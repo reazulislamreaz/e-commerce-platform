@@ -9,7 +9,7 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="group relative block overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      className="group relative block overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all hover:-translate-y-0.5 hover:border-gold/60 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
     >
       <div className="overflow-hidden">
         <div
@@ -24,12 +24,12 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
         </div>
       </div>
       {discount > 0 && (
-        <span className="absolute left-2 top-2 rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-semibold text-white">
+        <span className="absolute left-2 top-2 rounded-full bg-ink px-2 py-0.5 text-xs font-semibold text-white">
           -{discount}%
         </span>
       )}
       <div className="p-3.5">
-        <h3 className="line-clamp-2 min-h-10 text-sm text-zinc-800 transition-colors group-hover:text-indigo-700">
+        <h3 className="line-clamp-2 min-h-10 text-sm text-zinc-800 transition-colors group-hover:text-gold-dark">
           {product.name}
         </h3>
         <p className="mt-2 flex items-baseline gap-2">

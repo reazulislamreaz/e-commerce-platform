@@ -11,10 +11,10 @@ function BrandLogo() {
   return (
     <Link
       href="/"
-      className="shrink-0 rounded-md text-2xl font-bold tracking-tight text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      className="shrink-0 rounded-md text-2xl font-bold tracking-tight text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
       aria-label="ElevateApparel home"
     >
-      Elevate<span className="text-indigo-600">Apparel</span>
+      Elevate<span className="text-gold-dark">Apparel</span>
     </Link>
   );
 }
@@ -39,12 +39,12 @@ function SearchForm({
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search for t-shirts, polos, hoodies…"
           aria-label="Search products"
-          className="w-full rounded-full border border-zinc-300 bg-zinc-50 py-2.5 pl-5 pr-11 text-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-full border border-zinc-300 bg-zinc-50 py-2.5 pl-5 pr-11 text-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-gold focus:bg-white focus:ring-2 focus:ring-gold/20"
         />
         <button
           type="submit"
           aria-label="Search"
-          className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-indigo-600"
+          className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-gold/10 hover:text-gold-dark focus-visible:outline-2 focus-visible:outline-gold"
         >
           <Search className="size-4" />
         </button>
@@ -73,13 +73,13 @@ export function SiteHeader() {
   };
 
   const iconLinkClass =
-    'relative flex size-10 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600';
+    'relative flex size-10 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/85">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded-md focus:bg-indigo-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
       >
         Skip to main content
       </a>
@@ -89,7 +89,7 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-5">
         <button
           type="button"
-          className="flex size-10 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-indigo-600 lg:hidden"
+          className="flex size-10 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-gold lg:hidden"
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen((open) => !open)}
@@ -114,7 +114,7 @@ export function SiteHeader() {
           >
             <ShoppingCart className="size-5" />
             {cartCount > 0 && (
-              <span className="absolute right-0 top-0 flex size-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
+              <span className="absolute right-0 top-0 flex size-5 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
                 {cartCount > 9 ? '9+' : cartCount}
               </span>
             )}
@@ -122,7 +122,7 @@ export function SiteHeader() {
           {user ? (
             <div className="hidden items-center gap-2 pl-1 sm:flex">
               <span className="flex items-center gap-1.5 text-sm font-medium text-zinc-800">
-                <span className="flex size-8 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+                <span className="flex size-8 items-center justify-center rounded-full bg-gold/10 text-gold-dark">
                   <User className="size-4" />
                 </span>
                 Hi, {user.firstName ?? user.email}
@@ -131,7 +131,7 @@ export function SiteHeader() {
                 type="button"
                 onClick={() => logout.mutate()}
                 disabled={logout.isPending}
-                className="rounded-full px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+                className="rounded-full px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-gold disabled:opacity-50"
               >
                 {logout.isPending ? 'Logging out…' : 'Logout'}
               </button>
@@ -140,13 +140,13 @@ export function SiteHeader() {
             <div className="hidden items-center gap-2 pl-1 sm:flex">
               <Link
                 href="/login"
-                className="rounded-full px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-indigo-600"
+                className="rounded-full px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-gold"
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
               >
                 Register
               </Link>
@@ -160,7 +160,7 @@ export function SiteHeader() {
           <Link
             key={suggestion}
             href={`/search?q=${encodeURIComponent(suggestion)}`}
-            className="rounded-full border border-zinc-200 px-2.5 py-0.5 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+            className="rounded-full border border-zinc-200 px-2.5 py-0.5 transition-colors hover:border-gold hover:bg-gold/10 hover:text-gold-dark"
           >
             {suggestion}
           </Link>
@@ -181,14 +181,14 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-sm py-0.5 transition-colors hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              className="rounded-sm py-0.5 transition-colors hover:text-gold-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
               {item.name}
             </Link>
           ))}
           <Link
             href="/contact"
-            className="ml-auto rounded-sm py-0.5 transition-colors hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            className="ml-auto rounded-sm py-0.5 transition-colors hover:text-gold-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
           >
             Contact Us
           </Link>
@@ -216,7 +216,7 @@ export function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="block rounded-md px-3 py-2.5 transition-colors hover:bg-indigo-50 hover:text-indigo-700"
+                className="block rounded-md px-3 py-2.5 transition-colors hover:bg-gold/10 hover:text-gold-dark"
                 onClick={() => setMobileOpen(false)}
               >
                 {item.name}
@@ -244,7 +244,7 @@ export function SiteHeader() {
                   <Link
                     href="/register"
                     onClick={() => setMobileOpen(false)}
-                    className="flex-1 rounded-full bg-indigo-600 px-4 py-2.5 text-center font-semibold text-white transition-colors hover:bg-indigo-500"
+                    className="flex-1 rounded-full bg-ink px-4 py-2.5 text-center font-semibold text-white transition-colors hover:bg-zinc-800"
                   >
                     Register
                   </Link>

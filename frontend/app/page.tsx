@@ -6,17 +6,17 @@ import type { HomeSection } from '@/features/products/types';
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-indigo-950">
+    <section className="relative overflow-hidden bg-linear-to-br from-zinc-950 via-ink to-zinc-900">
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full bg-indigo-600/20 blur-3xl"
+        className="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full bg-gold/15 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-40 left-1/4 size-80 rounded-full bg-indigo-400/10 blur-3xl"
+        className="pointer-events-none absolute -bottom-40 left-1/4 size-80 rounded-full bg-gold/10 blur-3xl"
       />
       <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-5 px-4 py-20 sm:py-28">
-        <p className="rounded-full border border-indigo-400/40 bg-indigo-500/10 px-4 py-1 text-xs font-semibold tracking-[0.25em] text-indigo-300">
+        <p className="rounded-full border border-gold/40 bg-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.25em] text-gold">
           NEW SEASON
         </p>
         <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-white sm:text-6xl">
@@ -29,7 +29,7 @@ function Hero() {
         <div className="mt-3 flex flex-wrap gap-3">
           <Link
             href="/shop"
-            className="group inline-flex items-center gap-2 rounded-full bg-indigo-600 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition-all hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            className="group inline-flex items-center gap-2 rounded-full bg-gold px-7 py-3 text-sm font-semibold text-ink shadow-lg shadow-black/40 transition-all hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
           >
             Shop Now
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
@@ -38,7 +38,7 @@ function Hero() {
             <Link
               key={label}
               href={`/category/${label.toLowerCase()}`}
-              className="rounded-full border border-zinc-600 px-7 py-3 text-sm font-semibold text-zinc-200 transition-colors hover:border-indigo-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+              className="rounded-full border border-zinc-600 px-7 py-3 text-sm font-semibold text-zinc-200 transition-colors hover:border-gold hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
               {label}
             </Link>
@@ -60,7 +60,7 @@ function BenefitsBar() {
       <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:grid-cols-3">
         {benefits.map(({ icon: Icon, title, detail }) => (
           <div key={title} className="flex items-center justify-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gold/10 text-gold-dark">
               <Icon className="size-5" />
             </span>
             <div>
@@ -89,7 +89,7 @@ function CategoryGrid() {
           <Link
             key={category.id}
             href={`/category/${category.slug}`}
-            className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all hover:-translate-y-0.5 hover:border-gold/60 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
           >
             <div className="overflow-hidden">
               <div
@@ -99,7 +99,7 @@ function CategoryGrid() {
                 }}
               />
             </div>
-            <p className="px-2 py-2.5 text-center text-xs font-medium text-zinc-700 group-hover:text-indigo-700">
+            <p className="px-2 py-2.5 text-center text-xs font-medium text-zinc-700 group-hover:text-gold-dark">
               {category.name}
             </p>
           </Link>
@@ -121,7 +121,7 @@ function ProductSection({ section }: { section: HomeSection }) {
         </h2>
         <Link
           href={section.viewMoreHref}
-          className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-gold-dark transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
         >
           View More
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
@@ -139,27 +139,34 @@ function ProductSection({ section }: { section: HomeSection }) {
 function NewsletterCta() {
   return (
     <section className="mx-auto max-w-7xl px-4">
-      <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-12 text-center sm:px-12">
-        <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-          Join the ElevateApparel community
-        </h2>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-indigo-100">
-          Create an account for exclusive member offers, faster checkout, and early access to new
-          arrivals.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link
-            href="/register"
-            className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            Create Account
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-full border border-indigo-300/60 px-7 py-3 text-sm font-semibold text-white transition-colors hover:border-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            Login
-          </Link>
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-zinc-950 via-ink to-zinc-900 px-6 py-12 text-center sm:px-12">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-gold/15 blur-3xl"
+        />
+        <div className="relative">
+          <div className="mx-auto mb-5 h-1 w-12 rounded-full bg-gold" />
+          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            Join the ElevateApparel community
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-400">
+            Create an account for exclusive member offers, faster checkout, and early access to new
+            arrivals.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/register"
+              className="rounded-full bg-gold px-7 py-3 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              Create Account
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-full border border-zinc-600 px-7 py-3 text-sm font-semibold text-white transition-colors hover:border-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              Login
+            </Link>
+          </div>
         </div>
       </div>
     </section>
@@ -168,7 +175,7 @@ function NewsletterCta() {
 
 export default function Home() {
   return (
-    <main id="main-content" className="flex-1 bg-zinc-50/50">
+    <main id="main-content" className="flex-1 bg-card">
       <Hero />
       <BenefitsBar />
       <div className="space-y-16 py-16">

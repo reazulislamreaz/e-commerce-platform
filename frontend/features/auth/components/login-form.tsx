@@ -29,7 +29,7 @@ export function LoginForm() {
       : 'Something went wrong. Please try again.');
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-4">
+    <form onSubmit={onSubmit} noValidate className="space-y-5">
       <FormField
         label="Email"
         type="email"
@@ -38,14 +38,24 @@ export function LoginForm() {
         error={errors.email?.message}
         {...register('email')}
       />
-      <FormField
-        label="Password"
-        type="password"
-        autoComplete="current-password"
-        placeholder="Your password"
-        error={errors.password?.message}
-        {...register('password')}
-      />
+      <div>
+        <FormField
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Your password"
+          error={errors.password?.message}
+          {...register('password')}
+        />
+        <div className="mt-2 text-right">
+          <Link
+            href="/forgot-password"
+            className="text-xs font-medium text-zinc-500 transition-colors hover:text-gold-dark"
+          >
+            Forgot your password?
+          </Link>
+        </div>
+      </div>
       {serverError && (
         <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
           {serverError}
@@ -54,16 +64,26 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-full bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+        className="w-full rounded-lg bg-ink py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-50"
       >
         {isSubmitting ? 'Signing in…' : 'Login'}
       </button>
-      <p className="text-center text-sm text-zinc-600">
-        New here?{' '}
-        <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-700">
-          Create an account
-        </Link>
-      </p>
+      <div className="relative py-1" aria-hidden>
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-zinc-200" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-3 text-xs uppercase tracking-wider text-zinc-400">
+            New to ElevateApparel?
+          </span>
+        </div>
+      </div>
+      <Link
+        href="/register"
+        className="block w-full rounded-lg border border-gold bg-gold/5 py-3 text-center text-sm font-semibold text-gold-dark transition-colors hover:bg-gold/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+      >
+        Create an account
+      </Link>
     </form>
   );
 }

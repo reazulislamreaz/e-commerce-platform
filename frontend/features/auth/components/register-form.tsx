@@ -81,14 +81,14 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-full bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+        className="w-full rounded-lg bg-ink py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-50"
       >
         {isSubmitting ? 'Creating account…' : 'Create Account'}
       </button>
       <p className="text-center text-sm text-zinc-600">
         Already have an account?{' '}
-        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700">
-          Login
+        <Link href="/login" className="font-semibold text-gold-dark transition-colors hover:text-gold">
+          Sign in
         </Link>
       </p>
     </form>
