@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AppProviders } from '@/providers/app-providers';
+import { SiteHeader } from '@/components/layouts/site-header';
+import { SiteFooter } from '@/components/layouts/site-footer';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -14,8 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'Commerce', template: '%s | Commerce' },
-  description: 'Modern commerce, thoughtfully built.',
+  title: {
+    default: 'ElevateApparel — Elevate Your Everyday Style',
+    template: '%s | ElevateApparel',
+  },
+  description:
+    'Premium-quality apparel for men, women, and kids. Tees, polos, panjabis, and activewear designed for comfort and confidence.',
 };
 
 export default function RootLayout({
@@ -26,7 +32,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </AppProviders>
       </body>
     </html>
   );

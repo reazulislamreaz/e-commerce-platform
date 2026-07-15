@@ -1,16 +1,183 @@
+import Link from 'next/link';
+import { ArrowRight, RefreshCcw, ShieldCheck, Truck } from 'lucide-react';
+import { ProductCard } from '@/components/shared/product-card';
+import { homeCategories, homeSections } from '@/features/products/data';
+import type { HomeSection } from '@/features/products/types';
+
+function Hero() {
+  return (
+    <section className="relative overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-indigo-950">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full bg-indigo-600/20 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-40 left-1/4 size-80 rounded-full bg-indigo-400/10 blur-3xl"
+      />
+      <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-5 px-4 py-20 sm:py-28">
+        <p className="rounded-full border border-indigo-400/40 bg-indigo-500/10 px-4 py-1 text-xs font-semibold tracking-[0.25em] text-indigo-300">
+          NEW SEASON
+        </p>
+        <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-white sm:text-6xl">
+          Elevate your everyday style.
+        </h1>
+        <p className="max-w-xl text-lg leading-relaxed text-zinc-300">
+          Premium tees, polos, panjabis, and activewear — crafted with quality fabrics and delivered
+          to your door.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <Link
+            href="/shop"
+            className="group inline-flex items-center gap-2 rounded-full bg-indigo-600 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition-all hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          >
+            Shop Now
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          {['Men', 'Women', 'Kids'].map((label) => (
+            <Link
+              key={label}
+              href={`/category/${label.toLowerCase()}`}
+              className="rounded-full border border-zinc-600 px-7 py-3 text-sm font-semibold text-zinc-200 transition-colors hover:border-indigo-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BenefitsBar() {
+  const benefits = [
+    { icon: Truck, title: 'Fast Nationwide Delivery', detail: 'Free over ৳2,000' },
+    { icon: ShieldCheck, title: 'Secure Payment', detail: 'Encrypted checkout' },
+    { icon: RefreshCcw, title: 'Easy Returns', detail: '7-day return policy' },
+  ];
+  return (
+    <section aria-label="Store benefits" className="border-b border-zinc-200 bg-white">
+      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:grid-cols-3">
+        {benefits.map(({ icon: Icon, title, detail }) => (
+          <div key={title} className="flex items-center justify-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+              <Icon className="size-5" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">{title}</p>
+              <p className="text-xs text-zinc-500">{detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CategoryGrid() {
+  return (
+    <section aria-labelledby="categories-heading" className="mx-auto max-w-7xl px-4">
+      <h2
+        id="categories-heading"
+        className="text-center text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl"
+      >
+        Find Your Thing
+      </h2>
+      <p className="mt-2 text-center text-sm text-zinc-500">Browse our most-loved categories</p>
+      <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+        {homeCategories.map((category) => (
+          <Link
+            key={category.id}
+            href={`/category/${category.slug}`}
+            className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            <div className="overflow-hidden">
+              <div
+                className="aspect-square w-full transition-transform duration-300 group-hover:scale-105"
+                style={{
+                  background: `linear-gradient(150deg, hsl(${category.imageHue} 50% 90%), hsl(${category.imageHue} 45% 74%))`,
+                }}
+              />
+            </div>
+            <p className="px-2 py-2.5 text-center text-xs font-medium text-zinc-700 group-hover:text-indigo-700">
+              {category.name}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProductSection({ section }: { section: HomeSection }) {
+  return (
+    <section aria-labelledby={`section-${section.id}`} className="mx-auto max-w-7xl px-4">
+      <div className="mb-5 flex items-baseline justify-between gap-4">
+        <h2
+          id={`section-${section.id}`}
+          className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl"
+        >
+          {section.title}
+        </h2>
+        <Link
+          href={section.viewMoreHref}
+          className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          View More
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {section.products.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NewsletterCta() {
+  return (
+    <section className="mx-auto max-w-7xl px-4">
+      <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-12 text-center sm:px-12">
+        <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          Join the ElevateApparel community
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-indigo-100">
+          Create an account for exclusive member offers, faster checkout, and early access to new
+          arrivals.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/register"
+            className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            Create Account
+          </Link>
+          <Link
+            href="/login"
+            className="rounded-full border border-indigo-300/60 px-7 py-3 text-sm font-semibold text-white transition-colors hover:border-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            Login
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   return (
-    <main className="flex flex-1 items-center justify-center bg-zinc-50 p-8">
-      <section className="max-w-xl text-center">
-        <p className="mb-3 text-sm font-medium tracking-widest text-zinc-500">COMMERCE PLATFORM</p>
-        <h1 className="text-4xl font-semibold tracking-tight text-zinc-950">
-          A scalable storefront foundation.
-        </h1>
-        <p className="mt-5 text-zinc-600">
-          The customer experience, vendor tools, and operations console are ready to grow from a
-          secure API foundation.
-        </p>
-      </section>
+    <main id="main-content" className="flex-1 bg-zinc-50/50">
+      <Hero />
+      <BenefitsBar />
+      <div className="space-y-16 py-16">
+        <CategoryGrid />
+        {homeSections.map((section) => (
+          <ProductSection key={section.id} section={section} />
+        ))}
+        <NewsletterCta />
+      </div>
     </main>
   );
 }

@@ -8,6 +8,8 @@ This repository uses **NestJS** for the backend and **Next.js (App Router)** for
 
 Before making any change, the AI assistant **must read this file completely** and follow every rule.
 
+After reading this guide, read [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) completely to understand the repository's current architecture, implementation status, and local workflow.
+
 The primary goal is to produce **production-ready, scalable, secure, maintainable, and high-performance software**.
 
 ---
@@ -55,6 +57,7 @@ The primary goal is to produce **production-ready, scalable, secure, maintainabl
 Always use feature modules.
 
 Feature/
+
 - module
 - controller
 - service
@@ -70,6 +73,7 @@ Feature/
 - tests
 
 Controllers:
+
 - Receive requests
 - Call services
 - Return responses
@@ -116,9 +120,11 @@ Reject invalid requests early.
 ## Guards
 
 Authentication:
+
 - JWT Guard
 
 Authorization:
+
 - Roles Guard
 - Permission Guard
 
@@ -210,11 +216,13 @@ Use:
 Never fetch unused fields.
 
 MongoDB:
+
 - lean()
 - indexes
 - aggregation only when needed
 
 Prisma:
+
 - select
 - minimal include
 - transactions
@@ -398,4 +406,3 @@ Always behave like a Senior Staff Software Engineer.
 Do not optimize for speed of writing.
 
 Optimize for correctness, scalability, maintainability, and long-term engineering quality.
-
