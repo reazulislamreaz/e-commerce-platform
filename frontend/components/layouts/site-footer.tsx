@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Facebook, Instagram, Youtube } from 'lucide-react';
+import { BrandBadge } from '@/components/shared/brand-badge';
 
 const infoLinks = [
   { name: 'About Us', href: '/about' },
@@ -15,8 +16,11 @@ export function SiteFooter() {
     <footer className="mt-16 bg-zinc-950 text-zinc-300">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="font-serif text-2xl font-bold tracking-tight text-white">
-            Elevate<span className="text-gold">Apparel</span>
+          <p className="flex items-center gap-2.5 font-serif text-2xl font-bold tracking-tight text-white">
+            <BrandBadge />
+            <span>
+              Elevate<span className="text-gold">Apparel</span>
+            </span>
           </p>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
             Elevate your everyday. Premium-quality apparel for men, women, and kids — designed for

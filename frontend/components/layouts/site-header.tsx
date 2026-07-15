@@ -6,15 +6,19 @@ import { useState } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useLogout } from '@/features/auth/hooks';
 import { navCategories, searchSuggestions } from '@/features/products/data';
+import { BrandBadge } from '@/components/shared/brand-badge';
 
 function BrandLogo() {
   return (
     <Link
       href="/"
-      className="shrink-0 rounded-md font-serif text-2xl font-bold tracking-tight text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+      className="flex shrink-0 items-center gap-2.5 rounded-md font-serif text-2xl font-bold tracking-tight text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
       aria-label="ElevateApparel home"
     >
-      Elevate<span className="text-gold-dark">Apparel</span>
+      <BrandBadge />
+      <span className="hidden sm:inline">
+        Elevate<span className="text-gold-dark">Apparel</span>
+      </span>
     </Link>
   );
 }

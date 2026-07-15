@@ -1,10 +1,58 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, RefreshCcw, ShieldCheck, Truck } from 'lucide-react';
 import { ProductCard } from '@/components/shared/product-card';
 import { homeCategories, homeSections } from '@/features/products/data';
 import type { HomeSection } from '@/features/products/types';
 
+// Full-cover hero banner. Drop your artwork at frontend/public/banners/hero.jpg
+// (recommended ~3200×1200); the gradient hero below renders until it exists.
+const heroBannerPath = '/banners/hero.jpg';
+const hasHeroBanner = existsSync(join(process.cwd(), 'public', heroBannerPath));
+
 function Hero() {
+  if (hasHeroBanner) {
+    return (
+      <section className="relative overflow-hidden bg-ink">
+        <Link
+          href="/category/football-jerseys"
+          className="block focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-gold"
+        >
+          <div className="relative aspect-3200/1218 w-full">
+            <Image
+              src={heroBannerPath}
+              alt="Official jersey collection — shop the new season fan edition jerseys"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+          </div>
+        </Link>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/60 to-transparent" />
+        <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-wrap justify-center gap-3">
+          <Link
+            href="/shop"
+            className="group inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink shadow-lg shadow-black/40 transition-all hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+          >
+            Shop Now
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          {['Men', 'Women', 'Kids'].map((label) => (
+            <Link
+              key={label}
+              href={`/category/${label.toLowerCase()}`}
+              className="rounded-full border border-white/40 bg-black/30 px-6 py-2.5 text-sm font-semibold text-white backdrop-blur transition-colors hover:border-gold hover:text-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="relative overflow-hidden bg-linear-to-br from-zinc-950 via-ink to-zinc-900">
       <div
