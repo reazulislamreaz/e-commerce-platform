@@ -7,10 +7,12 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
   hint?: string;
+  /** Visually hide the label (still announced to screen readers) for placeholder-led minimal forms. */
+  hideLabel?: boolean;
 }
 
 export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormField(
-  { label, error, hint, className, type, ...props },
+  { label, error, hint, hideLabel, className, type, ...props },
   ref,
 ) {
   const id = useId();
@@ -20,7 +22,10 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
 
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-zinc-700">
+      <label
+        htmlFor={id}
+        className={cn('mb-1.5 block text-sm font-medium text-zinc-700', hideLabel && 'sr-only')}
+      >
         {label}
       </label>
       <div className="relative">

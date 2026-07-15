@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { RegisterForm } from '@/features/auth/components/register-form';
+import { playfair } from '@/lib/fonts';
 
 export const metadata: Metadata = {
   title: 'Create Account',
@@ -9,11 +10,7 @@ export const metadata: Metadata = {
 export default function RegisterPage() {
   return (
     <>
-      <div className="mb-8">
-        <div className="mb-5 h-1 w-12 rounded-full bg-gold" />
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Create account</h1>
-        <p className="mt-2 text-sm text-zinc-500">Join us today and start shopping.</p>
-      </div>
+      <h1 className={`${playfair.className} mb-8 text-4xl font-semibold text-ink`}>Sign Up</h1>
       <RegisterForm />
     </>
   );

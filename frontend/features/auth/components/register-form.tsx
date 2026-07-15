@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
+import { GoogleLoginButton } from '@/features/auth/components/google-login-button';
 import { useLogin, useRegister } from '@/features/auth/hooks';
 import { registerSchema, type RegisterInput } from '@/features/auth/schemas';
 
@@ -35,6 +36,7 @@ export function RegisterForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           label="First name"
+          hideLabel
           autoComplete="given-name"
           placeholder="First name"
           error={errors.firstName?.message}
@@ -42,6 +44,7 @@ export function RegisterForm() {
         />
         <FormField
           label="Last name"
+          hideLabel
           autoComplete="family-name"
           placeholder="Last name"
           error={errors.lastName?.message}
@@ -50,26 +53,29 @@ export function RegisterForm() {
       </div>
       <FormField
         label="Email"
+        hideLabel
         type="email"
         autoComplete="email"
-        placeholder="you@example.com"
+        placeholder="Email"
         error={errors.email?.message}
         {...register('email')}
       />
       <FormField
         label="Password"
+        hideLabel
         type="password"
         autoComplete="new-password"
-        placeholder="At least 12 characters"
-        hint="Must be 12+ characters with an uppercase letter, a lowercase letter, and a digit."
+        placeholder="Password"
+        hint="12+ characters with an uppercase letter, a lowercase letter, and a digit."
         error={errors.password?.message}
         {...register('password')}
       />
       <FormField
         label="Confirm password"
+        hideLabel
         type="password"
         autoComplete="new-password"
-        placeholder="Repeat your password"
+        placeholder="Confirm password"
         error={errors.confirmPassword?.message}
         {...register('confirmPassword')}
       />
@@ -85,10 +91,15 @@ export function RegisterForm() {
       >
         {isSubmitting ? 'Creating account…' : 'Create Account'}
       </button>
-      <p className="text-center text-sm text-zinc-600">
+      <p className="text-center text-xs text-zinc-400">or sign up with</p>
+      <GoogleLoginButton label="Sign up with Google" />
+      <p className="pt-2 text-center text-sm text-zinc-600">
         Already have an account?{' '}
-        <Link href="/login" className="font-semibold text-gold-dark transition-colors hover:text-gold">
-          Sign in
+        <Link
+          href="/login"
+          className="font-semibold text-ink underline underline-offset-2 transition-colors hover:text-gold-dark"
+        >
+          Sign In
         </Link>
       </p>
     </form>

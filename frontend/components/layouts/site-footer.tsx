@@ -16,7 +16,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <p className="text-2xl font-bold tracking-tight text-white">
-            Elevate<span className="text-indigo-400">Apparel</span>
+            Elevate<span className="text-gold">Apparel</span>
           </p>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
             Elevate your everyday. Premium-quality apparel for men, women, and kids — designed for
@@ -32,7 +32,7 @@ export function SiteFooter() {
                 key={label}
                 href="#"
                 aria-label={label}
-                className="flex size-9 items-center justify-center rounded-full bg-zinc-900 transition-colors hover:bg-indigo-600 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                className="flex size-9 items-center justify-center rounded-full bg-zinc-900 transition-colors hover:bg-gold hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
               >
                 <Icon className="size-4" />
               </a>
@@ -46,7 +46,7 @@ export function SiteFooter() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                  className="transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
                 >
                   {link.name}
                 </Link>
@@ -99,11 +99,11 @@ export function SiteFooter() {
               name="email"
               required
               placeholder="Your email"
-              className="w-full rounded-l-full border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-zinc-500 focus:border-indigo-400"
+              className="w-full rounded-l-full border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-zinc-500 focus:border-gold"
             />
             <button
               type="submit"
-              className="rounded-r-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+              className="rounded-r-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
               Join
             </button>
