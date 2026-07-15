@@ -1,238 +1,83 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, RefreshCcw, ShieldCheck, Truck } from 'lucide-react';
-import { ProductCard } from '@/components/shared/product-card';
-import { homeCategories, homeSections } from '@/features/products/data';
-import type { HomeSection } from '@/features/products/types';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Headphones,
+  Heart,
+  Quote,
+  RefreshCw,
+  ShieldCheck,
+  Star,
+  Truck,
+} from 'lucide-react';
 
-// Full-cover hero banner. Drop your artwork at frontend/public/banners/hero.jpg
-// (recommended ~3200×1200); the gradient hero below renders until it exists.
-const heroBannerPath = '/banners/hero.jpg';
-const hasHeroBanner = existsSync(join(process.cwd(), 'public', heroBannerPath));
+const collections = [
+  { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.jpg' },
+  { title: "WOMEN'S\nCOLLECTION", href: '/category/women', image: 'collection-women.jpg' },
+  { title: 'NEW\nARRIVALS', href: '/new-arrivals', image: 'collection-new.jpg' },
+  { title: 'SALE\nUP TO 40% OFF', href: '/sale', image: 'collection-sale.jpg' },
+];
+
+const products = [
+  ['Elevate Oversized Tee', 'Black', '৳1,190'],
+  ['Essential Tee', 'Off White', '৳1,090'],
+  ['Elevate Hoodie', 'Black', '৳1,890'],
+  ['Minimal Tee', 'Beige', '৳1,090'],
+  ['Elevate Jogger', 'Black', '৳1,590'],
+  ["Women's Hoodie", 'Cream', '৳1,890'],
+];
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-base font-bold uppercase tracking-tight text-white sm:text-[17px]">{children}</h2>;
+}
 
 function Hero() {
-  if (hasHeroBanner) {
-    return (
-      <section className="relative overflow-hidden bg-ink">
-        <Link
-          href="/category/football-jerseys"
-          className="block focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-gold"
-        >
-          <div className="relative aspect-3200/1218 w-full">
-            <Image
-              src={heroBannerPath}
-              alt="Official jersey collection — shop the new season fan edition jerseys"
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
-          </div>
-        </Link>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-wrap justify-center gap-3">
-          <Link
-            href="/shop"
-            className="group inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink shadow-lg shadow-black/40 transition-all hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-          >
-            Shop Now
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          {['Men', 'Women', 'Kids'].map((label) => (
-            <Link
-              key={label}
-              href={`/category/${label.toLowerCase()}`}
-              className="rounded-full border border-white/40 bg-black/30 px-6 py-2.5 text-sm font-semibold text-white backdrop-blur transition-colors hover:border-gold hover:text-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-      </section>
-    );
-  }
   return (
-    <section className="relative overflow-hidden bg-linear-to-br from-zinc-950 via-ink to-zinc-900">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full bg-gold/15 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-40 left-1/4 size-80 rounded-full bg-gold/10 blur-3xl"
-      />
-      <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-5 px-4 py-20 sm:py-28">
-        <p className="rounded-full border border-gold/40 bg-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.25em] text-gold">
-          NEW SEASON
-        </p>
-        <h1 className="max-w-2xl font-serif text-4xl font-bold tracking-tight text-white sm:text-6xl">
-          Elevate your everyday style.
-        </h1>
-        <p className="max-w-xl text-lg leading-relaxed text-zinc-300">
-          Premium tees, polos, panjabis, and activewear — crafted with quality fabrics and delivered
-          to your door.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-3">
-          <Link
-            href="/shop"
-            className="group inline-flex items-center gap-2 rounded-full bg-gold px-7 py-3 text-sm font-semibold text-ink shadow-lg shadow-black/40 transition-all hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-          >
-            Shop Now
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          {['Men', 'Women', 'Kids'].map((label) => (
-            <Link
-              key={label}
-              href={`/category/${label.toLowerCase()}`}
-              className="rounded-full border border-zinc-600 px-7 py-3 text-sm font-semibold text-zinc-200 transition-colors hover:border-gold hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
+    <section className="relative h-[360px] overflow-hidden border-b border-[#2d2a27] bg-[#090909] sm:h-[388px]">
+      <div className="absolute inset-y-0 right-0 w-full sm:w-[62%]">
+        <Image src="/images/home/hero-model.jpg" alt="Model wearing Elevate black t-shirt" fill priority sizes="(max-width: 640px) 100vw, 62vw" className="object-cover object-[68%_center] sm:object-center" />
       </div>
-    </section>
-  );
-}
-
-function BenefitsBar() {
-  const benefits = [
-    { icon: Truck, title: 'Fast Nationwide Delivery', detail: 'Free over ৳2,000' },
-    { icon: ShieldCheck, title: 'Secure Payment', detail: 'Encrypted checkout' },
-    { icon: RefreshCcw, title: 'Easy Returns', detail: '7-day return policy' },
-  ];
-  return (
-    <section aria-label="Store benefits" className="border-b border-zinc-200 bg-white">
-      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:grid-cols-3">
-        {benefits.map(({ icon: Icon, title, detail }) => (
-          <div key={title} className="flex items-center justify-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gold/10 text-gold-dark">
-              <Icon className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-zinc-900">{title}</p>
-              <p className="text-xs text-zinc-500">{detail}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CategoryGrid() {
-  return (
-    <section aria-labelledby="categories-heading" className="mx-auto max-w-7xl px-4">
-      <h2
-        id="categories-heading"
-        className="text-center font-serif text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl"
-      >
-        Find Your Thing
-      </h2>
-      <p className="mt-2 text-center text-sm text-zinc-500">Browse our most-loved categories</p>
-      <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-        {homeCategories.map((category) => (
-          <Link
-            key={category.id}
-            href={`/category/${category.slug}`}
-            className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all hover:-translate-y-0.5 hover:border-gold/60 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-          >
-            <div className="overflow-hidden">
-              <div
-                className="aspect-square w-full transition-transform duration-300 group-hover:scale-105"
-                style={{
-                  background: `linear-gradient(150deg, hsl(${category.imageHue} 50% 90%), hsl(${category.imageHue} 45% 74%))`,
-                }}
-              />
-            </div>
-            <p className="px-2 py-2.5 text-center text-xs font-medium text-zinc-700 group-hover:text-gold-dark">
-              {category.name}
-            </p>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ProductSection({ section }: { section: HomeSection }) {
-  return (
-    <section aria-labelledby={`section-${section.id}`} className="mx-auto max-w-7xl px-4">
-      <div className="mb-5 flex items-baseline justify-between gap-4">
-        <h2
-          id={`section-${section.id}`}
-          className="font-serif text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl"
-        >
-          {section.title}
-        </h2>
-        <Link
-          href={section.viewMoreHref}
-          className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-gold-dark transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-        >
-          View More
-          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-        </Link>
-      </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {section.products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function NewsletterCta() {
-  return (
-    <section className="mx-auto max-w-7xl px-4">
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-zinc-950 via-ink to-zinc-900 px-6 py-12 text-center sm:px-12">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-gold/15 blur-3xl"
-        />
-        <div className="relative">
-          <div className="mx-auto mb-5 h-1 w-12 rounded-full bg-gold" />
-          <h2 className="font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            Join the ElevateApparel community
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-400">
-            Create an account for exclusive member offers, faster checkout, and early access to new
-            arrivals.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/register"
-              className="rounded-full bg-gold px-7 py-3 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              Create Account
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-full border border-zinc-600 px-7 py-3 text-sm font-semibold text-white transition-colors hover:border-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              Login
-            </Link>
+      <div className="absolute inset-0 bg-linear-to-r from-[#080808] via-[#080808]/90 to-[#080808]/20 sm:inset-y-0 sm:left-0 sm:w-[68%] sm:bg-linear-to-r sm:from-[#080808] sm:via-[#080808]/95 sm:to-transparent" />
+      <ArrowLeft aria-hidden className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-white sm:left-7 sm:size-7" />
+      <ArrowRight aria-hidden className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-white sm:right-6 sm:size-7" />
+      <div className="relative mx-auto flex h-full max-w-[1024px] items-center px-12 sm:px-[10.2%]">
+        <div className="max-w-[390px]">
+          <p className="text-xs font-semibold uppercase tracking-[.11em] text-[#e0bd7d] sm:text-[14px]">Discover Your Edge</p>
+          <h1 className="mt-2 text-[clamp(42px,12vw,64px)] font-extrabold leading-[.93] tracking-[-.055em] text-white">
+            ELEVATE <span className="block text-[#e3bb78]">EVERYDAY</span>
+          </h1>
+          <p className="mt-3 max-w-[260px] text-sm font-medium leading-[1.5] text-[#f6f4f2]">Premium quality apparel designed to elevate your style.</p>
+          <div className="mt-5 flex flex-wrap gap-2.5 sm:gap-3">
+            <Link href="/shop" className="border border-[#efc677] bg-[#e5bd79] px-4 py-2.5 text-[11px] font-bold text-[#18120b] sm:px-5">SHOP NOW</Link>
+            <Link href="/new-arrivals" className="border border-[#cbc6bf] bg-black/10 px-4 py-2.5 text-[11px] font-bold text-white sm:px-5">NEW ARRIVALS</Link>
           </div>
         </div>
       </div>
+      <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-4"><span className="size-2.5 rounded-full bg-[#e6bf7f]" /><span className="size-2.5 rounded-full border border-white/70" /><span className="size-2.5 rounded-full border border-white/70" /></div>
     </section>
   );
 }
 
-export default function Home() {
-  return (
-    <main id="main-content" className="flex-1 bg-card">
-      <Hero />
-      <BenefitsBar />
-      <div className="space-y-16 py-16">
-        <CategoryGrid />
-        {homeSections.map((section) => (
-          <ProductSection key={section.id} section={section} />
-        ))}
-        <NewsletterCta />
-      </div>
-    </main>
-  );
+function Benefits() {
+  const benefits = [[Truck, 'FREE DELIVERY', 'On all orders over ৳1999'], [ShieldCheck, 'PREMIUM QUALITY', 'Finest materials'], [RefreshCw, 'EASY RETURNS', '7 day return policy'], [Headphones, 'CUSTOMER SUPPORT', "We're here to help"]] as const;
+  return <section className="bg-[#111110]"><div className="mx-auto grid max-w-[1024px] grid-cols-1 gap-y-3 px-5 py-4 min-[440px]:grid-cols-2 sm:px-7 lg:grid-cols-4 lg:gap-y-0">{benefits.map(([Icon, title, text], index) => <div key={title} className={`flex items-center gap-3 px-2 sm:px-4 ${index ? 'lg:border-l lg:border-[#4b4741]' : ''}`}><Icon className="size-8 shrink-0 text-[#e4bd7d]" strokeWidth={1.5} /><div><p className="text-xs font-bold text-white">{title}</p><p className="mt-0.5 text-[11px] leading-4 text-[#eee9e1]">{text}</p></div></div>)}</div></section>;
 }
+
+function CollectionGrid() {
+  return <section className="mx-auto max-w-[1024px] px-3 pt-3 sm:px-6"><div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">{collections.map((item) => <Link key={item.href} href={item.href} className="group relative aspect-[.9] overflow-hidden rounded-[5px] bg-[#222] sm:aspect-[1.05] lg:h-[238px] lg:aspect-auto"><Image src={`/images/home/${item.image}`} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 234px" className="object-cover object-top transition-transform duration-300 group-hover:scale-105" /><span className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-black/5" /><span className="absolute bottom-13 left-3 whitespace-pre-line text-[clamp(15px,4vw,20px)] font-bold leading-[1.05] text-white">{item.title}</span><span className="absolute bottom-3 left-3 border border-white/70 px-2.5 py-1.5 text-[10px] font-bold text-white">SHOP NOW</span></Link>)}</div></section>;
+}
+
+function Featured() {
+  return <section className="mx-auto max-w-[1024px] px-3 pt-5 sm:px-6 sm:pt-4"><div className="flex items-center justify-between gap-3"><SectionTitle>Featured Products</SectionTitle><Link href="/shop" className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-white">VIEW ALL <ArrowRight className="size-4 text-[#dcb878]" /></Link></div><div className="mt-3 grid grid-cols-2 gap-x-2.5 gap-y-5 min-[480px]:grid-cols-3 lg:grid-cols-6">{products.map(([name, color, price], index) => <Link key={name} href={`/product/${index + 1}`} className="group min-w-0"><div className="relative overflow-hidden rounded-[4px] bg-[#e4e3e1]"><Image src={`/images/home/product-${index + 1}.jpg`} alt={name} width={152} height={184} sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 16vw" className="aspect-[.826] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105" /><Heart className="absolute right-2 top-2 size-[17px] stroke-[#111]" strokeWidth={1.5} /></div><p className="mt-2 truncate text-[11px] font-medium leading-4 text-white">{name}</p><p className="text-[11px] leading-4 text-[#d0cbc4]">{color}</p><p className="mt-1 text-[13px] font-semibold text-[#e5c17d]">{price}</p></Link>)}</div></section>;
+}
+
+function About() {
+  return <section className="mx-auto mt-5 grid max-w-[1024px] grid-cols-1 bg-[#111110] lg:mt-3 lg:grid-cols-2"><div className="relative min-h-[205px] overflow-hidden px-5 py-6 sm:min-h-[190px] sm:px-7 lg:min-h-[168px] lg:py-5"><Image src="/images/home/about-models.jpg" alt="Elevate Apparel models" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover object-right" /><div className="absolute inset-y-0 left-0 w-[72%] bg-linear-to-r from-[#111110] via-[#111110]/95 to-transparent sm:w-[55%]" /><div className="relative max-w-[270px]"><h2 className="text-[16px] font-semibold uppercase text-[#dbb87c]">About Elevate Apparel</h2><p className="mt-3 text-xs leading-[1.5] text-[#f3f1ef]">Elevate Apparel is more than just clothing. It&apos;s a mindset. We create premium quality, minimal and timeless pieces to elevate your everyday life.</p><Link href="/about" className="mt-3 inline-block border border-[#d3b06f] px-4 py-2 text-[11px] font-bold text-[#efce91]">LEARN MORE</Link></div></div><div className="relative px-10 py-6 text-center sm:px-14 lg:px-12 lg:py-5"><h2 className="text-[16px] font-semibold uppercase text-[#dbb87c]">What Our Customers Say</h2><Quote className="absolute left-4 top-[58px] size-5 fill-[#dfbd7f] text-[#dfbd7f] sm:left-9" /><ArrowLeft className="absolute left-3 top-1/2 size-5 text-white sm:left-8" /><ArrowRight className="absolute right-3 top-1/2 size-5 text-white sm:right-8" /><p className="mx-auto mt-4 max-w-[315px] text-xs leading-[1.5] text-[#f0edeb]">The quality is outstanding! Super comfortable and a perfect fit. Elevate is my go-to brand now.</p><div className="mt-2 flex justify-center gap-1 text-[#e3bd79]">{Array.from({ length: 5 }, (_, i) => <Star key={i} className="size-3 fill-current" />)}</div><p className="mt-2 text-xs text-white">— Shakib H.</p></div></section>;
+}
+
+function Instagram() {
+  return <section className="mx-auto max-w-[1024px] bg-black px-3 pb-3 pt-5 text-center sm:px-7 sm:pb-2 sm:pt-2"><h2 className="text-[15px] font-semibold uppercase text-[#e3bf7f]">Follow Us on Instagram</h2><p className="mt-0.5 text-xs text-white">@elevate.apparel</p><div className="mt-3 grid grid-cols-4 gap-1.5">{Array.from({ length: 8 }, (_, index) => <a key={index} href="#" aria-label={`Instagram post ${index + 1}`} className="relative block aspect-[1.27] overflow-hidden"><Image src={`/images/home/instagram-${index + 1}.jpg`} alt="" fill sizes="(max-width: 1024px) 25vw, 117px" className="object-cover" /></a>)}</div></section>;
+}
+
+export default function Home() { return <main id="main-content" className="flex-1 bg-black"><Hero /><Benefits /><CollectionGrid /><Featured /><About /><Instagram /></main>; }

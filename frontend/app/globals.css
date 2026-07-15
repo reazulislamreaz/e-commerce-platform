@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
+  --background: #0a0a0b;
+  --foreground: #f4f4f5;
 }
 
 @theme inline {
@@ -20,6 +20,11 @@
   --color-gold-dark: #b8962e;
   --color-ink: #111827;
   --color-card: #f9fafb;
+  /* Dark surfaces */
+  --color-surface: #0a0a0b;
+  --color-surface-2: #141416;
+  --color-surface-3: #1d1d21;
+  --color-edge: #27272a;
 }
 
 body {

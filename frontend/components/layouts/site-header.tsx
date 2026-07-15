@@ -1,263 +1,35 @@
 'use client';
+
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Heart, Menu, Search, ShoppingCart, User, X } from 'lucide-react';
+import Image from 'next/image';
+import { Menu, Search, ShoppingBag, UserRound, X } from 'lucide-react';
 import { useState } from 'react';
-import { useAppSelector } from '@/store/hooks';
-import { useLogout } from '@/features/auth/hooks';
-import { navCategories, searchSuggestions } from '@/features/products/data';
-import { BrandBadge } from '@/components/shared/brand-badge';
 
-function BrandLogo() {
-  return (
-    <Link
-      href="/"
-      className="flex shrink-0 items-center gap-2.5 rounded-md font-serif text-2xl font-bold tracking-tight text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-      aria-label="ElevateApparel home"
-    >
-      <BrandBadge />
-      <span className="hidden sm:inline">
-        Elevate<span className="text-gold-dark">Apparel</span>
-      </span>
-    </Link>
-  );
-}
-
-function SearchForm({
-  query,
-  onQueryChange,
-  onSubmit,
-  className,
-}: {
-  query: string;
-  onQueryChange: (value: string) => void;
-  onSubmit: (event: React.FormEvent) => void;
-  className?: string;
-}) {
-  return (
-    <form onSubmit={onSubmit} role="search" className={className}>
-      <div className="relative">
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search for t-shirts, polos, hoodies…"
-          aria-label="Search products"
-          className="w-full rounded-full border border-zinc-300 bg-zinc-50 py-2.5 pl-5 pr-11 text-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-gold focus:bg-white focus:ring-2 focus:ring-gold/20"
-        />
-        <button
-          type="submit"
-          aria-label="Search"
-          className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-gold/10 hover:text-gold-dark focus-visible:outline-2 focus-visible:outline-gold"
-        >
-          <Search className="size-4" />
-        </button>
-      </div>
-    </form>
-  );
-}
+const nav = [
+  ['HOME', '/'], ['SHOP', '/shop'], ['MEN', '/category/men'], ['WOMEN', '/category/women'],
+  ['NEW ARRIVALS', '/new-arrivals'], ['SALE', '/sale'], ['ABOUT US', '/about'], ['CONTACT US', '/contact'],
+] as const;
 
 export function SiteHeader() {
-  const router = useRouter();
-  const user = useAppSelector((state) => state.auth.user);
-  const cartCount = useAppSelector((state) =>
-    state.cart.items.reduce((total, item) => total + item.quantity, 0),
-  );
-  const logout = useLogout();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [query, setQuery] = useState('');
-
-  const submitSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    const term = query.trim();
-    if (term) {
-      router.push(`/search?q=${encodeURIComponent(term)}`);
-      setMobileOpen(false);
-    }
-  };
-
-  const iconLinkClass =
-    'relative flex size-10 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
-
+  const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/85">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
-      >
-        Skip to main content
-      </a>
-      <p className="bg-zinc-950 py-1.5 text-center text-xs font-medium tracking-wide text-white">
-        NEW SEASON COLLECTION — FREE DELIVERY ON ORDERS OVER ৳2,000
-      </p>
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-5">
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-gold lg:hidden"
-          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen((open) => !open)}
-        >
-          {mobileOpen ? <X className="size-6" /> : <Menu className="size-6" />}
-        </button>
-        <BrandLogo />
-        <SearchForm
-          query={query}
-          onQueryChange={setQuery}
-          onSubmit={submitSearch}
-          className="hidden flex-1 md:block md:max-w-xl"
-        />
-        <nav aria-label="Account and cart" className="ml-auto flex items-center gap-1 sm:gap-2">
-          <Link href="/wishlist" aria-label="Wishlist" className={iconLinkClass}>
-            <Heart className="size-5" />
-          </Link>
-          <Link
-            href="/cart"
-            aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-            className={iconLinkClass}
-          >
-            <ShoppingCart className="size-5" />
-            {cartCount > 0 && (
-              <span className="absolute right-0 top-0 flex size-5 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
-                {cartCount > 9 ? '9+' : cartCount}
-              </span>
-            )}
-          </Link>
-          {user ? (
-            <div className="hidden items-center gap-2 pl-1 sm:flex">
-              <span className="flex items-center gap-1.5 text-sm font-medium text-zinc-800">
-                <span className="flex size-8 items-center justify-center rounded-full bg-gold/10 text-gold-dark">
-                  <User className="size-4" />
-                </span>
-                Hi, {user.firstName ?? user.email}
-              </span>
-              <button
-                type="button"
-                onClick={() => logout.mutate()}
-                disabled={logout.isPending}
-                className="rounded-full px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-gold disabled:opacity-50"
-              >
-                {logout.isPending ? 'Logging out…' : 'Logout'}
-              </button>
-            </div>
-          ) : (
-            <div className="hidden items-center gap-2 pl-1 sm:flex">
-              <Link
-                href="/login"
-                className="rounded-full px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-gold"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-              >
-                Register
-              </Link>
-            </div>
-          )}
-        </nav>
+    <header className="z-40 bg-black text-white">
+      <div className="flex min-h-[28px] items-center justify-center border-b border-[#282828] px-3 py-1 text-center text-[10px] font-semibold leading-4 text-[#f1eee9]">FREE DELIVERY ON ALL ORDERS OVER ৳1999 <span className="ml-1 text-[#e3bb77]">♣</span></div>
+      <div className="mx-auto flex h-[56px] max-w-[1024px] items-center border-b border-[#292929] px-4 sm:px-7">
+        <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">
+          <Image
+            src="/images/brand/elevate-apparel-logo.jpeg"
+            alt="Elevate Apparel"
+            width={1248}
+            height={179}
+            priority
+            className="h-7 w-auto object-contain sm:h-[37px]"
+          />
+        </Link>
+        <nav aria-label="Main navigation" className="ml-auto hidden items-center gap-[27px] lg:flex">{nav.map(([name, href], index) => <Link key={href} href={href} className={`relative py-[20px] text-[11px] font-semibold tracking-[-.01em] text-white ${index === 0 ? 'after:absolute after:inset-x-0 after:-bottom-px after:h-[2px] after:bg-[#e4bd7c]' : ''}`}>{name}</Link>)}</nav>
+        <div className="ml-auto flex items-center gap-3 pl-3 sm:gap-5 sm:pl-5 lg:ml-7"><button aria-label="Search" className="p-1"><Search className="size-5" strokeWidth={1.7} /></button><Link href="/login" aria-label="Account" className="p-1"><UserRound className="size-5" strokeWidth={1.7} /></Link><Link href="/cart" aria-label="Shopping bag" className="relative p-1"><ShoppingBag className="size-5" strokeWidth={1.7} /><span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">0</span></Link><button type="button" aria-label={open ? 'Close menu' : 'Open menu'} className="p-1 lg:hidden" onClick={() => setOpen(!open)}>{open ? <X className="size-5" /> : <Menu className="size-5" />}</button></div>
       </div>
-      <div className="mx-auto hidden max-w-7xl items-center gap-2 px-4 pb-2.5 text-xs text-zinc-500 md:flex">
-        <span className="font-medium">Popular:</span>
-        {searchSuggestions.map((suggestion) => (
-          <Link
-            key={suggestion}
-            href={`/search?q=${encodeURIComponent(suggestion)}`}
-            className="rounded-full border border-zinc-200 px-2.5 py-0.5 transition-colors hover:border-gold hover:bg-gold/10 hover:text-gold-dark"
-          >
-            {suggestion}
-          </Link>
-        ))}
-      </div>
-      <nav aria-label="Main navigation" className="hidden border-t border-zinc-100 lg:block">
-        <div className="mx-auto flex max-w-7xl items-center gap-7 px-4 py-2.5 text-sm font-medium text-zinc-700">
-          {[
-            { name: 'Home', href: '/' },
-            { name: 'Shop All', href: '/shop' },
-            { name: 'New Arrivals', href: '/new-arrivals' },
-            { name: 'Top Selling', href: '/top-selling' },
-            ...navCategories.map((category) => ({
-              name: category.name,
-              href: `/category/${category.slug}`,
-            })),
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-sm py-0.5 transition-colors hover:text-gold-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-            >
-              {item.name}
-            </Link>
-          ))}
-          <Link
-            href="/contact"
-            className="ml-auto rounded-sm py-0.5 transition-colors hover:text-gold-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-          >
-            Contact Us
-          </Link>
-        </div>
-      </nav>
-      {mobileOpen && (
-        <nav aria-label="Mobile navigation" className="border-t border-zinc-100 lg:hidden">
-          <div className="space-y-1 px-4 py-4 text-sm font-medium text-zinc-700">
-            <SearchForm
-              query={query}
-              onQueryChange={setQuery}
-              onSubmit={submitSearch}
-              className="mb-3"
-            />
-            {[
-              { name: 'Home', href: '/' },
-              { name: 'Shop All', href: '/shop' },
-              { name: 'New Arrivals', href: '/new-arrivals' },
-              { name: 'Top Selling', href: '/top-selling' },
-              ...navCategories.map((category) => ({
-                name: category.name,
-                href: `/category/${category.slug}`,
-              })),
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="block rounded-md px-3 py-2.5 transition-colors hover:bg-gold/10 hover:text-gold-dark"
-                onClick={() => setMobileOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-            <div className="mt-2 border-t border-zinc-100 pt-3">
-              {user ? (
-                <button
-                  type="button"
-                  onClick={() => logout.mutate()}
-                  disabled={logout.isPending}
-                  className="block w-full rounded-md px-3 py-2.5 text-left transition-colors hover:bg-zinc-50 disabled:opacity-50"
-                >
-                  {logout.isPending ? 'Logging out…' : `Logout (${user.firstName ?? user.email})`}
-                </button>
-              ) : (
-                <div className="flex gap-3">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 rounded-full border border-zinc-300 px-4 py-2.5 text-center transition-colors hover:border-zinc-400"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 rounded-full bg-ink px-4 py-2.5 text-center font-semibold text-white transition-colors hover:bg-zinc-800"
-                  >
-                    Register
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </nav>
-      )}
+      {open && <nav className="border-b border-[#292929] px-5 py-3 lg:hidden">{nav.map(([name, href]) => <Link key={href} href={href} onClick={() => setOpen(false)} className="block border-b border-white/5 py-2.5 text-xs font-semibold tracking-wide">{name}</Link>)}</nav>}
     </header>
   );
 }

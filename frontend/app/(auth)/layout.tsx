@@ -58,9 +58,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <main
       id="main-content"
-      className="flex flex-1 items-center justify-center bg-[#efeeea] px-4 py-10 sm:px-8"
+      className="flex flex-1 items-center justify-center bg-surface px-4 py-10 sm:px-8"
     >
-      <div className="grid w-full max-w-6xl overflow-hidden bg-white shadow-xl shadow-zinc-900/5 lg:min-h-168 lg:grid-cols-2">
+      <div className="grid w-full max-w-6xl overflow-hidden rounded-xl bg-white shadow-2xl shadow-black/50 lg:min-h-168 lg:grid-cols-2">
         <div className="relative flex flex-col px-6 py-8 sm:px-14">
           <div className="flex items-center text-sm">
             <Link
