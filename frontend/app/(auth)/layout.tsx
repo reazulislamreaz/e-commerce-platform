@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { playfair } from '@/lib/fonts';
 
 function ArtPanel() {
   return (
@@ -22,7 +21,9 @@ function ArtPanel() {
       />
       {/* Oversized watermark monogram */}
       <span
-        className={`${playfair.className} pointer-events-none absolute -bottom-24 -right-10 select-none text-[22rem] font-bold leading-none text-gold/10`}
+        className={
+          'font-serif pointer-events-none absolute -bottom-24 -right-10 select-none text-[22rem] font-bold leading-none text-gold/10'
+        }
       >
         E
       </span>
@@ -35,9 +36,7 @@ function ArtPanel() {
 
       {/* Statement */}
       <div className="relative flex flex-1 flex-col justify-center px-10">
-        <p
-          className={`${playfair.className} max-w-sm text-3xl font-semibold leading-snug text-white`}
-        >
+        <p className={'font-serif max-w-sm text-3xl font-semibold leading-snug text-white'}>
           We craft comfort that carries your confidence.
         </p>
         <div className="mt-6 h-px w-16 bg-gold" />
@@ -72,7 +71,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               Back
             </Link>
             <span
-              className={`${playfair.className} absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-ink`}
+              className={
+                'font-serif absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-ink'
+              }
             >
               elevate<span className="text-gold-dark">.apparel</span>
             </span>

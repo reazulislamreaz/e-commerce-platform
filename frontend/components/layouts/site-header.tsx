@@ -11,7 +11,7 @@ function BrandLogo() {
   return (
     <Link
       href="/"
-      className="shrink-0 rounded-md text-2xl font-bold tracking-tight text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+      className="shrink-0 rounded-md font-serif text-2xl font-bold tracking-tight text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
       aria-label="ElevateApparel home"
     >
       Elevate<span className="text-gold-dark">Apparel</span>

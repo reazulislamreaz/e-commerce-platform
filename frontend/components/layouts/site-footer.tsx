@@ -15,7 +15,7 @@ export function SiteFooter() {
     <footer className="mt-16 bg-zinc-950 text-zinc-300">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="text-2xl font-bold tracking-tight text-white">
+          <p className="font-serif text-2xl font-bold tracking-tight text-white">
             Elevate<span className="text-gold">Apparel</span>
           </p>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">

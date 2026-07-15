@@ -19,7 +19,7 @@ function Hero() {
         <p className="rounded-full border border-gold/40 bg-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.25em] text-gold">
           NEW SEASON
         </p>
-        <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-white sm:text-6xl">
+        <h1 className="max-w-2xl font-serif text-4xl font-bold tracking-tight text-white sm:text-6xl">
           Elevate your everyday style.
         </h1>
         <p className="max-w-xl text-lg leading-relaxed text-zinc-300">
@@ -79,7 +79,7 @@ function CategoryGrid() {
     <section aria-labelledby="categories-heading" className="mx-auto max-w-7xl px-4">
       <h2
         id="categories-heading"
-        className="text-center text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl"
+        className="text-center font-serif text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl"
       >
         Find Your Thing
       </h2>
@@ -115,7 +115,7 @@ function ProductSection({ section }: { section: HomeSection }) {
       <div className="mb-5 flex items-baseline justify-between gap-4">
         <h2
           id={`section-${section.id}`}
-          className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl"
+          className="font-serif text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl"
         >
           {section.title}
         </h2>
@@ -146,7 +146,7 @@ function NewsletterCta() {
         />
         <div className="relative">
           <div className="mx-auto mb-5 h-1 w-12 rounded-full bg-gold" />
-          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          <h2 className="font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
             Join the ElevateApparel community
           </h2>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-400">
