@@ -3,8 +3,23 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { MapPin, Menu, Search, ShoppingBag, UserRound, X } from 'lucide-react';
+import {
+  Heart,
+  LogOut,
+  MapPin,
+  Menu,
+  Package,
+  Search,
+  ShoppingBag,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
+import { SearchDialog } from '@/components/shared/search-dialog';
+import { useAppSelector } from '@/store/hooks';
+import { selectCartCount } from '@/store/slices/cart-slice';
+import { useLogout } from '@/features/auth/hooks';
+import { displayName } from '@/features/account/storage';
 
 const nav = [
   ['HOME', '/'],
@@ -24,8 +39,14 @@ function isActive(pathname: string, href: string) {
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const pathname = usePathname();
   const storeActive = isActive(pathname, '/store');
+  const cartCount = useAppSelector(selectCartCount);
+  const wishlistCount = useAppSelector((s) => s.wishlist.productIds.length);
+  const user = useAppSelector((s) => s.auth.user);
+  const logout = useLogout();
 
   return (
     <header className="z-40 bg-black text-white">
@@ -61,7 +82,12 @@ export function SiteHeader() {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-3 pl-3 sm:gap-5 sm:pl-5 lg:ml-0">
-          <button aria-label="Search" className="p-1 transition-colors hover:text-[#e3bb78]">
+          <button
+            type="button"
+            aria-label="Search"
+            onClick={() => setSearchOpen(true)}
+            className="p-1 transition-colors hover:text-[#e3bb78]"
+          >
             <Search className="size-5" strokeWidth={1.7} />
           </button>
           <Link
@@ -73,12 +99,95 @@ export function SiteHeader() {
             <MapPin className="size-5" strokeWidth={1.7} />
           </Link>
           <Link
-            href="/login"
-            aria-label="Account"
-            className="p-1 transition-colors hover:text-[#e3bb78]"
+            href="/wishlist"
+            aria-label="Wishlist"
+            className="relative p-1 transition-colors hover:text-[#e3bb78]"
           >
-            <UserRound className="size-5" strokeWidth={1.7} />
+            <Heart className="size-5" strokeWidth={1.7} />
+            {wishlistCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">
+                {wishlistCount > 9 ? '9+' : wishlistCount}
+              </span>
+            )}
           </Link>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Account"
+              aria-expanded={accountOpen}
+              onClick={() => setAccountOpen((v) => !v)}
+              className="p-1 transition-colors hover:text-[#e3bb78]"
+            >
+              <UserRound className="size-5" strokeWidth={1.7} />
+            </button>
+            {accountOpen && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Close account menu"
+                  className="fixed inset-0 z-40"
+                  onClick={() => setAccountOpen(false)}
+                />
+                <div className="absolute right-0 z-50 mt-2 w-52 rounded-[4px] border border-[#2d2a27] bg-[#111110] py-2 shadow-xl">
+                  {user ? (
+                    <>
+                      <p className="truncate px-3 pb-2 text-[11px] text-[#b5b0a8]">
+                        {displayName(user)}
+                      </p>
+                      <Link
+                        href="/account"
+                        onClick={() => setAccountOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
+                      >
+                        <UserRound className="size-3.5" /> My Account
+                      </Link>
+                      <Link
+                        href="/account/orders"
+                        onClick={() => setAccountOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
+                      >
+                        <Package className="size-3.5" /> Orders
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAccountOpen(false);
+                          logout.mutate();
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] hover:bg-[#1a1815] hover:text-red-300"
+                      >
+                        <LogOut className="size-3.5" /> Logout
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        onClick={() => setAccountOpen(false)}
+                        className="block px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/register"
+                        onClick={() => setAccountOpen(false)}
+                        className="block px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
+                      >
+                        Register
+                      </Link>
+                      <Link
+                        href="/track-order"
+                        onClick={() => setAccountOpen(false)}
+                        className="block px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
+                      >
+                        Track Order
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
           <Link
             href="/cart"
             aria-label="Shopping bag"
@@ -86,7 +195,7 @@ export function SiteHeader() {
           >
             <ShoppingBag className="size-5" strokeWidth={1.7} />
             <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">
-              0
+              {cartCount > 9 ? '9+' : cartCount}
             </span>
           </Link>
           <button
@@ -123,8 +232,23 @@ export function SiteHeader() {
             <MapPin className="size-3.5" strokeWidth={1.7} />
             STORE — WARI, DHAKA
           </Link>
+          <Link
+            href="/wishlist"
+            onClick={() => setOpen(false)}
+            className="block border-b border-white/5 py-2.5 text-xs font-semibold tracking-wide"
+          >
+            WISHLIST
+          </Link>
+          <Link
+            href={user ? '/account' : '/login'}
+            onClick={() => setOpen(false)}
+            className="block py-2.5 text-xs font-semibold tracking-wide"
+          >
+            {user ? 'MY ACCOUNT' : 'LOGIN'}
+          </Link>
         </nav>
       )}
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }

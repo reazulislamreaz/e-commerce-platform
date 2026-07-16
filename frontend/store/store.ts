@@ -1,7 +1,14 @@
 import { configureStore } from '@reduxjs/toolkit';
 import auth from './slices/auth-slice';
 import cart from './slices/cart-slice';
-export const makeStore = () => configureStore({ reducer: { auth, cart } });
+import wishlist from './slices/wishlist-slice';
+import recentlyViewed from './slices/recently-viewed-slice';
+
+export const makeStore = () =>
+  configureStore({
+    reducer: { auth, cart, wishlist, recentlyViewed },
+  });
+
 export type AppStore = ReturnType<typeof makeStore>;
 export type RootState = ReturnType<AppStore['getState']>;
 export type AppDispatch = AppStore['dispatch'];

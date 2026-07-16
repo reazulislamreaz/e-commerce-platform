@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { configureApiClient } from '@/services/api-client';
 import { makeStore } from '@/store/store';
+import { StoreHydrator } from '@/providers/store-hydrator';
+
 export function AppProviders({ children }: PropsWithChildren) {
   const [store] = useState(() => {
     const appStore = makeStore();
@@ -20,8 +22,10 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        {children}
-        <ReactQueryDevtools initialIsOpen={false} />
+        <StoreHydrator>
+          {children}
+          <ReactQueryDevtools initialIsOpen={false} />
+        </StoreHydrator>
       </QueryClientProvider>
     </Provider>
   );

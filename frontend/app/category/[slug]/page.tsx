@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PageHero } from '@/components/shared/page-hero';
-import { CatalogToolbar, ProductGrid } from '@/components/shared/product-grid';
+import { ShopCatalog } from '@/components/shop/shop-catalog';
 import { getProductsByCollection } from '@/features/products/data';
 
 const collections = {
@@ -73,11 +73,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         secondaryCta={meta.secondaryCta}
       />
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
-        <CatalogToolbar
+        <ShopCatalog
+          products={products}
           title={key === 'men' ? "Men's Pieces" : "Women's Pieces"}
-          count={products.length}
+          initialFilters={{ collections: [key] }}
         />
-        <ProductGrid products={products} />
       </section>
     </main>
   );

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageHero } from '@/components/shared/page-hero';
-import { CatalogToolbar, ProductGrid } from '@/components/shared/product-grid';
+import { ShopCatalog } from '@/components/shop/shop-catalog';
 import { getSaleProducts } from '@/features/products/data';
 
 export const metadata: Metadata = {
@@ -44,8 +44,11 @@ export default function SalePage() {
       </section>
 
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
-        <CatalogToolbar title="On Sale" count={products.length} />
-        <ProductGrid products={products} emptyMessage="No sale items at the moment." />
+        <ShopCatalog
+          products={products}
+          title="On Sale"
+          initialFilters={{ discount: true }}
+        />
       </section>
     </main>
   );

@@ -1,6 +1,8 @@
 'use client';
+
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
@@ -8,10 +10,14 @@ import { FormField } from '@/components/common/form-field';
 import { GoogleLoginButton } from '@/features/auth/components/google-login-button';
 import { useLogin } from '@/features/auth/hooks';
 import { loginSchema, type LoginInput } from '@/features/auth/schemas';
+import { useState } from 'react';
 
-export function LoginForm() {
+function LoginFormInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') || '/';
   const login = useLogin();
+  const [rememberMe, setRememberMe] = useState(true);
   const {
     register,
     handleSubmit,
@@ -19,8 +25,8 @@ export function LoginForm() {
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = handleSubmit(async (input) => {
-    await login.mutateAsync(input);
-    router.push('/');
+    await login.mutateAsync({ ...input, rememberMe });
+    router.push(next);
   });
 
   const serverError =
@@ -49,7 +55,16 @@ export function LoginForm() {
         error={errors.password?.message}
         {...register('password')}
       />
-      <div className="text-right">
+      <div className="flex items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-xs text-[#b5b0a8]">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="accent-[#e5bd79]"
+          />
+          Remember me
+        </label>
         <Link
           href="/forgot-password"
           className="text-xs font-medium text-[#b5b0a8] underline underline-offset-2 transition-colors hover:text-[#e3bb78]"
@@ -88,5 +103,13 @@ export function LoginForm() {
         </Link>
       </p>
     </form>
+  );
+}
+
+export function LoginForm() {
+  return (
+    <Suspense fallback={<p className="text-sm text-[#b5b0a8]">Loading…</p>}>
+      <LoginFormInner />
+    </Suspense>
   );
 }
