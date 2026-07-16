@@ -4,14 +4,20 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { formatTaka } from '@/lib/currency';
-import { getProductById } from '@/features/products/data';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { itemQuantitySet, itemRemoved } from '@/store/slices/cart-slice';
+import { selectCartHydrated, selectCartItems } from '@/store/selectors';
+import {
+  amountUntilFreeShipping,
+  cartSubtotal,
+  resolveCartLines,
+  shippingForSubtotal,
+} from '@/features/cart/pricing';
 
 export function CartClient() {
   const dispatch = useAppDispatch();
-  const items = useAppSelector((s) => s.cart.items);
-  const hydrated = useAppSelector((s) => s.cart.hydrated);
+  const items = useAppSelector(selectCartItems);
+  const hydrated = useAppSelector(selectCartHydrated);
 
   if (!hydrated) {
     return (
@@ -21,20 +27,11 @@ export function CartClient() {
     );
   }
 
-  const lines = items
-    .map((item) => {
-      const product = getProductById(item.productId);
-      if (!product) return null;
-      return { item, product };
-    })
-    .filter(Boolean) as {
-    item: (typeof items)[number];
-    product: NonNullable<ReturnType<typeof getProductById>>;
-  }[];
-
-  const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.item.quantity, 0);
-  const shipping = subtotal >= 1999 || subtotal === 0 ? 0 : 120;
+  const lines = resolveCartLines(items);
+  const subtotal = cartSubtotal(lines);
+  const shipping = shippingForSubtotal(subtotal);
   const total = subtotal + shipping;
+  const untilFree = amountUntilFreeShipping(subtotal);
 
   if (lines.length === 0) {
     return (
@@ -169,9 +166,9 @@ export function CartClient() {
                 <dd className="text-[#e5c17d]">{formatTaka(total)}</dd>
               </div>
             </dl>
-            {subtotal < 1999 && (
+            {untilFree > 0 && (
               <p className="mt-3 text-[11px] text-[#b5b0a8]">
-                Add {formatTaka(1999 - subtotal)} more for free delivery.
+                Add {formatTaka(untilFree)} more for free delivery.
               </p>
             )}
             <Link

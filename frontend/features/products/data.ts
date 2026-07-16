@@ -487,17 +487,6 @@ export function searchProducts(query: string, limit = 8): CatalogProduct[] {
 
 export const searchSuggestions = ['T-Shirt', 'Hoodie', 'Jogger', 'Oversized', 'Women', 'Sale'];
 
-export const navCategories = [
-  { name: 'Men', slug: 'men' },
-  { name: 'Women', slug: 'women' },
-  { name: 'Kids', slug: 'kids' },
-  { name: 'Teens', slug: 'teens' },
-  { name: 'Sports', slug: 'sports' },
-];
-
-export const homeCategories = [];
-export const homeSections = [];
-
 export const PRICE_PRESETS = [
   { label: 'Under ৳1000', min: 0, max: 999 },
   { label: '৳1000 – ৳1500', min: 1000, max: 1500 },

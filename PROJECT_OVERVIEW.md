@@ -133,7 +133,7 @@ Use `PrismaService` through dependency injection. Always use `select`, cursor pa
 
 ### Planned module boundaries
 
-The following module directories exist as intentional feature boundaries but have no business implementation yet: users, vendors, customers, products, categories, brands, inventory, cart, wishlist, orders, payments, coupons, reviews, upload, notifications, dashboard, analytics, and settings.
+Create Nest feature modules on demand (do not leave empty stub directories in the tree). Expected domains when implementing commerce APIs: users, vendors, customers, products, categories, brands, inventory, cart, wishlist, orders, payments, coupons, reviews, upload, notifications, dashboard, analytics, settings, and addresses.
 
 When implementing one, create a focused NestJS module with controller, service, repository/data-access layer, DTOs, tests, Swagger annotations, and only the Prisma models/indexes necessary for that feature.
 
@@ -152,10 +152,13 @@ The storefront now has a working Elevate Apparel shopping experience on top of t
 
 ### State rules
 
-- Redux is only for client state: currently authentication and cart slices.
-- TanStack Query owns all API/server state. Do not cache API entities in Redux.
-- Axios reads the Redux access token, attaches it as a Bearer token, and retries one failed request after calling `/auth/refresh`. A failed refresh signs the client out.
+- Redux is only for client state: `auth`, `cart`, `wishlist`, and `recentlyViewed` slices (`frontend/store/`). Prefer shared selectors from `frontend/store/selectors.ts`.
+- TanStack Query owns all API/server state. Auth mutations live in `features/auth/hooks.ts`; product Query hooks are ready in `features/products/hooks.ts` against `features/products/api.ts`.
+- Commerce domains use swappable repositories: `features/products/api.ts` (`productCatalog`) and `features/account/api.ts` (`accountRepository`). Local/mock implementations are the default until Nest modules ship — swap the export, not the pages.
+- Cart pricing helpers live in `features/cart/pricing.ts` (shared by bag + checkout).
+- Axios reads the Redux access token, attaches it as a Bearer token, and retries one failed request after calling `/auth/refresh`. A failed refresh signs the client out. With “Remember me”, auth persists in localStorage; without it, sessionStorage only.
 - Forms must use React Hook Form and Zod; `features/auth/schemas.ts` is the pattern to follow.
+- Do not pre-create empty Nest module folders. Add `controller` / `service` / `dto` when implementing a feature.
 
 ## Quality gates
 

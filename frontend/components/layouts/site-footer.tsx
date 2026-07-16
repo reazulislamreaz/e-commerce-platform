@@ -53,20 +53,31 @@ export function SiteFooter() {
             Elevate your life.
           </p>
           <div className="mt-4 flex items-center gap-4 text-[#e8e1d8]">
-            <a href="#" aria-label="Facebook" className="transition-colors hover:text-[#e3bb78]">
+            <a
+              href="https://www.facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+              className="transition-colors hover:text-[#e3bb78]"
+            >
               <Facebook className="size-4" />
             </a>
-            <a href="#" aria-label="Instagram" className="transition-colors hover:text-[#e3bb78]">
+            <a
+              href="https://www.instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="transition-colors hover:text-[#e3bb78]"
+            >
               <Instagram className="size-4" />
             </a>
             <a
-              href="#"
-              aria-label="TikTok"
-              className="text-sm leading-none transition-colors hover:text-[#e3bb78]"
+              href="https://www.youtube.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
+              className="transition-colors hover:text-[#e3bb78]"
             >
-              ♪
-            </a>
-            <a href="#" aria-label="YouTube" className="transition-colors hover:text-[#e3bb78]">
               <Youtube className="size-4" />
             </a>
           </div>

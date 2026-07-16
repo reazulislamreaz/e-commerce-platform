@@ -15,20 +15,63 @@ type PersistedAuth = {
   rememberMe: boolean;
 };
 
+function readAuth(): PersistedAuth {
+  const fromLocal = readStorage<PersistedAuth | null>('auth', null);
+  if (fromLocal?.accessToken) return { ...fromLocal, rememberMe: true };
+
+  if (typeof window === 'undefined') {
+    return { accessToken: null, user: null, rememberMe: true };
+  }
+  try {
+    const raw = sessionStorage.getItem('elevate:auth-session');
+    if (!raw) return { accessToken: null, user: null, rememberMe: false };
+    const parsed = JSON.parse(raw) as PersistedAuth;
+    return { ...parsed, rememberMe: false };
+  } catch {
+    return { accessToken: null, user: null, rememberMe: false };
+  }
+}
+
+function persistAuth(auth: {
+  accessToken: string | null;
+  user: AuthUser | null;
+  rememberMe: boolean;
+}) {
+  if (!auth.accessToken || !auth.user) {
+    removeStorage('auth');
+    if (typeof window !== 'undefined') sessionStorage.removeItem('elevate:auth-session');
+    return;
+  }
+
+  const payload: PersistedAuth = {
+    accessToken: auth.accessToken,
+    user: auth.user,
+    rememberMe: auth.rememberMe,
+  };
+
+  if (auth.rememberMe) {
+    writeStorage('auth', payload);
+    if (typeof window !== 'undefined') sessionStorage.removeItem('elevate:auth-session');
+  } else {
+    removeStorage('auth');
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('elevate:auth-session', JSON.stringify(payload));
+    }
+  }
+}
+
 export function StoreHydrator({ children }: PropsWithChildren) {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((s) => s.auth);
-  const cart = useAppSelector((s) => s.cart);
-  const wishlist = useAppSelector((s) => s.wishlist);
-  const recentlyViewed = useAppSelector((s) => s.recentlyViewed);
+  const cartItems = useAppSelector((s) => s.cart.items);
+  const cartHydratedFlag = useAppSelector((s) => s.cart.hydrated);
+  const wishlistIds = useAppSelector((s) => s.wishlist.productIds);
+  const wishlistHydratedFlag = useAppSelector((s) => s.wishlist.hydrated);
+  const recentIds = useAppSelector((s) => s.recentlyViewed.productIds);
+  const recentHydratedFlag = useAppSelector((s) => s.recentlyViewed.hydrated);
 
   useEffect(() => {
-    const persistedAuth = readStorage<PersistedAuth>('auth', {
-      accessToken: null,
-      user: null,
-      rememberMe: true,
-    });
-    dispatch(authHydrated(persistedAuth));
+    dispatch(authHydrated(readAuth()));
     dispatch(cartHydrated(readStorage<CartItem[]>('cart', [])));
     dispatch(wishlistHydrated(readStorage<string[]>('wishlist', [])));
     dispatch(recentlyViewedHydrated(readStorage<string[]>('recentlyViewed', [])));
@@ -36,31 +79,27 @@ export function StoreHydrator({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!auth.hydrated) return;
-    if (auth.accessToken && auth.user) {
-      writeStorage('auth', {
-        accessToken: auth.accessToken,
-        user: auth.user,
-        rememberMe: auth.rememberMe,
-      });
-    } else {
-      removeStorage('auth');
-    }
-  }, [auth]);
+    persistAuth({
+      accessToken: auth.accessToken,
+      user: auth.user,
+      rememberMe: auth.rememberMe,
+    });
+  }, [auth.hydrated, auth.accessToken, auth.user, auth.rememberMe]);
 
   useEffect(() => {
-    if (!cart.hydrated) return;
-    writeStorage('cart', cart.items);
-  }, [cart]);
+    if (!cartHydratedFlag) return;
+    writeStorage('cart', cartItems);
+  }, [cartHydratedFlag, cartItems]);
 
   useEffect(() => {
-    if (!wishlist.hydrated) return;
-    writeStorage('wishlist', wishlist.productIds);
-  }, [wishlist]);
+    if (!wishlistHydratedFlag) return;
+    writeStorage('wishlist', wishlistIds);
+  }, [wishlistHydratedFlag, wishlistIds]);
 
   useEffect(() => {
-    if (!recentlyViewed.hydrated) return;
-    writeStorage('recentlyViewed', recentlyViewed.productIds);
-  }, [recentlyViewed]);
+    if (!recentHydratedFlag) return;
+    writeStorage('recentlyViewed', recentIds);
+  }, [recentHydratedFlag, recentIds]);
 
   return children;
 }

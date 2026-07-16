@@ -9,19 +9,19 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField } from '@/components/common/form-field';
 import { formatTaka } from '@/lib/currency';
-import { getProductById } from '@/features/products/data';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { cartCleared } from '@/store/slices/cart-slice';
+import { selectAuthUser, selectCartItems } from '@/store/selectors';
 import {
-  applyCoupon,
-  createOrderNumber,
-  getCoupons,
-  getOrders,
-  saveCoupons,
-  saveOrders,
+  cartSubtotal,
+  resolveCartLines,
+  shippingForSubtotal,
+} from '@/features/cart/pricing';
+import {
+  accountRepository,
   type CustomerOrder,
   type SavedAddress,
-} from '@/features/account/storage';
+} from '@/features/account/api';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(80),
@@ -41,32 +41,18 @@ type CheckoutInput = z.infer<typeof checkoutSchema>;
 export function CheckoutClient() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const items = useAppSelector((s) => s.cart.items);
-  const user = useAppSelector((s) => s.auth.user);
+  const items = useAppSelector(selectCartItems);
+  const user = useAppSelector(selectAuthUser);
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [appliedCode, setAppliedCode] = useState<string | undefined>();
   const [couponError, setCouponError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const lines = useMemo(
-    () =>
-      items
-        .map((item) => {
-          const product = getProductById(item.productId);
-          if (!product) return null;
-          return { item, product };
-        })
-        .filter(Boolean) as {
-        item: (typeof items)[number];
-        product: NonNullable<ReturnType<typeof getProductById>>;
-      }[],
-    [items],
-  );
+  const lines = useMemo(() => resolveCartLines(items), [items]);
 
-  const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.item.quantity, 0);
-  const shippingBase = subtotal >= 1999 || subtotal === 0 ? 0 : 120;
-  const shipping = appliedCode === 'FREESHIP' ? 0 : shippingBase;
+  const subtotal = cartSubtotal(lines);
+  const shipping = shippingForSubtotal(subtotal, appliedCode === 'FREESHIP');
   const total = Math.max(0, subtotal - discount) + shipping;
 
   const {
@@ -85,13 +71,13 @@ export function CheckoutClient() {
     },
   });
 
-  const applyCode = () => {
+  const applyCode = async () => {
     if (!user) {
       setCouponError('Sign in to apply coupons from your account.');
       return;
     }
-    const coupons = getCoupons(user.id);
-    const result = applyCoupon(couponCode, subtotal, coupons);
+    const coupons = await accountRepository.getCoupons(user.id);
+    const result = accountRepository.applyCoupon(couponCode, subtotal, coupons);
     if (result.error) {
       setCouponError(result.error);
       setDiscount(0);
@@ -126,7 +112,7 @@ export function CheckoutClient() {
     const now = new Date().toISOString();
     const order: CustomerOrder = {
       id: `ord-${stamp}`,
-      number: createOrderNumber(),
+      number: accountRepository.createOrderNumber(),
       createdAt: now,
       status: 'confirmed',
       items: lines.map(({ item, product }) => ({
@@ -156,16 +142,19 @@ export function CheckoutClient() {
       ],
     };
 
+    await accountRepository.placeOrder(user?.id ?? null, order);
+
+    if (user && appliedCode) {
+      const coupons = await accountRepository.getCoupons(user.id);
+      await accountRepository.saveCoupons(
+        user.id,
+        coupons.map((c) => (c.code === appliedCode ? { ...c, used: true } : c)),
+      );
+    }
+
+    dispatch(cartCleared());
+
     if (user) {
-      const orders = getOrders(user.id);
-      saveOrders(user.id, [order, ...orders]);
-      if (appliedCode) {
-        const coupons = getCoupons(user.id).map((c) =>
-          c.code === appliedCode ? { ...c, used: true } : c,
-        );
-        saveCoupons(user.id, coupons);
-      }
-      dispatch(cartCleared());
       router.push(`/account/orders/${order.id}?confirmed=1`);
       return;
     }
@@ -175,7 +164,6 @@ export function CheckoutClient() {
     } catch {
       // ignore
     }
-    dispatch(cartCleared());
     router.push('/order-confirmation');
   });
 

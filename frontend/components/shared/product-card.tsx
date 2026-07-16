@@ -1,16 +1,10 @@
-'use client';
-
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart } from 'lucide-react';
 import { formatTaka } from '@/lib/currency';
 import type { CatalogProduct } from '@/features/products/types';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { wishlistToggled } from '@/store/slices/wishlist-slice';
+import { WishlistButton } from '@/components/shared/wishlist-button';
 
 export function ProductCard({ product }: { product: CatalogProduct }) {
-  const dispatch = useAppDispatch();
-  const wishlisted = useAppSelector((s) => s.wishlist.productIds.includes(product.id));
   const discount =
     product.compareAtPrice && product.onSale
       ? Math.round((1 - product.price / product.compareAtPrice) * 100)
@@ -53,20 +47,7 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
             Sold Out
           </span>
         )}
-        <button
-          type="button"
-          aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-          onClick={(e) => {
-            e.preventDefault();
-            dispatch(wishlistToggled(product.id));
-          }}
-          className="absolute right-2 top-2 rounded-full bg-white/80 p-1.5 transition-colors hover:bg-white"
-        >
-          <Heart
-            className={`size-[15px] ${wishlisted ? 'fill-[#e3bb78] stroke-[#e3bb78]' : 'stroke-[#111]'}`}
-            strokeWidth={1.5}
-          />
-        </button>
+        <WishlistButton productId={product.id} />
       </div>
       <Link href={`/product/${product.slug}`}>
         <p className="mt-2 truncate text-[11px] font-medium leading-4 text-white">{product.name}</p>

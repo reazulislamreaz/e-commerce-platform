@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Minus, Plus, Star } from 'lucide-react';
+import { Minus, Plus, Star } from 'lucide-react';
 import { formatTaka } from '@/lib/currency';
 import type { CatalogProduct } from '@/features/products/types';
 import { normalizeProduct } from '@/features/products/types';
 import { ProductCard } from '@/components/shared/product-card';
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
+import { WishlistButton } from '@/components/shared/wishlist-button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { itemAdded } from '@/store/slices/cart-slice';
-import { wishlistToggled } from '@/store/slices/wishlist-slice';
 import { productViewed } from '@/store/slices/recently-viewed-slice';
 import { getProductById } from '@/features/products/data';
 
@@ -24,7 +24,6 @@ export function ProductDetailClient({
 }) {
   const p = normalizeProduct(product);
   const dispatch = useAppDispatch();
-  const wishlisted = useAppSelector((s) => s.wishlist.productIds.includes(p.id));
   const recentIds = useAppSelector((s) => s.recentlyViewed.productIds);
 
   const [activeImage, setActiveImage] = useState(0);
@@ -247,17 +246,7 @@ export function ProductDetailClient({
               >
                 {addedMsg ? 'Added to Bag' : 'Add to Bag'}
               </button>
-              <button
-                type="button"
-                onClick={() => dispatch(wishlistToggled(p.id))}
-                className="inline-flex items-center gap-2 border border-[#37332c] px-5 py-3 text-[11px] font-bold uppercase text-white hover:border-[#e3bb78] hover:text-[#e3bb78]"
-              >
-                <Heart
-                  className={`size-3.5 ${wishlisted ? 'fill-[#e3bb78] stroke-[#e3bb78]' : ''}`}
-                  strokeWidth={1.5}
-                />
-                Wishlist
-              </button>
+              <WishlistButton productId={p.id} variant="button" />
             </div>
 
             <Link

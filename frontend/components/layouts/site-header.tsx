@@ -14,12 +14,22 @@ import {
   UserRound,
   X,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { SearchDialog } from '@/components/shared/search-dialog';
 import { useAppSelector } from '@/store/hooks';
-import { selectCartCount } from '@/store/slices/cart-slice';
+import {
+  selectAuthUser,
+  selectCartCount,
+  selectWishlistCount,
+} from '@/store/selectors';
 import { useLogout } from '@/features/auth/hooks';
 import { displayName } from '@/features/account/storage';
+
+const SearchDialog = dynamic(
+  () =>
+    import('@/components/shared/search-dialog').then((mod) => mod.SearchDialog),
+  { ssr: false },
+);
 
 const nav = [
   ['HOME', '/'],
@@ -44,8 +54,8 @@ export function SiteHeader() {
   const pathname = usePathname();
   const storeActive = isActive(pathname, '/store');
   const cartCount = useAppSelector(selectCartCount);
-  const wishlistCount = useAppSelector((s) => s.wishlist.productIds.length);
-  const user = useAppSelector((s) => s.auth.user);
+  const wishlistCount = useAppSelector(selectWishlistCount);
+  const user = useAppSelector(selectAuthUser);
   const logout = useLogout();
 
   return (

@@ -74,20 +74,6 @@ export type ProductSort =
   | 'rating'
   | 'discount';
 
-export interface HomeCategory {
-  id: string;
-  name: string;
-  slug: string;
-  imageHue: number;
-}
-
-export interface HomeSection {
-  id: string;
-  title: string;
-  viewMoreHref: string;
-  products: CatalogProduct[];
-}
-
 /** Normalize optional catalog fields for filtering / PDP. */
 export function normalizeProduct(product: CatalogProduct): Required<
   Pick<
