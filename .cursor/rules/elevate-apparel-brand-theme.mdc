@@ -1,0 +1,32 @@
+---
+description: Mandatory Elevate Apparel brand theme — colors, fonts, and visual system for all storefront UI
+alwaysApply: true
+---
+
+# Elevate Apparel Brand Theme
+
+Follow the full theme spec in [CLAUDE.md](../../CLAUDE.md) (**Elevate Apparel Brand Theme**). Every page must match this system.
+
+## Fonts
+
+- UI: Geist Sans (`font-sans`)
+- Editorial only: Playfair Display (`font-serif`)
+- Mono rare: Geist Mono (`font-mono`)
+- Do not introduce Inter/Roboto/system as the brand face
+
+## Colors (match live UI)
+
+- Backgrounds: `#0a0a0b`, `#090909`, `#111110`, `#1a1815`, `black`
+- Gold: `#e3bb78`, `#e0bd7d`, CTA `#e5bd79` / `#e5bd78`, hover `#eec98a`
+- Text: white / `#f4f4f5`; muted `#b5b0a8`; on-gold `#18120b`
+- Borders: `#2d2a27`, `#37332c`, `#292929`
+- CSS tokens also in `frontend/app/globals.css` (`--color-gold`, `--color-surface*`)
+
+## UI patterns
+
+- Max width `1400px`
+- Sharp radii (`rounded-[4px]`–`rounded-lg`), not pill-heavy
+- Uppercase compact gold CTAs; gold focus rings
+- Dark-first; no purple/indigo glow themes; no cream broadsheet defaults
+
+When building or restyling any page, reuse header/footer/auth/homepage visual language.

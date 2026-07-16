@@ -50,6 +50,97 @@ The primary goal is to produce **production-ready, scalable, secure, maintainabl
 
 ---
 
+# Elevate Apparel Brand Theme (Mandatory)
+
+This is the **canonical visual system** for the storefront. Every page, layout, form, modal, and marketing surface **must** follow it. Do not invent a new palette, font stack, or visual mood.
+
+Source of truth in code: `frontend/app/globals.css`, `frontend/app/layout.tsx`, `frontend/lib/fonts.ts`. Prefer theme tokens / Tailwind theme colors over one-off hex when possible; when hardcoding is already the pattern on a page, match the values below exactly.
+
+## Brand mood
+
+- Premium dark streetwear / apparel
+- Near-black surfaces with champagne-gold accents
+- High contrast, moody photography, minimal chrome
+- Editorial but not newspaper; luxury without purple or neon glow
+
+## Fonts
+
+| Role | Family | CSS / Tailwind |
+|------|--------|----------------|
+| Primary UI | **Geist Sans** | `--font-geist-sans`, `font-sans` |
+| Editorial / display (sparingly) | **Playfair Display** (500/600/700) | `--font-playfair`, `font-serif` |
+| Mono (code / rare UI) | **Geist Mono** | `--font-geist-mono`, `font-mono` |
+
+Rules:
+
+- Body and most UI: Geist Sans
+- Do **not** introduce Inter, Roboto, Arial-as-brand, or system-ui as the primary brand face
+- Playfair is for selective editorial moments only — never drown the UI in serif
+- Prefer uppercase + tight tracking for nav, CTAs, and section eyebrows (`tracking-[.08em]`–`[.2em]`, `text-[10px]`–`text-xs`, `font-semibold` / `font-bold`)
+
+## Color tokens (`globals.css`)
+
+| Token | Hex | Use |
+|-------|-----|-----|
+| `--background` / `--color-surface` | `#0a0a0b` | Page background |
+| `--foreground` | `#f4f4f5` | Primary text |
+| `--color-surface-2` | `#141416` | Elevated dark surface |
+| `--color-surface-3` | `#1d1d21` | Higher elevation |
+| `--color-edge` | `#27272a` | Subtle borders |
+| `--color-gold` | `#d4af37` | Classic gold token |
+| `--color-gold-light` | `#e6c860` | Lighter gold |
+| `--color-gold-dark` | `#b8962e` | Darker gold |
+| `--color-ink` | `#111827` | Dark ink (badges / contrast) |
+
+## In-product accent palette (homepage / auth — match these)
+
+Champagne gold accents used across live UI (keep consistency):
+
+| Role | Hex |
+|------|-----|
+| Gold primary / links / accents | `#e3bb78` |
+| Gold eyebrow / soft accent | `#e0bd7d` |
+| Gold CTA fill | `#e5bd79` / `#e5bd78` |
+| Gold CTA border | `#efc677` |
+| Gold hover | `#eec98a` |
+| Gold on dark outline buttons | `#efce91` / `#d3b06f` |
+| Deep black page / hero | `#090909` / `black` |
+| Card / panel surface | `#111110` |
+| Input surface | `#1a1815` |
+| Border warm dark | `#2d2a27` / `#37332c` / `#292929` |
+| Muted text | `#b5b0a8` / `#8b867d` |
+| Soft light text | `#eee9e1` / `#e9e5de` / `#f1eee9` |
+| Text on gold CTA | `#18120b` |
+| Product card image ground | `#e4e3e1` |
+
+## Layout & components
+
+- Max content width: **1400px** (`max-w-[1400px]` / `--container-8xl`)
+- Radii: small and sharp — typically `rounded-[4px]`–`rounded-lg`, not pill-heavy
+- Primary CTA: gold fill + dark text, uppercase, bold, compact padding
+- Secondary CTA: transparent / dark with light border
+- Focus rings: gold (`outline-[#e3bb78]` / `ring-[#e3bb78]/15`)
+- Icons: Lucide, stroke ~1.5–1.7, gold accents where highlighted
+- Imagery: dark, moody apparel photography; WebP/AVIF; never purple gradients or cream broadsheet looks
+
+## Do / Don't
+
+**Do**
+
+- Keep pages dark-first with gold accents
+- Reuse header/footer, form-field, and auth art-panel patterns
+- Use the same gold for links, active nav underline, prices, and CTAs
+
+**Don't**
+
+- Switch to light mode as the default brand experience
+- Introduce purple/indigo/glow “AI default” themes
+- Replace Geist / Playfair with generic stacks
+- Use large card grids with heavy shadows as the default marketing language
+- Drift hex values — copy the palette above
+
+---
+
 # NestJS Standards
 
 ## Architecture
@@ -385,6 +476,7 @@ Before coding:
 - Clean Architecture
 - NestJS conventions
 - Next.js best practices
+- Elevate Apparel brand theme (colors, fonts, dark + gold UI)
 - Strict TypeScript
 - DTO validation
 - Repository pattern
