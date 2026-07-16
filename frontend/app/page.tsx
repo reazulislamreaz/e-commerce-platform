@@ -11,6 +11,10 @@ import {
   Star,
   Truck,
 } from 'lucide-react';
+import { formatTaka } from '@/lib/currency';
+import { getNewArrivals, getSaleProducts } from '@/features/products/data';
+import type { CatalogProduct } from '@/features/products/types';
+import { NewsletterForm } from '@/components/shared/newsletter-form';
 
 const collections = [
   { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.webp' },
@@ -19,13 +23,68 @@ const collections = [
   { title: 'SALE\nUP TO 40% OFF', href: '/sale', image: 'collection-sale.webp' },
 ];
 
-const products = [
-  ['Elevate Oversized Tee', 'Black', '৳1,190'],
-  ['Essential Tee', 'Off White', '৳1,090'],
-  ['Elevate Hoodie', 'Black', '৳1,890'],
-  ['Minimal Tee', 'Beige', '৳1,090'],
-  ['Elevate Jogger', 'Black', '৳1,590'],
-  ["Women's Hoodie", 'Cream', '৳1,890'],
+/** Featured edit — preserved homepage merchandising */
+const featuredProducts: CatalogProduct[] = [
+  {
+    id: 'f1',
+    name: 'Elevate Oversized Tee',
+    slug: 'elevate-oversized-tee',
+    price: 1190,
+    category: 'T-Shirts',
+    collection: 'men',
+    color: 'Black',
+    image: '/images/home/product-1.webp',
+  },
+  {
+    id: 'f2',
+    name: 'Essential Tee',
+    slug: 'essential-tee',
+    price: 1090,
+    category: 'T-Shirts',
+    collection: 'unisex',
+    color: 'Off White',
+    image: '/images/home/product-2.webp',
+  },
+  {
+    id: 'f3',
+    name: 'Elevate Hoodie',
+    slug: 'elevate-hoodie',
+    price: 1890,
+    category: 'Hoodies',
+    collection: 'men',
+    color: 'Black',
+    image: '/images/home/product-3.webp',
+  },
+  {
+    id: 'f4',
+    name: 'Minimal Tee',
+    slug: 'minimal-tee',
+    price: 1090,
+    category: 'T-Shirts',
+    collection: 'unisex',
+    color: 'Beige',
+    image: '/images/home/product-4.webp',
+  },
+  {
+    id: 'f5',
+    name: 'Elevate Jogger',
+    slug: 'elevate-jogger',
+    price: 1590,
+    category: 'Bottoms',
+    collection: 'men',
+    color: 'Black',
+    image: '/images/home/product-5.webp',
+  },
+  {
+    id: 'f6',
+    name: "Women's Hoodie",
+    slug: 'womens-hoodie',
+    price: 1890,
+    category: 'Hoodies',
+    collection: 'women',
+    color: 'Cream',
+    image: '/images/home/product-6.webp',
+  },
 ];
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -33,6 +92,72 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     <h2 className="text-base font-bold uppercase tracking-tight text-white sm:text-[17px]">
       {children}
     </h2>
+  );
+}
+
+function SectionHeader({
+  title,
+  href,
+  linkLabel = 'VIEW ALL',
+}: {
+  title: string;
+  href: string;
+  linkLabel?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <SectionTitle>{title}</SectionTitle>
+      <Link href={href} className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-white">
+        {linkLabel} <ArrowRight className="size-4 text-[#dcb878]" />
+      </Link>
+    </div>
+  );
+}
+
+function ProductRail({ products }: { products: CatalogProduct[] }) {
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-x-2.5 gap-y-5 min-[480px]:grid-cols-3 lg:grid-cols-6">
+      {products.map((product) => (
+        <Link key={product.id} href={`/product/${product.slug}`} className="group min-w-0">
+          <div className="relative overflow-hidden rounded-[4px] bg-[#e4e3e1]">
+            <Image
+              src={product.image}
+              alt={product.name}
+              width={304}
+              height={368}
+              quality={85}
+              sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 16vw"
+              className="aspect-[.826] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            {product.isNew && (
+              <span className="absolute left-2 top-2 border border-[#e3bb78] bg-black/50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#e3bb78]">
+                New
+              </span>
+            )}
+            {product.onSale && product.compareAtPrice && (
+              <span className="absolute left-2 top-2 bg-[#e5bd79] px-1.5 py-0.5 text-[9px] font-bold text-[#18120b]">
+                -
+                {Math.round((1 - product.price / product.compareAtPrice) * 100)}%
+              </span>
+            )}
+            <Heart
+              className="absolute right-2 top-2 size-[17px] stroke-[#111]"
+              strokeWidth={1.5}
+            />
+          </div>
+          <p className="mt-2 truncate text-[11px] font-medium leading-4 text-white">{product.name}</p>
+          <p className="text-[11px] leading-4 text-[#d0cbc4]">{product.color}</p>
+          <p className="mt-1 flex items-baseline gap-2 text-[13px] font-semibold text-[#e5c17d]">
+            {formatTaka(product.price)}
+            {product.compareAtPrice && product.onSale && (
+              <span className="text-[11px] font-normal text-[#8b867d] line-through">
+                {formatTaka(product.compareAtPrice)}
+              </span>
+            )}
+          </p>
+        </Link>
+      ))}
+    </div>
   );
 }
 
@@ -157,46 +282,66 @@ function CollectionGrid() {
 function Featured() {
   return (
     <section className="mx-auto max-w-[1400px] px-3 pt-5 sm:px-6 sm:pt-4">
-      <div className="flex items-center justify-between gap-3">
-        <SectionTitle>Featured Products</SectionTitle>
-        <Link
-          href="/shop"
-          className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-white"
-        >
-          VIEW ALL <ArrowRight className="size-4 text-[#dcb878]" />
-        </Link>
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-x-2.5 gap-y-5 min-[480px]:grid-cols-3 lg:grid-cols-6">
-        {products.map(([name, color, price], index) => (
-          <Link key={name} href={`/product/${index + 1}`} className="group min-w-0">
-            <div className="relative overflow-hidden rounded-[4px] bg-[#e4e3e1]">
-              <Image
-                src={`/images/home/product-${index + 1}.webp`}
-                alt={name}
-                width={304}
-                height={368}
-                quality={85}
-                sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                className="aspect-[.826] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <Heart
-                className="absolute right-2 top-2 size-[17px] stroke-[#111]"
-                strokeWidth={1.5}
-              />
-            </div>
-            <p className="mt-2 truncate text-[11px] font-medium leading-4 text-white">{name}</p>
-            <p className="text-[11px] leading-4 text-[#d0cbc4]">{color}</p>
-            <p className="mt-1 text-[13px] font-semibold text-[#e5c17d]">{price}</p>
-          </Link>
-        ))}
-      </div>
+      <SectionHeader title="Featured Products" href="/shop" />
+      <ProductRail products={featuredProducts} />
+    </section>
+  );
+}
+
+/** Fresh drops — drives discovery without replacing Featured */
+function NewArrivals() {
+  const products = getNewArrivals().slice(0, 6);
+  if (products.length === 0) return null;
+
+  return (
+    <section className="mx-auto max-w-[1400px] px-3 pt-8 sm:px-6">
+      <SectionHeader title="New Arrivals" href="/new-arrivals" />
+      <ProductRail products={products} />
+    </section>
+  );
+}
+
+/** Single purposeful promo — urgency without clutter */
+function SalePromo() {
+  const saleCount = getSaleProducts().length;
+
+  return (
+    <section className="mx-auto mt-8 max-w-[1400px] px-3 sm:px-6">
+      <Link
+        href="/sale"
+        className="group relative flex min-h-[140px] items-center overflow-hidden rounded-[5px] bg-[#111110] sm:min-h-[160px]"
+      >
+        <Image
+          src="/images/home/collection-sale.webp"
+          alt=""
+          fill
+          quality={85}
+          sizes="(max-width: 1400px) 100vw, 1400px"
+          className="object-cover opacity-40 transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-linear-to-r from-black via-black/80 to-black/30" />
+        <div className="relative px-5 py-8 sm:px-10">
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+            Limited Time
+          </p>
+          <p className="mt-1 text-[clamp(24px,5vw,36px)] font-extrabold tracking-[-.03em] text-white">
+            SALE UP TO <span className="text-[#e3bb78]">40% OFF</span>
+          </p>
+          <p className="mt-1 text-xs text-[#eee9e1]">
+            {saleCount} select pieces — while stocks last
+          </p>
+          <span className="mt-4 inline-flex items-center gap-2 border border-[#efc677] bg-[#e5bd79] px-4 py-2 text-[11px] font-bold text-[#18120b]">
+            SHOP SALE <ArrowRight className="size-3.5" />
+          </span>
+        </div>
+      </Link>
     </section>
   );
 }
 
 function About() {
   return (
-    <section className="mx-auto mt-5 grid max-w-[1400px] grid-cols-1 bg-[#111110] lg:mt-3 lg:grid-cols-2">
+    <section className="mx-auto mt-8 grid max-w-[1400px] grid-cols-1 bg-[#111110] lg:grid-cols-2">
       <div className="relative min-h-[205px] overflow-hidden px-5 py-6 sm:min-h-[190px] sm:px-7 lg:min-h-[168px] lg:py-5">
         <Image
           src="/images/home/about-models.webp"
@@ -245,9 +390,28 @@ function About() {
   );
 }
 
+/** Email capture — high-converting fashion pattern, kept minimal */
+function Newsletter() {
+  return (
+    <section className="mx-auto mt-8 max-w-[1400px] border border-[#2d2a27] bg-[#111110] px-5 py-10 text-center sm:px-10 sm:py-12">
+      <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+        Stay Elevated
+      </p>
+      <h2 className="mt-2 text-[clamp(22px,4vw,28px)] font-extrabold tracking-[-.03em] text-white">
+        NEW DROPS &amp; MEMBER OFFERS
+      </h2>
+      <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[#b5b0a8]">
+        Be first to know about new arrivals, restocks, and exclusive offers. No spam — just the
+        edit.
+      </p>
+      <NewsletterForm />
+    </section>
+  );
+}
+
 function Instagram() {
   return (
-    <section className="mx-auto max-w-[1400px] bg-black px-3 pb-3 pt-5 text-center sm:px-7 sm:pb-2 sm:pt-2">
+    <section className="mx-auto max-w-[1400px] bg-black px-3 pb-3 pt-8 text-center sm:px-7 sm:pb-2">
       <h2 className="text-[15px] font-semibold uppercase text-[#e3bf7f]">Follow Us on Instagram</h2>
       <p className="mt-0.5 text-xs text-white">@elevate.apparel</p>
       <div className="mt-3 grid grid-cols-4 gap-1.5">
@@ -280,7 +444,10 @@ export default function Home() {
       <Benefits />
       <CollectionGrid />
       <Featured />
+      <NewArrivals />
+      <SalePromo />
       <About />
+      <Newsletter />
       <Instagram />
     </main>
   );
