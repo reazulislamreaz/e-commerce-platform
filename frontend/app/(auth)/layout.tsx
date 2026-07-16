@@ -6,9 +6,11 @@ function ArtPanel() {
   return (
     <aside aria-hidden className="relative hidden overflow-hidden lg:block">
       <Image
-        src="/images/home/hero-model.jpg"
+        src="/images/home/hero.webp"
         alt=""
         fill
+        priority
+        quality={85}
         sizes="(min-width: 1024px) 40vw, 0vw"
         className="object-cover object-[65%_center]"
       />
@@ -69,10 +71,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <Link href="/" aria-label="Elevate Apparel home">
               <Image
-                src="/images/brand/elevate-apparel-logo.jpeg"
+                src="/images/brand/elevate-apparel-logo.webp"
                 alt="Elevate Apparel"
                 width={1248}
                 height={179}
+                quality={90}
                 className="h-6 w-auto object-contain"
               />
             </Link>

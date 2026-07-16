@@ -18,7 +18,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-[56px] max-w-[1400px] items-center border-b border-[#292929] px-4 sm:px-7">
         <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">
           <Image
-            src="/images/brand/elevate-apparel-logo.jpeg"
+            src="/images/brand/elevate-apparel-logo.webp"
             alt="Elevate Apparel"
             width={1248}
             height={179}

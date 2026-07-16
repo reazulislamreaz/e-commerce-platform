@@ -40,7 +40,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-5 py-8 text-xs sm:grid-cols-2 sm:px-7 lg:grid-cols-[1.5fr_.85fr_1.2fr_1fr_1.15fr] lg:gap-6 lg:py-9">
         <div className="flex flex-col">
           <Image
-            src="/images/brand/elevate-apparel-logo.jpeg"
+            src="/images/brand/elevate-apparel-logo.webp"
             alt="Elevate Apparel"
             width={1248}
             height={179}

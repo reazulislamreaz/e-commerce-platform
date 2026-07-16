@@ -13,10 +13,10 @@ import {
 } from 'lucide-react';
 
 const collections = [
-  { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.jpg' },
-  { title: "WOMEN'S\nCOLLECTION", href: '/category/women', image: 'collection-women.jpg' },
-  { title: 'NEW\nARRIVALS', href: '/new-arrivals', image: 'collection-new.jpg' },
-  { title: 'SALE\nUP TO 40% OFF', href: '/sale', image: 'collection-sale.jpg' },
+  { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.webp' },
+  { title: "WOMEN'S\nCOLLECTION", href: '/category/women', image: 'collection-women.webp' },
+  { title: 'NEW\nARRIVALS', href: '/new-arrivals', image: 'collection-new.webp' },
+  { title: 'SALE\nUP TO 40% OFF', href: '/sale', image: 'collection-sale.webp' },
 ];
 
 const products = [
@@ -41,10 +41,11 @@ function Hero() {
     <section className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#2d2a27] bg-[#090909]">
       <div className="absolute inset-y-0 right-0 w-full sm:w-[62%]">
         <Image
-          src="/images/home/hero.jpg"
+          src="/images/home/hero.webp"
           alt="Model wearing Elevate black t-shirt"
           fill
           priority
+          quality={85}
           sizes="(max-width: 640px) 100vw, 62vw"
           className="object-cover object-[68%_center] sm:object-center"
         />
@@ -135,6 +136,7 @@ function CollectionGrid() {
               src={`/images/home/${item.image}`}
               alt=""
               fill
+              quality={85}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 330px"
               className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
             />
@@ -169,10 +171,11 @@ function Featured() {
           <Link key={name} href={`/product/${index + 1}`} className="group min-w-0">
             <div className="relative overflow-hidden rounded-[4px] bg-[#e4e3e1]">
               <Image
-                src={`/images/home/product-${index + 1}.jpg`}
+                src={`/images/home/product-${index + 1}.webp`}
                 alt={name}
-                width={152}
-                height={184}
+                width={304}
+                height={368}
+                quality={85}
                 sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 16vw"
                 className="aspect-[.826] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
@@ -196,9 +199,10 @@ function About() {
     <section className="mx-auto mt-5 grid max-w-[1400px] grid-cols-1 bg-[#111110] lg:mt-3 lg:grid-cols-2">
       <div className="relative min-h-[205px] overflow-hidden px-5 py-6 sm:min-h-[190px] sm:px-7 lg:min-h-[168px] lg:py-5">
         <Image
-          src="/images/home/about-models.jpg"
+          src="/images/home/about-models.webp"
           alt="Elevate Apparel models"
           fill
+          quality={85}
           sizes="(max-width: 1024px) 100vw, 50vw"
           className="object-cover object-right"
         />
@@ -255,9 +259,10 @@ function Instagram() {
             className="relative block aspect-[1.27] overflow-hidden"
           >
             <Image
-              src={`/images/home/instagram-${index + 1}.jpg`}
+              src={`/images/home/instagram-${index + 1}.webp`}
               alt=""
               fill
+              quality={85}
               sizes="(max-width: 1024px) 25vw, 170px"
               className="object-cover"
             />
