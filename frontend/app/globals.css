@@ -25,6 +25,8 @@
   --color-surface-2: #141416;
   --color-surface-3: #1d1d21;
   --color-edge: #27272a;
+  /* Site content container (1400px on large desktop) */
+  --container-8xl: 87.5rem;
 }
 
 body {
