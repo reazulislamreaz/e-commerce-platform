@@ -27,6 +27,7 @@ const columns = [
     'ABOUT US',
     [
       ['Our Story', '/about'],
+      ['Store', '/store'],
       ['Terms & Conditions', '/terms'],
       ['Privacy Policy', '/privacy'],
       ['Contact Us', '/contact'],
@@ -107,7 +108,9 @@ export function SiteFooter() {
             </li>
             <li className="flex items-center gap-2">
               <MapPin className="size-3.5 shrink-0 text-[#e2bb79]" />
-              Dhaka, Bangladesh
+              <Link href="/store" className="transition-colors hover:text-[#e3bb78]">
+                Wari, Dhaka
+              </Link>
             </li>
           </ul>
           <ul

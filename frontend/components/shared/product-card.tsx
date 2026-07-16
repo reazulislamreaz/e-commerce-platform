@@ -1,53 +1,60 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart } from 'lucide-react';
 import { formatTaka } from '@/lib/currency';
 import type { CatalogProduct } from '@/features/products/types';
 
 export function ProductCard({ product }: { product: CatalogProduct }) {
-  const discount = product.compareAtPrice
-    ? Math.round((1 - product.price / product.compareAtPrice) * 100)
-    : 0;
+  const discount =
+    product.compareAtPrice && product.onSale
+      ? Math.round((1 - product.price / product.compareAtPrice) * 100)
+      : 0;
+
   return (
-    <Link
-      href={`/product/${product.slug}`}
-      className="group relative block overflow-hidden rounded-xl border border-edge bg-surface-2 transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-lg hover:shadow-black/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-    >
-      <div className="overflow-hidden">
-        <div
-          className="relative aspect-4/5 w-full transition-transform duration-300 group-hover:scale-105"
-          style={{
-            background: `linear-gradient(160deg, hsl(${product.imageHue} 12% 22%), hsl(${product.imageHue} 16% 12%))`,
-          }}
-        >
-          <span className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm font-medium text-zinc-400">
-            {product.category}
+    <Link href={`/product/${product.slug}`} className="group min-w-0">
+      <div className="relative overflow-hidden rounded-[4px] bg-[#e4e3e1]">
+        {product.image ? (
+          <Image
+            src={product.image}
+            alt={product.name}
+            width={400}
+            height={500}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="aspect-[.8] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            className="aspect-[.8] w-full"
+            style={{
+              background: `linear-gradient(160deg, hsl(${product.imageHue ?? 0} 12% 22%), hsl(${product.imageHue ?? 0} 16% 12%))`,
+            }}
+          />
+        )}
+        {discount > 0 && (
+          <span className="absolute left-2 top-2 bg-[#e5bd79] px-2 py-0.5 text-[10px] font-bold text-[#18120b]">
+            -{discount}%
           </span>
-        </div>
+        )}
+        {product.isNew && !discount && (
+          <span className="absolute left-2 top-2 border border-[#e3bb78] bg-black/50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#e3bb78]">
+            New
+          </span>
+        )}
+        <Heart
+          className="absolute right-2 top-2 size-[17px] stroke-[#111] opacity-80 transition-opacity group-hover:opacity-100"
+          strokeWidth={1.5}
+        />
       </div>
-      {discount > 0 && (
-        <span className="absolute left-2.5 top-2.5 rounded-full bg-gold px-2 py-0.5 text-xs font-bold text-ink">
-          -{discount}%
-        </span>
-      )}
-      <span
-        aria-hidden
-        className="absolute right-2.5 top-2.5 flex size-8 items-center justify-center rounded-full bg-black/40 text-zinc-300 opacity-0 backdrop-blur transition-opacity group-hover:opacity-100"
-      >
-        <Heart className="size-4" />
-      </span>
-      <div className="p-3.5">
-        <h3 className="line-clamp-2 min-h-10 text-sm text-zinc-200 transition-colors group-hover:text-gold">
-          {product.name}
-        </h3>
-        <p className="mt-2 flex items-baseline gap-2">
-          <span className="text-base font-bold text-white">{formatTaka(product.price)}</span>
-          {product.compareAtPrice && (
-            <span className="text-sm text-zinc-500 line-through">
-              {formatTaka(product.compareAtPrice)}
-            </span>
-          )}
-        </p>
-      </div>
+      <p className="mt-2 truncate text-[11px] font-medium leading-4 text-white">{product.name}</p>
+      <p className="text-[11px] leading-4 text-[#d0cbc4]">{product.color}</p>
+      <p className="mt-1 flex items-baseline gap-2 text-[13px] font-semibold text-[#e5c17d]">
+        {formatTaka(product.price)}
+        {product.compareAtPrice && product.onSale && (
+          <span className="text-[11px] font-normal text-[#8b867d] line-through">
+            {formatTaka(product.compareAtPrice)}
+          </span>
+        )}
+      </p>
     </Link>
   );
 }
