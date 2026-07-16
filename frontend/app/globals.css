@@ -35,6 +35,27 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Ensure all clickable controls show a pointer cursor. */
+button,
+[type='button'],
+[type='submit'],
+[type='reset'],
+[role='button'],
+a,
+label[for],
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+[type='button']:disabled,
+[type='submit']:disabled,
+[type='reset']:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 /* Keep browser autofill from repainting the dark inputs. */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
