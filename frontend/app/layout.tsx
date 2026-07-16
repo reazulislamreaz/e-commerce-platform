@@ -5,7 +5,7 @@ import { playfair } from '@/lib/fonts';
 import { AppProviders } from '@/providers/app-providers';
 import { SiteHeader } from '@/components/layouts/site-header';
 import { SiteFooter } from '@/components/layouts/site-footer';
-import { WhatsAppFloat } from '@/components/shared/whatsapp-float';
+import { ContactWidgetLazy } from '@/components/shared/contact-widget/contact-widget-lazy';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -65,7 +65,7 @@ export default function RootLayout({
           <SiteHeader />
           {children}
           <SiteFooter />
-          <WhatsAppFloat />
+          <ContactWidgetLazy />
         </AppProviders>
       </body>
     </html>

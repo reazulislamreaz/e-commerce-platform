@@ -65,3 +65,9 @@ input:-webkit-autofill:focus {
   caret-color: #ffffff;
   transition: background-color 9999s ease-in-out 0s;
 }
+
+/* Facebook Customer Chat — hide Meta's default launcher; ContactWidget opens chat */
+.fb-customerchat iframe,
+.fb_customer_chat_bounce_in {
+  display: none !important;
+}

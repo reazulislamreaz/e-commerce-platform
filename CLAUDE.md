@@ -10,7 +10,158 @@ Before making any change, the AI assistant **must read this file completely** an
 
 After reading this guide, read [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) completely to understand the repository's current architecture, implementation status, and local workflow.
 
+**Do not write or modify code until the mandatory pre-coding flow below is complete.**
+
 The primary goal is to produce **production-ready, scalable, secure, maintainable, and high-performance software**.
+
+---
+
+# Mandatory Pre-Coding Flow (Read Before Every Change)
+
+Every AI assistant **must** complete this flow **before** inspecting files for a task, designing a solution, or writing code. Skipping steps leads to duplicate logic, broken architecture, and non-production-ready output.
+
+## Step 1 — Read project context (required)
+
+1. Read this file (`CLAUDE.md`) completely.
+2. Read [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) completely.
+3. Confirm what is **implemented** vs **planned** — do not treat mock/local data or UI stubs as live backend features.
+
+## Step 2 — Inspect before you build (required)
+
+1. Read the existing module, page, feature folder, and related files — do not assume structure.
+2. Search for reusable components, hooks, utilities, services, and patterns already in the repo.
+3. Identify the correct data-access layer (see **Frontend Data Access Rules** below) — never bypass it.
+4. Check sibling pages/components for UI and naming conventions to match.
+
+## Step 3 — Design with production constraints (required)
+
+Before writing code, explicitly consider:
+
+- Separation of concerns and single responsibility
+- Backend integration path (repository/API layer, not hardcoded page logic)
+- Loading, empty, error, and success states
+- Performance (Server Components first, minimal client boundaries, no unnecessary re-renders)
+- Security, validation, and type safety
+- Elevate Apparel brand theme compliance
+- Accessibility (WCAG), SEO (metadata, semantic HTML), and responsive behavior
+- Whether existing code should be **refactored** instead of duplicated
+
+## Step 4 — Implement with minimal, focused diffs
+
+- Reuse and extend existing code; do not reimplement what already exists.
+- Remove dead code, unused imports, and duplicate logic when touched — do not leave cleanup for later.
+- Preserve existing functionality, UI, and UX unless the task explicitly changes them.
+- No `console.log`, commented-out code, temporary debug code, or unused assets/dependencies.
+
+## Step 5 — Self-review and quality gates (required before handoff)
+
+Run applicable checks and fix failures:
+
+```bash
+npm run lint --workspace=frontend
+npm run lint --workspace=backend
+npm run build --workspace=frontend
+npm run build --workspace=backend
+```
+
+Also verify: no direct bypass of feature APIs, no new global state without justification, no breaking changes, no secrets committed.
+
+---
+
+# Production Readiness Standards
+
+Treat every change as if preparing for **large-scale production deployment**. Apply these standards to all new and modified code.
+
+## Code quality
+
+- Clean, readable, consistently styled code
+- Feature-first folder structure; logical separation of UI, hooks, services, and utilities
+- SOLID, DRY, KISS — no unnecessary complexity
+- Proper naming; no duplicate components or parallel implementations of the same logic
+- Strict TypeScript — no `any`, no disabled lint rules unless justified
+
+## Remove unnecessary code
+
+When working in an area, remove (do not accumulate):
+
+- Dead code, unused components, hooks, utilities, imports, variables
+- Duplicate logic and redundant CSS
+- Unused assets and dependencies
+- Console logs, debug code, and commented-out blocks
+- Obsolete files that are no longer referenced
+
+Keep only code that is actively used or intentionally part of the public feature API.
+
+## Performance (frontend)
+
+- Prefer Server Components; use `'use client'` only when needed
+- Use dynamic imports, Suspense, and route-based splitting where appropriate
+- Optimize images and fonts; avoid shipping entire catalogs to the client when server filtering/pagination is possible
+- Memoize only when it prevents real re-render cost; avoid premature optimization
+- Use efficient list rendering, event handlers, and TanStack Query cache settings
+- Provide loading skeletons or states where user-facing fetches occur
+
+## Backend readiness (frontend architecture)
+
+The frontend must stay ready for real REST API integration:
+
+| Layer | Rule |
+|-------|------|
+| **API client** | Use `frontend/services/api-client.ts` — never ad-hoc fetch in components |
+| **Products** | Import from `@/features/products` (barrel). Server: sync getters; Client: `hooks.ts` + `productCatalog`. Do **not** import `@/features/products/data` from pages/components |
+| **Account** | Use `accountRepository` from `@/features/account` — swap local for HTTP later; do not call `storage.ts` from UI |
+| **Auth** | Use `features/auth/api.ts` + hooks — wire mutations with loading/error states |
+| **Responses** | Use `types/api.ts` helpers (`unwrapData`, pagination meta types) |
+| **Lists** | Support pagination, filtering, sorting, and search via the repository/API layer — design for cursor pagination |
+
+When adding commerce features, implement **vertically**: schema → DTO → service → API → frontend repository/hooks → UI.
+
+## State management
+
+| Data type | Owner |
+|-----------|--------|
+| Auth session, cart, wishlist, recently viewed | Redux (`frontend/store/`) |
+| Server/API data | TanStack Query (`features/*/hooks.ts`) |
+| Local UI state | Component `useState` |
+
+Rules:
+
+- No unnecessary global state
+- No duplicated data across Redux and Query
+- Use shared selectors from `frontend/store/selectors.ts`
+- Invalidate or update Query cache after mutations
+
+## Component reusability
+
+- Extract shared UI into `components/common`, `components/shared`, or feature folders
+- Design composable props; avoid copy-paste page implementations
+- Abstract repeated logic into hooks or utilities
+- Match existing header, footer, form-field, and auth patterns
+
+## UI consistency
+
+Every storefront surface must follow **Elevate Apparel Brand Theme (Mandatory)** — spacing, typography, colors, buttons, inputs, cards, icons, radii, and responsive behavior. Do not introduce new palettes, fonts, or light-default themes.
+
+## Future scalability
+
+Design so the app can support without major refactors:
+
+- Large product catalogs and high traffic
+- Authentication and RBAC
+- Orders, payments, wishlist, reviews, inventory, coupons, notifications
+- Additional modules via new feature folders and repository implementations
+
+## Best practices checklist
+
+- **Accessibility:** semantic HTML, labels, focus management, dialog `role="dialog"` + `aria-modal`, descriptive `alt` text
+- **SEO:** per-route `metadata` / `generateMetadata`, Open Graph images, sitemap updates, JSON-LD on product pages where applicable
+- **Errors:** error boundaries, user-facing error states, no silent failures on submit flows
+- **Validation:** Zod + React Hook Form on forms; DTOs + ValidationPipe on APIs
+- **Security:** no secrets in code; validate and sanitize all input
+
+## Refactor when you find issues
+
+If existing code is inefficient, duplicated, poorly structured, not reusable, inconsistent, or likely to break when the backend connects — **refactor it in the same change** while preserving functionality and UI. Do not add new bypasses around bad patterns.
 
 ---
 
@@ -453,21 +604,14 @@ must pass.
 
 ---
 
-# AI Workflow
+# AI Workflow (Summary)
 
-Before coding:
+This is a short summary. The authoritative checklist is **Mandatory Pre-Coding Flow** and **Production Readiness Standards** above — follow those before every change.
 
-1. Read the existing module.
-2. Understand architecture.
-3. Search for reusable code.
-4. Design implementation.
-5. Consider edge cases.
-6. Optimize queries.
-7. Consider indexing.
-8. Consider security.
-9. Write code.
-10. Self-review.
-11. Ensure lint/build/typecheck pass.
+1. Complete the mandatory pre-coding flow (read docs → inspect existing code → design → implement → self-review).
+2. Follow production readiness standards (code quality, performance, backend-ready architecture, state rules, UI consistency).
+3. Run lint and build for affected workspaces before handoff.
+4. Refactor issues you touch — do not leave duplicate or bypass patterns for a later pass.
 
 ---
 
