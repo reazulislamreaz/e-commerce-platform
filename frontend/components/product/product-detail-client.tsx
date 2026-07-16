@@ -13,7 +13,7 @@ import { WishlistButton } from '@/components/shared/wishlist-button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { itemAdded } from '@/store/slices/cart-slice';
 import { productViewed } from '@/store/slices/recently-viewed-slice';
-import { getProductById } from '@/features/products/data';
+import { getProductById } from '@/features/products';
 
 export function ProductDetailClient({
   product,
@@ -118,7 +118,13 @@ export function ProductDetailClient({
                       index === activeImage ? 'border-[#e5bd79]' : 'border-transparent'
                     }`}
                   >
-                    <Image src={src} alt="" fill className="object-cover" sizes="64px" />
+                    <Image
+                      src={src}
+                      alt={`${p.name} view ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="64px"
+                    />
                   </button>
                 ))}
               </div>

@@ -12,7 +12,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { formatTaka } from '@/lib/currency';
-import { getNewArrivals, getSaleProducts } from '@/features/products/data';
+import { getAllProducts, getNewArrivals, getSaleProducts } from '@/features/products';
 import type { CatalogProduct } from '@/features/products/types';
 import { NewsletterForm } from '@/components/shared/newsletter-form';
 
@@ -23,69 +23,7 @@ const collections = [
   { title: 'SALE\nUP TO 40% OFF', href: '/sale', image: 'collection-sale.webp' },
 ];
 
-/** Featured edit — preserved homepage merchandising */
-const featuredProducts: CatalogProduct[] = [
-  {
-    id: 'f1',
-    name: 'Elevate Oversized Tee',
-    slug: 'elevate-oversized-tee',
-    price: 1190,
-    category: 'T-Shirts',
-    collection: 'men',
-    color: 'Black',
-    image: '/images/home/product-1.webp',
-  },
-  {
-    id: 'f2',
-    name: 'Essential Tee',
-    slug: 'essential-tee',
-    price: 1090,
-    category: 'T-Shirts',
-    collection: 'unisex',
-    color: 'Off White',
-    image: '/images/home/product-2.webp',
-  },
-  {
-    id: 'f3',
-    name: 'Elevate Hoodie',
-    slug: 'elevate-hoodie',
-    price: 1890,
-    category: 'Hoodies',
-    collection: 'men',
-    color: 'Black',
-    image: '/images/home/product-3.webp',
-  },
-  {
-    id: 'f4',
-    name: 'Minimal Tee',
-    slug: 'minimal-tee',
-    price: 1090,
-    category: 'T-Shirts',
-    collection: 'unisex',
-    color: 'Beige',
-    image: '/images/home/product-4.webp',
-  },
-  {
-    id: 'f5',
-    name: 'Elevate Jogger',
-    slug: 'elevate-jogger',
-    price: 1590,
-    category: 'Bottoms',
-    collection: 'men',
-    color: 'Black',
-    image: '/images/home/product-5.webp',
-  },
-  {
-    id: 'f6',
-    name: "Women's Hoodie",
-    slug: 'womens-hoodie',
-    price: 1890,
-    category: 'Hoodies',
-    collection: 'women',
-    color: 'Cream',
-    image: '/images/home/product-6.webp',
-  },
-];
+const featuredProducts = getAllProducts().slice(0, 6);
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (

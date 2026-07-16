@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import type { ProductFilters, ProductCollection } from '@/features/products/types';
 import { DEFAULT_FILTERS, countActiveFilters } from '@/features/products/filter';
-import { PRICE_PRESETS } from '@/features/products/data';
+import { PRICE_PRESETS } from '@/features/products/constants';
 
 type Facets = {
   categories: string[];
@@ -340,7 +340,12 @@ export function MobileFilterDrawer({
         className="absolute inset-0 bg-black/70"
         onClick={onClose}
       />
-      <div className="absolute inset-y-0 left-0 flex w-[min(100%,340px)] flex-col bg-[#0a0a0b] shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Product filters"
+        className="absolute inset-y-0 left-0 flex w-[min(100%,340px)] flex-col bg-[#0a0a0b] shadow-2xl"
+      >
         <div className="flex items-center justify-between border-b border-[#2d2a27] px-4 py-3">
           <p className="text-[12px] font-bold uppercase tracking-[.14em] text-white">Filters</p>
           <button type="button" aria-label="Close" onClick={onClose} className="p-1 text-white">

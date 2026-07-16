@@ -23,7 +23,7 @@ import {
   selectWishlistCount,
 } from '@/store/selectors';
 import { useLogout } from '@/features/auth/hooks';
-import { displayName } from '@/features/account/storage';
+import { displayName } from '@/features/account';
 
 const SearchDialog = dynamic(
   () =>

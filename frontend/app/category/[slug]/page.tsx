@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PageHero } from '@/components/shared/page-hero';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { getProductsByCollection } from '@/features/products/data';
+import { getProductsByCollection } from '@/features/products';
 
 const collections = {
   men: {

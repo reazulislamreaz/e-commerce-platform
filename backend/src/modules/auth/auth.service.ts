@@ -1,12 +1,13 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { type User, UserStatus } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
-import { JwtPayload } from './jwt.strategy';
+import type { LoginDto } from './dto/login.dto';
+import type { RegisterDto } from './dto/register.dto';
+import type { JwtPayload } from './jwt.strategy';
+
 const userSelect = {
   id: true,
   email: true,
@@ -15,6 +16,7 @@ const userSelect = {
   firstName: true,
   lastName: true,
 } as const;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -22,6 +24,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {}
+
   async register(dto: RegisterDto) {
     const email = dto.email.trim().toLowerCase();
     if (await this.prisma.user.findUnique({ where: { email }, select: { id: true } }))
@@ -32,16 +35,20 @@ export class AuthService {
         passwordHash: await argon2.hash(dto.password),
         firstName: dto.firstName.trim(),
         lastName: dto.lastName.trim(),
+        status: UserStatus.ACTIVE,
       },
       select: userSelect,
     });
   }
+
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.trim().toLowerCase() },
     });
-    if (!user || !(await argon2.verify(user.passwordHash, dto.password)))
+    if (!user || user.deletedAt || !(await argon2.verify(user.passwordHash, dto.password)))
       throw new UnauthorizedException('Invalid email or password');
+    if (user.status === UserStatus.SUSPENDED)
+      throw new UnauthorizedException('Account is suspended');
     const tokens = await this.issueTokens(user);
     await this.prisma.user.update({
       where: { id: user.id },
@@ -49,9 +56,16 @@ export class AuthService {
     });
     return { user: this.toUser(user), ...tokens };
   }
+
   async refresh(userId: string, refreshToken: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user?.refreshTokenHash || !(await argon2.verify(user.refreshTokenHash, refreshToken)))
+    if (
+      !user ||
+      user.deletedAt ||
+      user.status === UserStatus.SUSPENDED ||
+      !user.refreshTokenHash ||
+      !(await argon2.verify(user.refreshTokenHash, refreshToken))
+    )
       throw new UnauthorizedException('Invalid refresh token');
     const tokens = await this.issueTokens(user);
     await this.prisma.user.update({
@@ -60,9 +74,11 @@ export class AuthService {
     });
     return tokens;
   }
+
   async logout(userId: string): Promise<void> {
     await this.prisma.user.update({ where: { id: userId }, data: { refreshTokenHash: null } });
   }
+
   private async issueTokens(user: User) {
     const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
     return {
@@ -76,8 +92,14 @@ export class AuthService {
       }),
     };
   }
+
   private toUser(user: User) {
-    const { passwordHash, refreshTokenHash, deletedAt, ...safeUser } = user;
+    const {
+      passwordHash: _passwordHash,
+      refreshTokenHash: _refreshTokenHash,
+      deletedAt: _deletedAt,
+      ...safeUser
+    } = user;
     return safeUser;
   }
 }

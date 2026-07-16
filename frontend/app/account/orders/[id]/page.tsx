@@ -5,15 +5,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
-import { getOrders } from '@/features/account/storage';
+import { selectAuthUser } from '@/store/selectors';
+import { useAccountOrders } from '@/features/account';
 import { formatTaka } from '@/lib/currency';
 
 function OrderDetailInner() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const confirmed = searchParams.get('confirmed') === '1';
-  const user = useAppSelector((s) => s.auth.user)!;
-  const order = getOrders(user.id).find((o) => o.id === id);
+  const user = useAppSelector(selectAuthUser)!;
+  const { data: orders, loading } = useAccountOrders(user.id);
+  const order = orders.find((o) => o.id === id);
+
+  if (loading) {
+    return <p className="text-sm text-[#b5b0a8]">Loading order…</p>;
+  }
 
   if (!order) {
     return (
@@ -75,7 +81,7 @@ function OrderDetailInner() {
           {order.items.map((item) => (
             <li key={`${item.productId}-${item.size}-${item.color}`} className="flex gap-3">
               <div className="relative h-16 w-14 overflow-hidden rounded-[4px] bg-[#e4e3e1]">
-                <Image src={item.image} alt="" fill className="object-cover" sizes="56px" />
+                <Image src={item.image} alt={item.name} fill className="object-cover" sizes="56px" />
               </div>
               <div className="min-w-0 flex-1 text-sm">
                 <Link

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageHero } from '@/components/shared/page-hero';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { getSaleProducts } from '@/features/products/data';
+import { getSaleProducts } from '@/features/products';
 
 export const metadata: Metadata = {
   title: 'Sale',

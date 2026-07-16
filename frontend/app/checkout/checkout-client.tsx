@@ -21,7 +21,7 @@ import {
   accountRepository,
   type CustomerOrder,
   type SavedAddress,
-} from '@/features/account/api';
+} from '@/features/account';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(80),
@@ -47,6 +47,7 @@ export function CheckoutClient() {
   const [discount, setDiscount] = useState(0);
   const [appliedCode, setAppliedCode] = useState<string | undefined>();
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const lines = useMemo(() => resolveCartLines(items), [items]);
@@ -92,79 +93,86 @@ export function CheckoutClient() {
   const onSubmit = handleSubmit(async (values) => {
     if (lines.length === 0) return;
     setSubmitting(true);
-
-    const stamp = crypto.randomUUID();
-    const address: SavedAddress = {
-      id: `addr-${stamp}`,
-      label: 'Checkout',
-      fullName: values.fullName,
-      phone: values.phone,
-      line1: values.line1,
-      line2: values.line2,
-      city: values.city,
-      district: values.district,
-      postalCode: values.postalCode,
-      country: 'Bangladesh',
-      isDefault: true,
-      type: 'shipping',
-    };
-
-    const now = new Date().toISOString();
-    const order: CustomerOrder = {
-      id: `ord-${stamp}`,
-      number: accountRepository.createOrderNumber(),
-      createdAt: now,
-      status: 'confirmed',
-      items: lines.map(({ item, product }) => ({
-        productId: product.id,
-        name: product.name,
-        slug: product.slug,
-        image: product.image,
-        size: item.size,
-        color: item.color,
-        quantity: item.quantity,
-        unitPrice: product.price,
-      })),
-      subtotal,
-      shipping,
-      discount,
-      total,
-      couponCode: appliedCode,
-      shippingAddress: address,
-      paymentMethod: values.paymentMethod,
-      trackingNumber: `TRK${stamp.replace(/-/g, '').slice(0, 10).toUpperCase()}`,
-      timeline: [
-        { label: 'Order placed', at: now, done: true },
-        { label: 'Confirmed', at: now, done: true },
-        { label: 'Processing', at: '', done: false },
-        { label: 'Shipped', at: '', done: false },
-        { label: 'Delivered', at: '', done: false },
-      ],
-    };
-
-    await accountRepository.placeOrder(user?.id ?? null, order);
-
-    if (user && appliedCode) {
-      const coupons = await accountRepository.getCoupons(user.id);
-      await accountRepository.saveCoupons(
-        user.id,
-        coupons.map((c) => (c.code === appliedCode ? { ...c, used: true } : c)),
-      );
-    }
-
-    dispatch(cartCleared());
-
-    if (user) {
-      router.push(`/account/orders/${order.id}?confirmed=1`);
-      return;
-    }
+    setSubmitError(null);
 
     try {
-      sessionStorage.setItem('elevate:lastOrder', JSON.stringify(order));
+      const stamp = crypto.randomUUID();
+      const address: SavedAddress = {
+        id: `addr-${stamp}`,
+        label: 'Checkout',
+        fullName: values.fullName,
+        phone: values.phone,
+        line1: values.line1,
+        line2: values.line2,
+        city: values.city,
+        district: values.district,
+        postalCode: values.postalCode,
+        country: 'Bangladesh',
+        isDefault: true,
+        type: 'shipping',
+      };
+
+      const now = new Date().toISOString();
+      const order: CustomerOrder = {
+        id: `ord-${stamp}`,
+        number: accountRepository.createOrderNumber(),
+        createdAt: now,
+        status: 'confirmed',
+        items: lines.map(({ item, product }) => ({
+          productId: product.id,
+          name: product.name,
+          slug: product.slug,
+          image: product.image,
+          size: item.size,
+          color: item.color,
+          quantity: item.quantity,
+          unitPrice: product.price,
+        })),
+        subtotal,
+        shipping,
+        discount,
+        total,
+        couponCode: appliedCode,
+        shippingAddress: address,
+        paymentMethod: values.paymentMethod,
+        trackingNumber: `TRK${stamp.replace(/-/g, '').slice(0, 10).toUpperCase()}`,
+        timeline: [
+          { label: 'Order placed', at: now, done: true },
+          { label: 'Confirmed', at: now, done: true },
+          { label: 'Processing', at: '', done: false },
+          { label: 'Shipped', at: '', done: false },
+          { label: 'Delivered', at: '', done: false },
+        ],
+      };
+
+      await accountRepository.placeOrder(user?.id ?? null, order);
+
+      if (user && appliedCode) {
+        const coupons = await accountRepository.getCoupons(user.id);
+        await accountRepository.saveCoupons(
+          user.id,
+          coupons.map((c) => (c.code === appliedCode ? { ...c, used: true } : c)),
+        );
+      }
+
+      dispatch(cartCleared());
+
+      if (user) {
+        router.push(`/account/orders/${order.id}?confirmed=1`);
+        return;
+      }
+
+      try {
+        sessionStorage.setItem('elevate:lastOrder', JSON.stringify(order));
+      } catch {
+        // ignore quota errors
+      }
+      router.push('/order-confirmation');
     } catch {
-      // ignore
+      setSubmitError('Could not place your order. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
-    router.push('/order-confirmation');
   });
 
   if (lines.length === 0) {
@@ -251,7 +259,13 @@ export function CheckoutClient() {
               {lines.map(({ item, product }) => (
                 <li key={`${item.productId}-${item.variantId}`} className="flex gap-3">
                   <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-[4px] bg-[#e4e3e1]">
-                    <Image src={product.image} alt="" fill className="object-cover" sizes="56px" />
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      sizes="56px"
+                    />
                   </div>
                   <div className="min-w-0 flex-1 text-[12px]">
                     <p className="truncate font-medium text-white">{product.name}</p>
@@ -318,6 +332,8 @@ export function CheckoutClient() {
                 to save this order to your account history.
               </p>
             )}
+
+            {submitError && <p className="text-xs text-red-400">{submitError}</p>}
 
             <button
               type="submit"

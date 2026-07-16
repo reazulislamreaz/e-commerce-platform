@@ -1,24 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { useAppSelector } from '@/store/hooks';
+import { selectAuthUser } from '@/store/selectors';
 import {
-  getNotifications,
-  saveNotifications,
-  type AccountNotification,
-} from '@/features/account/storage';
+  accountRepository,
+  useAccountNotifications,
+} from '@/features/account';
 
 export default function NotificationsPage() {
-  const user = useAppSelector((s) => s.auth.user)!;
-  const [items, setItems] = useState<AccountNotification[]>(() => getNotifications(user.id));
+  const user = useAppSelector(selectAuthUser)!;
+  const { data: items, setData, loading } = useAccountNotifications(user.id);
 
-  const persist = (next: AccountNotification[]) => {
-    setItems(next);
-    saveNotifications(user.id, next);
+  const markAllRead = async () => {
+    const next = items.map((n) => ({ ...n, read: true }));
+    setData(next);
+    await accountRepository.saveNotifications(user.id, next);
   };
 
-  const markAllRead = () => persist(items.map((n) => ({ ...n, read: true })));
+  if (loading) {
+    return <p className="text-sm text-[#b5b0a8]">Loading notifications…</p>;
+  }
 
   return (
     <div className="space-y-4">
@@ -28,7 +30,7 @@ export default function NotificationsPage() {
         </h2>
         <button
           type="button"
-          onClick={markAllRead}
+          onClick={() => void markAllRead()}
           className="text-[10px] font-semibold uppercase text-[#e3bb78]"
         >
           Mark all read

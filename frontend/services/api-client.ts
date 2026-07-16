@@ -1,6 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import type { AppStore } from '@/store/store';
-import { signedOut } from '@/store/slices/auth-slice';
+import { accessTokenRefreshed, signedOut } from '@/store/slices/auth-slice';
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true,
@@ -37,6 +37,7 @@ apiClient.interceptors.response.use(
           refreshPromise = undefined;
         });
       const token = await refreshPromise;
+      store?.dispatch(accessTokenRefreshed(token));
       request.headers.Authorization = `Bearer ${token}`;
       return apiClient(request);
     } catch (refreshError) {

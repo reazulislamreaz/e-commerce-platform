@@ -2,12 +2,17 @@
 
 import Link from 'next/link';
 import { useAppSelector } from '@/store/hooks';
-import { getOrders } from '@/features/account/storage';
+import { selectAuthUser } from '@/store/selectors';
+import { useAccountOrders } from '@/features/account';
 import { formatTaka } from '@/lib/currency';
 
 export default function OrdersPage() {
-  const user = useAppSelector((s) => s.auth.user)!;
-  const orders = getOrders(user.id);
+  const user = useAppSelector(selectAuthUser)!;
+  const { data: orders, loading } = useAccountOrders(user.id);
+
+  if (loading) {
+    return <p className="text-sm text-[#b5b0a8]">Loading orders…</p>;
+  }
 
   return (
     <div className="space-y-4">

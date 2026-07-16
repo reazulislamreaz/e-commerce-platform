@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { accountRepository } from './api';
 import type {
   AccountCoupon,
@@ -11,61 +11,101 @@ import type {
   SavedAddress,
 } from './api';
 
+const EMPTY_ORDERS: CustomerOrder[] = [];
+const EMPTY_ADDRESSES: SavedAddress[] = [];
+const EMPTY_NOTIFICATIONS: AccountNotification[] = [];
+const EMPTY_COUPONS: AccountCoupon[] = [];
+const EMPTY_REVIEWS: AccountReview[] = [];
+const EMPTY_RETURNS: ReturnRequest[] = [];
+
+export const accountKeys = {
+  all: ['account'] as const,
+  orders: (userId: string) => [...accountKeys.all, 'orders', userId] as const,
+  addresses: (userId: string) => [...accountKeys.all, 'addresses', userId] as const,
+  notifications: (userId: string) =>
+    [...accountKeys.all, 'notifications', userId] as const,
+  coupons: (userId: string) => [...accountKeys.all, 'coupons', userId] as const,
+  reviews: (userId: string) => [...accountKeys.all, 'reviews', userId] as const,
+  returns: (userId: string) => [...accountKeys.all, 'returns', userId] as const,
+};
+
 function useAccountResource<T>(
   userId: string | undefined,
-  loader: (userId: string) => Promise<T>,
-  initial: T,
+  queryKey: readonly unknown[],
+  queryFn: () => Promise<T>,
+  empty: T,
 ) {
-  const [data, setData] = useState<T>(initial);
-  const [loading, setLoading] = useState(Boolean(userId));
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey,
+    queryFn,
+    enabled: Boolean(userId),
+  });
 
-  const reload = useCallback(async () => {
-    if (!userId) {
-      setData(initial);
-      setLoading(false);
-      return;
+  const setData = (next: T) => {
+    if (userId) {
+      queryClient.setQueryData(queryKey, next);
     }
-    setLoading(true);
-    try {
-      setData(await loader(userId));
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, loader, initial]);
+  };
 
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
-  return { data, setData, loading, reload };
+  return {
+    data: query.data ?? empty,
+    loading: query.isLoading,
+    setData,
+    reload: () => query.refetch(),
+  };
 }
 
 export function useAccountOrders(userId: string | undefined) {
-  const loader = useCallback((id: string) => accountRepository.getOrders(id), []);
-  return useAccountResource(userId, loader, [] as CustomerOrder[]);
+  return useAccountResource(
+    userId,
+    userId ? accountKeys.orders(userId) : accountKeys.all,
+    () => accountRepository.getOrders(userId!),
+    EMPTY_ORDERS,
+  );
 }
 
 export function useAccountAddresses(userId: string | undefined) {
-  const loader = useCallback((id: string) => accountRepository.getAddresses(id), []);
-  return useAccountResource(userId, loader, [] as SavedAddress[]);
+  return useAccountResource(
+    userId,
+    userId ? accountKeys.addresses(userId) : accountKeys.all,
+    () => accountRepository.getAddresses(userId!),
+    EMPTY_ADDRESSES,
+  );
 }
 
 export function useAccountNotifications(userId: string | undefined) {
-  const loader = useCallback((id: string) => accountRepository.getNotifications(id), []);
-  return useAccountResource(userId, loader, [] as AccountNotification[]);
+  return useAccountResource(
+    userId,
+    userId ? accountKeys.notifications(userId) : accountKeys.all,
+    () => accountRepository.getNotifications(userId!),
+    EMPTY_NOTIFICATIONS,
+  );
 }
 
 export function useAccountCoupons(userId: string | undefined) {
-  const loader = useCallback((id: string) => accountRepository.getCoupons(id), []);
-  return useAccountResource(userId, loader, [] as AccountCoupon[]);
+  return useAccountResource(
+    userId,
+    userId ? accountKeys.coupons(userId) : accountKeys.all,
+    () => accountRepository.getCoupons(userId!),
+    EMPTY_COUPONS,
+  );
 }
 
 export function useAccountReviews(userId: string | undefined) {
-  const loader = useCallback((id: string) => accountRepository.getReviews(id), []);
-  return useAccountResource(userId, loader, [] as AccountReview[]);
+  return useAccountResource(
+    userId,
+    userId ? accountKeys.reviews(userId) : accountKeys.all,
+    () => accountRepository.getReviews(userId!),
+    EMPTY_REVIEWS,
+  );
 }
 
 export function useAccountReturns(userId: string | undefined) {
-  const loader = useCallback((id: string) => accountRepository.getReturnRequests(id), []);
-  return useAccountResource(userId, loader, [] as ReturnRequest[]);
+  return useAccountResource(
+    userId,
+    userId ? accountKeys.returns(userId) : accountKeys.all,
+    () => accountRepository.getReturnRequests(userId!),
+    EMPTY_RETURNS,
+  );
 }

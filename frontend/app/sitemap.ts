@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getAllProducts } from '@/features/products/data';
+import { getAllProducts } from '@/features/products';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -20,6 +20,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/size-guide',
     '/terms',
     '/privacy',
+    '/wishlist',
+    '/track-order',
   ].map((path) => ({
     url: `${siteUrl}${path}`,
     lastModified: new Date(),

@@ -3,14 +3,19 @@
 import Link from 'next/link';
 import { Package, Heart, MapPin, Bell } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
-import { getNotifications, getOrders, displayName } from '@/features/account/storage';
+import { selectAuthUser, selectWishlistCount } from '@/store/selectors';
+import {
+  displayName,
+  useAccountNotifications,
+  useAccountOrders,
+} from '@/features/account';
 import { formatTaka } from '@/lib/currency';
 
 export default function AccountOverviewPage() {
-  const user = useAppSelector((s) => s.auth.user)!;
-  const wishlistCount = useAppSelector((s) => s.wishlist.productIds.length);
-  const orders = getOrders(user.id);
-  const notifications = getNotifications(user.id);
+  const user = useAppSelector(selectAuthUser)!;
+  const wishlistCount = useAppSelector(selectWishlistCount);
+  const { data: orders } = useAccountOrders(user.id);
+  const { data: notifications } = useAccountNotifications(user.id);
   const unread = notifications.filter((n) => !n.read).length;
   const recent = orders.slice(0, 3);
 

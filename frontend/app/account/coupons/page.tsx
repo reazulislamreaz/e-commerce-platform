@@ -1,11 +1,16 @@
 'use client';
 
 import { useAppSelector } from '@/store/hooks';
-import { getCoupons } from '@/features/account/storage';
+import { selectAuthUser } from '@/store/selectors';
+import { useAccountCoupons } from '@/features/account';
 
 export default function CouponsPage() {
-  const user = useAppSelector((s) => s.auth.user)!;
-  const coupons = getCoupons(user.id);
+  const user = useAppSelector(selectAuthUser)!;
+  const { data: coupons, loading } = useAccountCoupons(user.id);
+
+  if (loading) {
+    return <p className="text-sm text-[#b5b0a8]">Loading coupons…</p>;
+  }
 
   return (
     <div className="space-y-4">

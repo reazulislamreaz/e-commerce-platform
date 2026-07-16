@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ProductCard } from '@/components/shared/product-card';
-import { getProductById } from '@/features/products/data';
+import { getProductById } from '@/features/products';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { wishlistCleared } from '@/store/slices/wishlist-slice';
 import {

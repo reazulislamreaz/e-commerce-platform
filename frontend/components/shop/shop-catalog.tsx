@@ -9,7 +9,7 @@ import {
   paginateProducts,
   sortProducts,
 } from '@/features/products/filter';
-import { PAGE_SIZE } from '@/features/products/data';
+import { PAGE_SIZE } from '@/features/products/constants';
 import { CatalogToolbar, ProductGrid } from '@/components/shared/product-grid';
 import { FilterPanel, MobileFilterDrawer, useShopFilters } from '@/components/shop/filter-panel';
 

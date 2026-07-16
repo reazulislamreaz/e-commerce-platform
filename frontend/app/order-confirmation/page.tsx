@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatTaka } from '@/lib/currency';
-import type { CustomerOrder } from '@/features/account/storage';
+import type { CustomerOrder } from '@/features/account';
 
 function readLastOrder(): CustomerOrder | null {
   if (typeof window === 'undefined') return null;

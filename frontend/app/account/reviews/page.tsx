@@ -2,11 +2,16 @@
 
 import Link from 'next/link';
 import { useAppSelector } from '@/store/hooks';
-import { getAccountReviews } from '@/features/account/storage';
+import { selectAuthUser } from '@/store/selectors';
+import { useAccountReviews } from '@/features/account';
 
 export default function ReviewsPage() {
-  const user = useAppSelector((s) => s.auth.user)!;
-  const reviews = getAccountReviews(user.id);
+  const user = useAppSelector(selectAuthUser)!;
+  const { data: reviews, loading } = useAccountReviews(user.id);
+
+  if (loading) {
+    return <p className="text-sm text-[#b5b0a8]">Loading reviews…</p>;
+  }
 
   return (
     <div className="space-y-4">
@@ -28,7 +33,9 @@ export default function ReviewsPage() {
               >
                 {review.productName}
               </Link>
-              <p className="mt-1 text-[#e5c17d]">{'★'.repeat(review.rating)}</p>
+              <p className="mt-1 text-[#e5c17d]" aria-label={`${review.rating} out of 5 stars`}>
+                {'★'.repeat(review.rating)}
+              </p>
               <p className="mt-1 text-sm text-[#b5b0a8]">{review.body}</p>
             </li>
           ))}

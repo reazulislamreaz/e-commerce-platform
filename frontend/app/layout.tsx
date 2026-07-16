@@ -26,14 +26,15 @@ export const metadata: Metadata = {
     template: '%s | ElevateApparel',
   },
   description:
-    'Premium-quality apparel for men, women, and kids. Tees, polos, panjabis, and activewear designed for comfort and confidence.',
+    'Premium-quality apparel for men and women. Tees, polos, panjabis, and activewear designed for comfort and confidence.',
   openGraph: {
     type: 'website',
     locale: 'en_BD',
     siteName: 'Elevate Apparel',
     title: 'ElevateApparel — Elevate Your Everyday Style',
     description:
-      'Premium-quality apparel for men, women, and kids. Designed for comfort and confidence.',
+      'Premium-quality apparel for men and women. Designed for comfort and confidence.',
+    images: [{ url: '/images/home/hero.webp', width: 1920, height: 1080, alt: 'Elevate Apparel' }],
   },
   twitter: {
     card: 'summary_large_image',

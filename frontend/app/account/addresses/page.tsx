@@ -6,11 +6,12 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField } from '@/components/common/form-field';
 import { useAppSelector } from '@/store/hooks';
+import { selectAuthUser } from '@/store/selectors';
 import {
-  getAddresses,
-  saveAddresses,
+  accountRepository,
+  useAccountAddresses,
   type SavedAddress,
-} from '@/features/account/storage';
+} from '@/features/account';
 
 const schema = z.object({
   label: z.string().min(1).max(40),
@@ -27,8 +28,8 @@ const schema = z.object({
 type Input = z.infer<typeof schema>;
 
 export default function AddressesPage() {
-  const user = useAppSelector((s) => s.auth.user)!;
-  const [addresses, setAddresses] = useState<SavedAddress[]>(() => getAddresses(user.id));
+  const user = useAppSelector(selectAuthUser)!;
+  const { data: addresses, setData: setAddresses, loading } = useAccountAddresses(user.id);
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -40,12 +41,12 @@ export default function AddressesPage() {
     defaultValues: { label: 'Home', city: 'Dhaka', district: 'Dhaka', isDefault: false },
   });
 
-  const persist = (next: SavedAddress[]) => {
+  const persist = async (next: SavedAddress[]) => {
     setAddresses(next);
-    saveAddresses(user.id, next);
+    await accountRepository.saveAddresses(user.id, next);
   };
 
-  const onSubmit = handleSubmit((values) => {
+  const onSubmit = handleSubmit(async (values) => {
     const next: SavedAddress = {
       id: `addr-${crypto.randomUUID()}`,
       ...values,
@@ -58,10 +59,14 @@ export default function AddressesPage() {
     if (next.isDefault) {
       list = list.map((a) => ({ ...a, isDefault: a.id === next.id }));
     }
-    persist(list);
+    await persist(list);
     reset({ label: 'Home', city: 'Dhaka', district: 'Dhaka', isDefault: false });
     setOpen(false);
   });
+
+  if (loading) {
+    return <p className="text-sm text-[#b5b0a8]">Loading addresses…</p>;
+  }
 
   return (
     <div className="space-y-4">

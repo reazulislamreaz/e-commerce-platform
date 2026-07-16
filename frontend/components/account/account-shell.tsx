@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useLogout } from '@/features/auth/hooks';
-import { displayName } from '@/features/account/storage';
+import { displayName } from '@/features/account';
 import { cn } from '@/lib/utils';
 
 const nav: {

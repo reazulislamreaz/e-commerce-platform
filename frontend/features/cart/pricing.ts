@@ -1,6 +1,6 @@
 import type { CartItem } from '@/store/slices/cart-slice';
 import type { CatalogProduct } from '@/features/products/types';
-import { getProductById } from '@/features/products/data';
+import { getProductById } from '@/features/products';
 
 export interface CartLine {
   item: CartItem;

@@ -4,20 +4,20 @@ import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { FormField } from '@/components/common/form-field';
 import { useAppSelector } from '@/store/hooks';
-import { getOrders } from '@/features/account/storage';
+import { selectAuthUser } from '@/store/selectors';
+import { useAccountOrders } from '@/features/account';
 
 function TrackOrderInner() {
   const params = useSearchParams();
-  const user = useAppSelector((s) => s.auth.user);
+  const user = useAppSelector(selectAuthUser);
+  const { data: orders } = useAccountOrders(user?.id);
   const [number, setNumber] = useState(params.get('number') ?? '');
   const [submitted, setSubmitted] = useState(Boolean(params.get('number')));
 
   const order = useMemo(() => {
     if (!submitted || !user || !number.trim()) return null;
-    return getOrders(user.id).find(
-      (o) => o.number.toLowerCase() === number.trim().toLowerCase(),
-    );
-  }, [submitted, user, number]);
+    return orders.find((o) => o.number.toLowerCase() === number.trim().toLowerCase());
+  }, [submitted, user, number, orders]);
 
   return (
     <main id="main-content" className="flex-1 bg-black">

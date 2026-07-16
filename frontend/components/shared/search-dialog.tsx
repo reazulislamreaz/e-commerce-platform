@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { searchProducts, searchSuggestions } from '@/features/products/data';
+import { SEARCH_DIALOG_LIMIT, searchProducts, searchSuggestions } from '@/features/products';
 import { formatTaka } from '@/lib/currency';
 import { readStorage, writeStorage } from '@/lib/storage';
 
@@ -36,7 +36,7 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  const results = useMemo(() => searchProducts(query, 6), [query]);
+  const results = useMemo(() => searchProducts(query, SEARCH_DIALOG_LIMIT), [query]);
 
   const commitSearch = (value: string) => {
     const q = value.trim();
@@ -61,7 +61,12 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
         className="absolute inset-0 bg-black/75"
         onClick={onClose}
       />
-      <div className="relative mx-auto mt-16 w-[min(100%-1.5rem,640px)] rounded-[4px] border border-[#2d2a27] bg-[#0a0a0b] shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search products"
+        className="relative mx-auto mt-16 w-[min(100%-1.5rem,640px)] rounded-[4px] border border-[#2d2a27] bg-[#0a0a0b] shadow-2xl"
+      >
         <div className="flex items-center gap-2 border-b border-[#2d2a27] px-3 py-2.5">
           <Search className="size-4 text-[#e3bb78]" strokeWidth={1.7} />
           <input
@@ -150,7 +155,7 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
                         <div className="relative h-12 w-10 overflow-hidden rounded-[4px] bg-[#e4e3e1]">
                           <Image
                             src={product.image}
-                            alt=""
+                            alt={product.name}
                             fill
                             className="object-cover"
                             sizes="40px"
