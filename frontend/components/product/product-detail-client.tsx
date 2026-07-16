@@ -3,17 +3,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Minus, Plus, Star } from 'lucide-react';
 import { formatTaka } from '@/lib/currency';
 import type { CatalogProduct } from '@/features/products/types';
 import { normalizeProduct } from '@/features/products/types';
 import { ProductCard } from '@/components/shared/product-card';
+import { ProductActionButtons } from '@/components/product/product-action-buttons';
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
 import { WishlistButton } from '@/components/shared/wishlist-button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { itemAdded } from '@/store/slices/cart-slice';
 import { productViewed } from '@/store/slices/recently-viewed-slice';
 import { getProductById } from '@/features/products';
+import {
+  buildProductOrderWhatsAppHref,
+  buildTelHref,
+  getContactConfig,
+} from '@/lib/contact-config';
 
 export function ProductDetailClient({
   product,
@@ -24,6 +31,7 @@ export function ProductDetailClient({
 }) {
   const p = normalizeProduct(product);
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const recentIds = useAppSelector((s) => s.recentlyViewed.productIds);
 
   const [activeImage, setActiveImage] = useState(0);
@@ -56,6 +64,14 @@ export function ProductDetailClient({
     .filter(Boolean)
     .slice(0, 4) as CatalogProduct[];
 
+  const contact = getContactConfig();
+  const whatsappOrderHref = buildProductOrderWhatsAppHref(
+    contact.whatsappNumber,
+    { name: p.name, slug: p.slug, price: p.price },
+    { size, color, quantity: qty },
+  );
+  const callOrderHref = buildTelHref(contact.phoneNumber);
+
   const addToBag = () => {
     if (!inStock) return;
     const variantId = variant?.id ?? `${p.id}-${color}-${size}`;
@@ -70,6 +86,21 @@ export function ProductDetailClient({
     );
     setAddedMsg(true);
     window.setTimeout(() => setAddedMsg(false), 2000);
+  };
+
+  const orderNow = () => {
+    if (!inStock) return;
+    const variantId = variant?.id ?? `${p.id}-${color}-${size}`;
+    dispatch(
+      itemAdded({
+        productId: p.id,
+        variantId,
+        size,
+        color,
+        quantity: qty,
+      }),
+    );
+    router.push('/checkout');
   };
 
   return (
@@ -102,10 +133,15 @@ export function ProductDetailClient({
                 }`}
               />
               {discount > 0 && (
-                <span className="absolute left-3 top-3 bg-[#e5bd79] px-2.5 py-1 text-[11px] font-bold text-[#18120b]">
+                <span className="absolute left-3 top-3 z-10 bg-[#e5bd79] px-2.5 py-1 text-[11px] font-bold text-[#18120b]">
                   -{discount}%
                 </span>
               )}
+              <WishlistButton
+                productId={p.id}
+                variant="overlay"
+                className="right-3 top-3"
+              />
             </div>
             {p.images.length > 1 && (
               <div className="mt-3 flex gap-2 overflow-x-auto">
@@ -243,17 +279,15 @@ export function ProductDetailClient({
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2.5">
-              <button
-                type="button"
-                disabled={!inStock}
-                onClick={addToBag}
-                className="border border-[#efc677] bg-[#e5bd79] px-6 py-3 text-[11px] font-bold uppercase text-[#18120b] hover:bg-[#eec98a] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {addedMsg ? 'Added to Bag' : 'Add to Bag'}
-              </button>
-              <WishlistButton productId={p.id} variant="button" />
-            </div>
+            <ProductActionButtons
+              inStock={inStock}
+              addedMsg={addedMsg}
+              productName={p.name}
+              whatsappOrderHref={whatsappOrderHref}
+              callOrderHref={callOrderHref}
+              onAddToBag={addToBag}
+              onOrderNow={orderNow}
+            />
 
             <Link
               href="/shop"

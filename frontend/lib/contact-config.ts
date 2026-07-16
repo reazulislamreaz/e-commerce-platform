@@ -6,7 +6,7 @@
 const DEFAULT_WHATSAPP_NUMBER = '8801234567890';
 const DEFAULT_WHATSAPP_MESSAGE =
   'Hi Elevate Apparel — I have a question about your products / my order.';
-const DEFAULT_PHONE = '+8801738430320';
+const DEFAULT_PHONE = '+8801571208486';
 const DEFAULT_FACEBOOK_PAGE_ID = '61579074209186';
 
 export interface ContactConfig {
@@ -41,4 +41,28 @@ export function buildTelHref(phone: string): string {
 
 export function buildMessengerHref(pageId: string): string {
   return `https://m.me/${pageId}`;
+}
+
+export function buildProductOrderWhatsAppHref(
+  number: string,
+  product: { name: string; slug: string; price: number },
+  options: { size: string; color: string; quantity: number },
+): string {
+  const lineTotal = product.price * options.quantity;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? '';
+  const productLink = siteUrl ? `${siteUrl}/product/${product.slug}` : `/product/${product.slug}`;
+  const message = [
+    'Hi Elevate Apparel, I would like to place an order:',
+    '',
+    `Product: ${product.name}`,
+    `Color: ${options.color}`,
+    `Size: ${options.size}`,
+    `Quantity: ${options.quantity}`,
+    `Unit price: ৳${product.price}`,
+    `Line total: ৳${lineTotal}`,
+    '',
+    `Link: ${productLink}`,
+  ].join('\n');
+
+  return buildWhatsAppHref(number, message);
 }
