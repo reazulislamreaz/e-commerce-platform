@@ -35,12 +35,12 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Keep browser autofill from painting inputs a jarring blue. */
+/* Keep browser autofill from repainting the dark inputs. */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px var(--color-card) inset;
-  -webkit-text-fill-color: var(--color-ink);
-  caret-color: var(--color-ink);
+  -webkit-box-shadow: 0 0 0 1000px #1a1815 inset;
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
   transition: background-color 9999s ease-in-out 0s;
 }

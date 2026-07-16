@@ -24,7 +24,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
     <div>
       <label
         htmlFor={id}
-        className={cn('mb-1.5 block text-sm font-medium text-zinc-700', hideLabel && 'sr-only')}
+        className={cn('mb-1.5 block text-sm font-medium text-[#d8d4cd]', hideLabel && 'sr-only')}
       >
         {label}
       </label>
@@ -36,9 +36,9 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           className={cn(
-            'w-full rounded-lg border border-zinc-300 bg-card px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-gold focus:bg-white focus:ring-2 focus:ring-gold/20',
+            'w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-3.5 py-3 text-sm text-white outline-none transition-colors placeholder:text-[#8b867d] focus:border-[#e3bb78] focus:ring-2 focus:ring-[#e3bb78]/15',
             isPassword && 'pr-11',
-            error && 'border-red-500 focus:border-red-500 focus:ring-red-100',
+            error && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/15',
             className,
           )}
           {...props}
@@ -48,19 +48,19 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
             type="button"
             onClick={() => setShowPassword((visible) => !visible)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-zinc-400 transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-gold"
+            className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-[#8b867d] transition-colors hover:text-[#e3bb78] focus-visible:outline-2 focus-visible:outline-[#e3bb78]"
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         )}
       </div>
       {error ? (
-        <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs text-red-600">
+        <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs text-red-400">
           {error}
         </p>
       ) : (
         hint && (
-          <p id={`${id}-hint`} className="mt-1.5 text-xs text-zinc-500">
+          <p id={`${id}-hint`} className="mt-1.5 text-xs text-[#8b867d]">
             {hint}
           </p>
         )

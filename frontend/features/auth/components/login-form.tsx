@@ -52,30 +52,37 @@ export function LoginForm() {
       <div className="text-right">
         <Link
           href="/forgot-password"
-          className="text-xs font-medium text-zinc-500 underline underline-offset-2 transition-colors hover:text-ink"
+          className="text-xs font-medium text-[#b5b0a8] underline underline-offset-2 transition-colors hover:text-[#e3bb78]"
         >
           Forgot Password?
         </Link>
       </div>
       {serverError && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+        <p
+          role="alert"
+          className="rounded-[4px] border border-red-900/60 bg-red-950/50 px-3.5 py-2.5 text-sm text-red-300"
+        >
           {serverError}
         </p>
       )}
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-lg bg-ink py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-50"
+        className="w-full rounded-[4px] bg-[#e5bd78] py-3 text-xs font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78] disabled:opacity-50"
       >
-        {isSubmitting ? 'Signing in…' : 'Login'}
+        {isSubmitting ? 'Signing In…' : 'Login'}
       </button>
-      <p className="text-center text-xs text-zinc-400">or login with</p>
+      <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[.15em] text-[#8b867d]">
+        <span aria-hidden className="h-px flex-1 bg-[#2d2a27]" />
+        or login with
+        <span aria-hidden className="h-px flex-1 bg-[#2d2a27]" />
+      </div>
       <GoogleLoginButton label="Login with Google" />
-      <p className="pt-2 text-center text-sm text-zinc-600">
+      <p className="pt-2 text-center text-sm text-[#b5b0a8]">
         Doesn&apos;t have an account?{' '}
         <Link
           href="/register"
-          className="font-semibold text-ink underline underline-offset-2 transition-colors hover:text-gold-dark"
+          className="font-semibold text-[#e3bb78] transition-colors hover:text-[#eec98a]"
         >
           Sign Up
         </Link>

@@ -1,54 +1,43 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowLeft, BadgeCheck, Sparkles, Truck } from 'lucide-react';
 
 function ArtPanel() {
   return (
-    <aside
-      aria-hidden
-      className="relative hidden overflow-hidden bg-linear-to-br from-zinc-950 via-ink to-[#2a2113] lg:flex lg:flex-col"
-    >
-      {/* Layered gold atmosphere */}
-      <div className="pointer-events-none absolute -right-24 top-1/4 size-96 rounded-full bg-gold/25 blur-3xl" />
-      <div className="pointer-events-none absolute -left-32 -bottom-24 size-80 rounded-full bg-gold/15 blur-3xl" />
-      <div className="pointer-events-none absolute right-1/4 -top-20 size-64 rounded-full bg-gold-light/10 blur-3xl" />
-      {/* Fine diagonal texture */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.05]"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(135deg, #d4af37 0, #d4af37 1px, transparent 1px, transparent 16px)',
-        }}
+    <aside aria-hidden className="relative hidden overflow-hidden lg:block">
+      <Image
+        src="/images/home/hero-model.jpg"
+        alt=""
+        fill
+        sizes="(min-width: 1024px) 40vw, 0vw"
+        className="object-cover object-[65%_center]"
       />
-      {/* Oversized watermark monogram */}
-      <span
-        className={
-          'font-serif pointer-events-none absolute -bottom-24 -right-10 select-none text-[22rem] font-bold leading-none text-gold/10'
-        }
-      >
-        E
-      </span>
-
-      {/* Top meta bar */}
-      <div className="relative flex items-center justify-between border-b border-white/10 px-10 py-5 text-xs tracking-[0.2em] text-zinc-400">
-        <span>NEW SEASON</span>
-        <span className="text-gold">01—04</span>
+      <div className="absolute inset-0 bg-linear-to-t from-[#090909] via-[#090909]/45 to-black/10" />
+      <div className="absolute inset-x-0 top-0 flex items-center justify-between px-8 py-5 text-[10px] font-semibold tracking-[.2em] text-[#eee9e1]">
+        <span>EST. 2024</span>
+        <span className="text-[#e3bb78]">DHAKA — WORLDWIDE</span>
       </div>
-
-      {/* Statement */}
-      <div className="relative flex flex-1 flex-col justify-center px-10">
-        <p className={'font-serif max-w-sm text-3xl font-semibold leading-snug text-white'}>
-          We craft comfort that carries your confidence.
+      <div className="absolute inset-x-0 bottom-0 px-8 pb-8">
+        <p className="text-xs font-semibold uppercase tracking-[.11em] text-[#e0bd7d]">
+          Discover Your Edge
         </p>
-        <div className="mt-6 h-px w-16 bg-gold" />
-        <p className="mt-6 max-w-55 self-end text-right text-xs leading-relaxed text-zinc-400">
-          Premium fabrics, timeless cuts — designed to elevate the everyday.
+        <p className="mt-1.5 text-[34px] font-extrabold leading-none tracking-[-.04em] text-white">
+          ELEVATE <span className="text-[#e3bb78]">EVERYDAY</span>
         </p>
-      </div>
-
-      {/* Bottom meta bar */}
-      <div className="relative flex items-center justify-between border-t border-white/10 px-10 py-5 text-xs tracking-[0.2em] text-zinc-400">
-        <span>@{new Date().getFullYear()}</span>
-        <span className="text-gold">ELEVATEAPPAREL</span>
+        <ul className="mt-4 space-y-1.5 text-xs text-[#e9e5de]">
+          <li className="flex items-center gap-2">
+            <Sparkles className="size-3.5 shrink-0 text-[#e3bb78]" />
+            Member-only drops &amp; offers
+          </li>
+          <li className="flex items-center gap-2">
+            <Truck className="size-3.5 shrink-0 text-[#e3bb78]" />
+            Faster checkout &amp; order tracking
+          </li>
+          <li className="flex items-center gap-2">
+            <BadgeCheck className="size-3.5 shrink-0 text-[#e3bb78]" />
+            Easy 7-day returns
+          </li>
+        </ul>
       </div>
     </aside>
   );
@@ -58,27 +47,37 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <main
       id="main-content"
-      className="flex flex-1 items-center justify-center bg-surface px-4 py-10 sm:px-8"
+      className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#090909] px-4 py-10 sm:px-8"
     >
-      <div className="grid w-full max-w-6xl overflow-hidden rounded-xl bg-white shadow-2xl shadow-black/50 lg:min-h-168 lg:grid-cols-2">
-        <div className="relative flex flex-col px-6 py-8 sm:px-14">
-          <div className="flex items-center text-sm">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-40 top-0 size-96 rounded-full bg-[#e3bb78]/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-40 right-0 size-96 rounded-full bg-[#e3bb78]/5 blur-3xl"
+      />
+      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-lg border border-[#2d2a27] bg-[#111110] shadow-2xl shadow-black/60 lg:min-h-[600px] lg:grid-cols-[1fr_.9fr]">
+        <div className="relative flex flex-col px-6 py-7 sm:px-12">
+          <div className="flex items-center justify-between text-xs">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-zinc-500 transition-colors hover:text-ink"
+              className="inline-flex items-center gap-1.5 font-semibold tracking-wide text-[#b5b0a8] transition-colors hover:text-[#e3bb78]"
             >
               <ArrowLeft className="size-4" />
-              Back
+              BACK
             </Link>
-            <span
-              className={
-                'font-serif absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-ink'
-              }
-            >
-              elevate<span className="text-gold-dark">.apparel</span>
-            </span>
+            <Link href="/" aria-label="Elevate Apparel home">
+              <Image
+                src="/images/brand/elevate-apparel-logo.jpeg"
+                alt="Elevate Apparel"
+                width={1248}
+                height={179}
+                className="h-6 w-auto object-contain"
+              />
+            </Link>
           </div>
-          <div className="flex flex-1 items-center py-12">
+          <div className="flex flex-1 items-center py-10">
             <div className="mx-auto w-full max-w-sm">{children}</div>
           </div>
         </div>
