@@ -34,7 +34,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function Hero() {
   return (
-    <section className="relative h-[360px] overflow-hidden border-b border-[#2d2a27] bg-[#090909] sm:h-[388px] lg:h-[470px]">
+    <section className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#2d2a27] bg-[#090909]">
       <div className="absolute inset-y-0 right-0 w-full sm:w-[62%]">
         <Image src="/images/home/hero-model.jpg" alt="Model wearing Elevate black t-shirt" fill priority sizes="(max-width: 640px) 100vw, 62vw" className="object-cover object-[68%_center] sm:object-center" />
       </div>
