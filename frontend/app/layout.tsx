@@ -5,6 +5,7 @@ import { playfair } from '@/lib/fonts';
 import { AppProviders } from '@/providers/app-providers';
 import { SiteHeader } from '@/components/layouts/site-header';
 import { SiteFooter } from '@/components/layouts/site-footer';
+import { MobileBottomNav } from '@/components/layouts/mobile-bottom-nav';
 import { ContactWidgetLazy } from '@/components/shared/contact-widget/contact-widget-lazy';
 
 const geistSans = Geist({
@@ -54,7 +55,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col pb-[calc(3.25rem+env(safe-area-inset-bottom))] md:pb-0">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[4px] focus:bg-[#e5bd79] focus:px-4 focus:py-2 focus:text-xs focus:font-bold focus:uppercase focus:text-[#18120b]"
@@ -65,6 +66,7 @@ export default function RootLayout({
           <SiteHeader />
           {children}
           <SiteFooter />
+          <MobileBottomNav />
           <ContactWidgetLazy />
         </AppProviders>
       </body>

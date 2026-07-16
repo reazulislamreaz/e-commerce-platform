@@ -51,7 +51,7 @@ export function WishlistButton({
         dispatch(wishlistToggled(productId));
       }}
       className={cn(
-        'absolute z-10 flex size-10 items-center justify-center rounded-full border border-[#37332c]/50 bg-[#111110]/85 text-white shadow-[0_4px_14px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:border-[#e3bb78]/60 hover:bg-[#111110] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-11',
+        'absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full border border-[#37332c]/50 bg-[#111110]/85 text-white shadow-[0_4px_14px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:border-[#e3bb78]/60 hover:bg-[#111110] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-11',
         className,
       )}
     >

@@ -9,6 +9,8 @@ import { formatTaka } from '@/lib/currency';
 import type { CatalogProduct } from '@/features/products/types';
 import { normalizeProduct } from '@/features/products/types';
 import { ProductCard } from '@/components/shared/product-card';
+import { EasyReturnsExchange } from '@/components/product/easy-returns-exchange';
+import { InlineSizeGuide } from '@/components/product/inline-size-guide';
 import { ProductActionButtons } from '@/components/product/product-action-buttons';
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
 import { WishlistButton } from '@/components/shared/wishlist-button';
@@ -137,11 +139,7 @@ export function ProductDetailClient({
                   -{discount}%
                 </span>
               )}
-              <WishlistButton
-                productId={p.id}
-                variant="overlay"
-                className="right-3 top-3"
-              />
+              <WishlistButton productId={p.id} variant="overlay" />
             </div>
             {p.images.length > 1 && (
               <div className="mt-3 flex gap-2 overflow-x-auto">
@@ -241,12 +239,6 @@ export function ProductDetailClient({
                   );
                 })}
               </div>
-              <Link
-                href="/size-guide"
-                className="mt-2 inline-block text-[11px] text-[#b5b0a8] underline underline-offset-2 hover:text-[#e3bb78]"
-              >
-                Size guide
-              </Link>
             </div>
 
             <p
@@ -288,6 +280,10 @@ export function ProductDetailClient({
               onAddToBag={addToBag}
               onOrderNow={orderNow}
             />
+
+            <InlineSizeGuide category={p.category} />
+
+            <EasyReturnsExchange />
 
             <Link
               href="/shop"

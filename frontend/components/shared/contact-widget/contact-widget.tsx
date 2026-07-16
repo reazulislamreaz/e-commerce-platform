@@ -25,7 +25,7 @@ interface ContactChannel {
 }
 
 const POSITION =
-  'fixed z-50 bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] sm:bottom-[max(1.5rem,env(safe-area-inset-bottom))] sm:right-[max(1.5rem,env(safe-area-inset-right))]';
+  'fixed z-50 bottom-[calc(3.25rem+env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] md:bottom-[max(1.25rem,env(safe-area-inset-bottom))] md:right-[max(1.25rem,env(safe-area-inset-right))] lg:bottom-[max(1.5rem,env(safe-area-inset-bottom))] lg:right-[max(1.5rem,env(safe-area-inset-right))]';
 
 export function ContactWidget() {
   const menuId = useId();
