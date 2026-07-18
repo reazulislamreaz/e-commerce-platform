@@ -17,6 +17,9 @@ export {
   useAccountOrders,
   useAccountReturns,
   useAccountReviews,
+  useCreateReview,
+  useUpdateReview,
+  useDeleteReview,
 } from './hooks';
 
 export { displayName } from './storage';

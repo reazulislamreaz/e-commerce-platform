@@ -120,4 +120,16 @@ export class OrderResponseDto {
 
   @ApiProperty({ type: [OrderTimelineStepDto] })
   timeline!: OrderTimelineStepDto[];
+
+  @ApiPropertyOptional({
+    example: 'customer@example.com',
+    description: 'Present on admin order responses for fulfillment.',
+  })
+  email?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Present on admin order responses when the order belongs to a registered user.',
+  })
+  userId?: string;
 }

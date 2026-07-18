@@ -1,0 +1,297 @@
+import { apiClient } from '@/services/api-client';
+import { unwrapData, type ApiResponse } from '@/types/api';
+import type {
+  AdminBrand,
+  AdminCategory,
+  AdminCollection,
+  AdminCoupon,
+  AdminOrder,
+  AdminOrderStatus,
+  AdminProductDetail,
+  AdminProductSummary,
+  AdminReturn,
+  AdminReview,
+  AdminReviewStatus,
+  AdminReturnStatus,
+  AdminUser,
+  ContactMessage,
+  ContactStatus,
+  CursorPage,
+  CreateAdminProductInput,
+  InventoryBalance,
+  InventoryLocation,
+  InventoryMovement,
+  NewsletterStatus,
+  NewsletterSubscription,
+  ProductStatus,
+  UpdateAdminProductInput,
+  UserStatus,
+} from './types';
+
+async function getData<T>(path: string, config?: Parameters<typeof apiClient.get>[1]): Promise<T> {
+  const { data } = await apiClient.get<ApiResponse<T>>(path, config);
+  return unwrapData(data);
+}
+
+async function getPage<T>(
+  path: string,
+  params?: Record<string, string | number | undefined>,
+): Promise<CursorPage<T>> {
+  const { data } = await apiClient.get<ApiResponse<T[]>>(path, { params });
+  return {
+    data: unwrapData(data),
+    meta: {
+      limit: Number(data.meta?.limit ?? params?.limit ?? 20),
+      nextCursor: (data.meta?.nextCursor as string | null | undefined) ?? null,
+    },
+  };
+}
+
+async function postData<T>(path: string, body?: unknown): Promise<T> {
+  const { data } = await apiClient.post<ApiResponse<T>>(path, body);
+  return unwrapData(data);
+}
+
+async function patchData<T>(path: string, body?: unknown): Promise<T> {
+  const { data } = await apiClient.patch<ApiResponse<T>>(path, body);
+  return unwrapData(data);
+}
+
+async function deleteData(path: string): Promise<void> {
+  await apiClient.delete(path);
+}
+
+export const adminApi = {
+  listOrders(params?: {
+    cursor?: string;
+    limit?: number;
+    status?: string;
+    number?: string;
+    email?: string;
+  }) {
+    return getPage<AdminOrder>('/admin/orders', params);
+  },
+  getOrder(id: string) {
+    return getData<AdminOrder>(`/admin/orders/${id}`);
+  },
+  updateOrderStatus(
+    id: string,
+    body: {
+      status: Uppercase<AdminOrderStatus> | string;
+      note?: string;
+      trackingNumber?: string;
+      carrier?: string;
+    },
+  ) {
+    return postData<AdminOrder>(`/admin/orders/${id}/status`, body);
+  },
+  setOrderTracking(id: string, body: { trackingNumber: string; carrier?: string }) {
+    return postData<AdminOrder>(`/admin/orders/${id}/tracking`, body);
+  },
+  cancelOrder(id: string, reason: string) {
+    return postData<AdminOrder>(`/admin/orders/${id}/cancel`, { reason });
+  },
+
+  listReturns(params?: { cursor?: string; limit?: number; status?: string }) {
+    return getPage<AdminReturn>('/admin/returns', params);
+  },
+  getReturn(id: string) {
+    return getData<AdminReturn>(`/admin/returns/${id}`);
+  },
+  approveReturn(id: string, note?: string) {
+    return postData<AdminReturn>(`/admin/returns/${id}/approve`, { note });
+  },
+  rejectReturn(id: string, note?: string) {
+    return postData<AdminReturn>(`/admin/returns/${id}/reject`, { note });
+  },
+  completeReturn(id: string, note?: string) {
+    return postData<AdminReturn>(`/admin/returns/${id}/complete`, { note });
+  },
+
+  listReviews(params?: { cursor?: string; limit?: number; status?: AdminReviewStatus | string }) {
+    return getPage<AdminReview>('/admin/reviews', params);
+  },
+  getReview(id: string) {
+    return getData<AdminReview>(`/admin/reviews/${id}`);
+  },
+  publishReview(id: string, note?: string) {
+    return postData<AdminReview>(`/admin/reviews/${id}/publish`, { note });
+  },
+  rejectReview(id: string, note?: string) {
+    return postData<AdminReview>(`/admin/reviews/${id}/reject`, { note });
+  },
+
+  listInventoryBalances(params?: {
+    cursor?: string;
+    limit?: number;
+    variantId?: string;
+    locationId?: string;
+  }) {
+    return getPage<InventoryBalance>('/admin/inventory/balances', params);
+  },
+  listInventoryMovements(params?: { cursor?: string; limit?: number; variantId?: string }) {
+    return getPage<InventoryMovement>('/admin/inventory/movements', params);
+  },
+  listInventoryLocations() {
+    return getData<InventoryLocation[]>('/admin/inventory/locations');
+  },
+  adjustInventory(body: {
+    variantId: string;
+    locationId: string;
+    quantityDelta: number;
+    idempotencyKey: string;
+    note?: string;
+    expectedVersion?: number;
+  }) {
+    return postData<{ success: true }>('/admin/inventory/adjustments', body);
+  },
+
+  listCoupons() {
+    return getData<AdminCoupon[]>('/admin/coupons');
+  },
+  getCoupon(id: string) {
+    return getData<AdminCoupon>(`/admin/coupons/${id}`);
+  },
+  createCoupon(body: Record<string, unknown>) {
+    return postData<AdminCoupon>('/admin/coupons', body);
+  },
+  updateCoupon(id: string, body: Record<string, unknown>) {
+    return patchData<AdminCoupon>(`/admin/coupons/${id}`, body);
+  },
+  deactivateCoupon(id: string) {
+    return postData<AdminCoupon>(`/admin/coupons/${id}/deactivate`);
+  },
+  listCouponRedemptions(id: string, params?: { cursor?: string; limit?: number }) {
+    return getPage<{
+      id: string;
+      orderId: string;
+      userId?: string | null;
+      discountTaka: number;
+      shippingWaived: boolean;
+      createdAt: string;
+    }>(`/admin/coupons/${id}/redemptions`, params);
+  },
+
+  listProducts(params?: {
+    cursor?: string;
+    limit?: number;
+    status?: ProductStatus | string;
+    q?: string;
+  }) {
+    return getPage<AdminProductSummary>('/admin/products', params);
+  },
+  getProduct(id: string) {
+    return getData<AdminProductDetail>(`/admin/products/${id}`);
+  },
+  createProduct(body: CreateAdminProductInput) {
+    return postData<AdminProductDetail>('/admin/products', body);
+  },
+  updateProduct(id: string, body: UpdateAdminProductInput) {
+    return patchData<AdminProductDetail>(`/admin/products/${id}`, body);
+  },
+  publishProduct(id: string) {
+    return postData<AdminProductDetail>(`/admin/products/${id}/publish`);
+  },
+  unpublishProduct(id: string) {
+    return postData<AdminProductDetail>(`/admin/products/${id}/unpublish`);
+  },
+  archiveProduct(id: string) {
+    return postData<AdminProductDetail>(`/admin/products/${id}/archive`);
+  },
+  addProductPrice(id: string, body: { amountTaka: number; compareAtTaka?: number }) {
+    return postData<AdminProductDetail>(`/admin/products/${id}/prices`, body);
+  },
+
+  listBrands() {
+    return getData<AdminBrand[]>('/admin/brands');
+  },
+  createBrand(body: { name: string; slug?: string }) {
+    return postData<AdminBrand>('/admin/brands', body);
+  },
+  updateBrand(id: string, body: { name?: string; slug?: string }) {
+    return patchData<AdminBrand>(`/admin/brands/${id}`, body);
+  },
+  deleteBrand(id: string) {
+    return deleteData(`/admin/brands/${id}`);
+  },
+
+  listCategories() {
+    return getData<AdminCategory[]>('/admin/categories');
+  },
+  createCategory(body: { name: string; slug?: string; parentId?: string }) {
+    return postData<AdminCategory>('/admin/categories', body);
+  },
+  updateCategory(id: string, body: { name?: string; slug?: string; parentId?: string | null }) {
+    return patchData<AdminCategory>(`/admin/categories/${id}`, body);
+  },
+  deleteCategory(id: string) {
+    return deleteData(`/admin/categories/${id}`);
+  },
+
+  listCollections() {
+    return getData<AdminCollection[]>('/admin/collections');
+  },
+  createCollection(body: { name: string; slug?: string }) {
+    return postData<AdminCollection>('/admin/collections', body);
+  },
+  updateCollection(id: string, body: { name?: string; slug?: string }) {
+    return patchData<AdminCollection>(`/admin/collections/${id}`, body);
+  },
+  deleteCollection(id: string) {
+    return deleteData(`/admin/collections/${id}`);
+  },
+
+  listContactMessages(params?: {
+    cursor?: string;
+    limit?: number;
+    status?: ContactStatus | string;
+  }) {
+    return getPage<ContactMessage>('/admin/contact-messages', params);
+  },
+  updateContactMessage(id: string, body: { status?: ContactStatus; adminNotes?: string }) {
+    return patchData<ContactMessage>(`/admin/contact-messages/${id}`, body);
+  },
+
+  listNewsletterSubscriptions(params?: {
+    cursor?: string;
+    limit?: number;
+    status?: NewsletterStatus | string;
+  }) {
+    return getPage<NewsletterSubscription>('/admin/newsletter/subscriptions', params);
+  },
+  forceUnsubscribe(id: string) {
+    return postData<NewsletterSubscription>(`/admin/newsletter/subscriptions/${id}/unsubscribe`);
+  },
+
+  listUsers(params?: {
+    cursor?: string;
+    limit?: number;
+    role?: string;
+    status?: UserStatus | string;
+  }) {
+    return getPage<AdminUser>('/users', params);
+  },
+  getUser(id: string) {
+    return getData<AdminUser>(`/users/${id}`);
+  },
+  updateUserStatus(id: string, status: UserStatus) {
+    return patchData<AdminUser>(`/users/${id}/status`, { status });
+  },
+  updateUserRole(id: string, role: 'ADMIN' | 'CUSTOMER') {
+    return patchData<AdminUser>(`/users/${id}/role`, { role });
+  },
+  createAdmin(body: {
+    email: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+    phone: string;
+  }) {
+    return postData<AdminUser>('/users/admins', body);
+  },
+  deleteUser(id: string) {
+    return deleteData(`/users/${id}`);
+  },
+};
+
+export type { AdminReturnStatus };

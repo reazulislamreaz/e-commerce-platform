@@ -675,6 +675,8 @@ export class OrdersService {
       paymentMethod: 'cod',
       trackingNumber: order.shipments[0]?.trackingNumber,
       timeline: buildTimeline(order),
+      email: order.email,
+      ...(order.userId ? { userId: order.userId } : {}),
     };
   }
 }

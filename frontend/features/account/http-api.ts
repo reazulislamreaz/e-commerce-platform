@@ -41,6 +41,11 @@ async function postData<T>(
   return unwrapData(data);
 }
 
+async function patchData<T>(path: string, body?: unknown): Promise<T> {
+  const { data } = await apiClient.patch<ApiResponse<T>>(path, body);
+  return unwrapData(data);
+}
+
 async function deleteData(path: string): Promise<void> {
   await apiClient.delete(path);
 }
@@ -140,11 +145,31 @@ export const httpAccountRepository: AccountRepository = {
   },
 
   async getReviews() {
-    return [] as AccountReview[];
+    return getData<AccountReview[]>('/reviews');
   },
 
   async saveReviews() {
     throw new Error('saveReviews is not supported over HTTP');
+  },
+
+  async createReview(input: {
+    productId: string;
+    rating: number;
+    title: string;
+    body: string;
+  }) {
+    return postData<AccountReview>('/reviews', input);
+  },
+
+  async updateReview(
+    id: string,
+    input: { rating?: number; title?: string; body?: string },
+  ) {
+    return patchData<AccountReview>(`/reviews/${id}`, input);
+  },
+
+  async deleteReview(id: string) {
+    await deleteData(`/reviews/${id}`);
   },
 
   applyCoupon() {

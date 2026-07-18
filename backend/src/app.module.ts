@@ -21,6 +21,7 @@ import { CartModule } from '@/modules/cart/cart.module';
 import { WishlistModule } from '@/modules/wishlist/wishlist.module';
 import { OrdersModule } from '@/modules/orders/orders.module';
 import { ReturnsModule } from '@/modules/returns/returns.module';
+import { ReviewsModule } from '@/modules/reviews/reviews.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { PreferencesModule } from '@/modules/preferences/preferences.module';
 import { ContactModule } from '@/modules/contact/contact.module';
@@ -61,6 +62,7 @@ import { HealthModule } from '@/modules/health/health.module';
     WishlistModule,
     OrdersModule,
     ReturnsModule,
+    ReviewsModule,
     NotificationsModule,
     PreferencesModule,
     ContactModule,

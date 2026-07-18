@@ -95,6 +95,9 @@ export interface AccountReview {
   title: string;
   body: string;
   createdAt: string;
+  verified?: boolean;
+  status?: 'pending' | 'published' | 'rejected';
+  publishedAt?: string;
 }
 
 function userKey(userId: string, suffix: string) {

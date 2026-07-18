@@ -83,15 +83,16 @@ Elevate Apparel is a Bangladesh-oriented premium apparel ecommerce storefront (B
 | Inventory | Location + constrained balances + append-only movements; checkout reserve/release/ship/return; admin adjust |
 | Commerce | Server cart/wishlist (guest merge), addresses, coupons, COD orders/tracking/fulfillment, returns |
 | Comms | Notifications, preferences/consent, contact, newsletter unsubscribe |
-| Admin APIs | Catalog/inventory/coupons/orders/returns/contact/newsletter (Swagger; no admin UI) |
+| Admin APIs | Catalog/inventory/coupons/orders/returns/reviews/contact/newsletter + role-gated `/admin` UI |
+| Reviews | Delivered-purchase create → `PENDING`; admin publish/reject; product aggregate recompute |
 | Platform | Idempotency, outbox, audit log, Redis throttling, retention purge |
-| DB | Identity plus catalog, variant, BIGINT price, inventory, review-schema, and full COD commerce models |
+| DB | Identity plus catalog, variant, BIGINT price, inventory, moderated reviews, and full COD commerce models |
 | Envelope | `{ success, message, data, meta? }` |
-| CI | `.github/workflows/ci.yml` — lint, Prisma, tests, builds |
+| CI | `.github/workflows/ci.yml` — quality job + Postgres/Redis integration/smoke job |
 
 ### What is not implemented
 
-Online payment gateways (bKash/card), review write/moderation APIs (schema retained per C8), admin dashboard UI, affiliate, Google OAuth, object-storage upload transport.
+Online payment gateways (bKash/card), review media/object-storage upload transport, affiliate, Google OAuth.
 
 ### User journeys (from frontend)
 
@@ -134,6 +135,9 @@ Online payment gateways (bKash/card), review write/moderation APIs (schema retai
 | Returns / notifications / preferences | 7-day window; sale exchange-only; in-app notifications from domain events |
 | Contact / newsletter | Persisted + throttled; consent + hashed unsubscribe |
 | Admin catalog / inventory / coupons | Swagger APIs with audit |
+| Moderated reviews | Customer create/edit/delete + admin publish/reject; PDP shows published only |
+| Admin UI (`/admin`) | Orders, returns, reviews, inventory, coupons, products, taxonomy, contact, newsletter, users |
+| COD/review smoke | HTTP integration tests + [COD_SMOKE_CHECKLIST.md](./COD_SMOKE_CHECKLIST.md) |
 
 ### Implemented (UI + local/mock)
 
@@ -144,11 +148,11 @@ Online payment gateways (bKash/card), review write/moderation APIs (schema retai
 
 ### Placeholders / simulated
 
-Google login, bKash/card gateways, review-create UI.
+Google login, bKash/card gateways, review media uploads.
 
 ### Explicit non-goals (v1)
 
-Affiliate marketing, vendor marketplace UI, admin dashboard UI, wallets, subscriptions, Socket.IO live dashboards, Elasticsearch (until Postgres FTS proves insufficient).
+Affiliate marketing, vendor marketplace UI, wallets, subscriptions, Socket.IO live dashboards, Elasticsearch (until Postgres FTS proves insufficient).
 
 ---
 
@@ -856,13 +860,13 @@ Frontend: checkout → `POST /orders`; confirmation/track from API.
 
 Server cart/wishlist; merge on login.
 
-### Milestone 7 — Reviews, returns, notifications, contact, newsletter (C8–C10)
+### Milestone 7 — Reviews, returns, notifications, contact, newsletter (C8–C10) — shipped (review media deferred)
 
-### Milestone 8 — Online payments (bKash/card) + refunds + ledger
+### Milestone 8 — Online payments (bKash/card) + refunds + ledger — deferred
 
 ### Milestone 9 — Cache warming, search tuning, email templates polish
 
-### Milestone 10 — Admin commerce APIs (optional UI later), ops, load test, prod cutover
+### Milestone 10 — Admin commerce APIs + admin UI — shipped; ops, load test, prod cutover remain
 
 ---
 

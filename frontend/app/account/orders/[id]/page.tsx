@@ -4,9 +4,10 @@ import { Suspense, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
+import { ReviewForm } from '@/components/account/review-form';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
-import { accountRepository, type CustomerOrder } from '@/features/account';
+import { accountRepository, useAccountReviews, type CustomerOrder } from '@/features/account';
 import { formatTaka } from '@/lib/currency';
 
 function OrderDetailInner() {
@@ -14,8 +15,10 @@ function OrderDetailInner() {
   const searchParams = useSearchParams();
   const confirmed = searchParams.get('confirmed') === '1';
   const user = useAppSelector(selectAuthUser)!;
+  const { data: reviews } = useAccountReviews(user.id);
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviewProductId, setReviewProductId] = useState<string | null>(null);
 
   useEffect(() => {
     void accountRepository
@@ -39,6 +42,10 @@ function OrderDetailInner() {
       </div>
     );
   }
+
+  const uniqueProducts = Array.from(
+    new Map(order.items.map((item) => [item.productId, item])).values(),
+  );
 
   return (
     <div className="space-y-4">
@@ -89,7 +96,13 @@ function OrderDetailInner() {
           {order.items.map((item) => (
             <li key={`${item.productId}-${item.size}-${item.color}`} className="flex gap-3">
               <div className="relative h-16 w-14 overflow-hidden rounded-[4px] bg-[#e4e3e1]">
-                <Image src={item.image} alt={item.name} fill className="object-cover" sizes="56px" />
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  fill
+                  className="object-cover"
+                  sizes="56px"
+                />
               </div>
               <div className="min-w-0 flex-1 text-sm">
                 <Link
@@ -129,6 +142,60 @@ function OrderDetailInner() {
           </div>
         </dl>
       </div>
+
+      {order.status === 'delivered' ? (
+        <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
+          <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+            Review your purchase
+          </h3>
+          <p className="mt-1 text-sm text-[#b5b0a8]">
+            Share feedback for each product in this delivered order.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {uniqueProducts.map((item) => {
+              const existingReview = reviews.find((review) => review.productId === item.productId);
+              return (
+                <li key={item.productId} className="rounded-[4px] border border-[#2d2a27] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-medium text-white">{item.name}</p>
+                    {existingReview ? (
+                      <Link
+                        href="/account/reviews"
+                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+                      >
+                        View your review
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setReviewProductId((current) =>
+                            current === item.productId ? null : item.productId,
+                          )
+                        }
+                        className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-3 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] hover:bg-[#eec98a]"
+                      >
+                        Write review
+                      </button>
+                    )}
+                  </div>
+                  {reviewProductId === item.productId && !existingReview ? (
+                    <div className="mt-3">
+                      <ReviewForm
+                        userId={user.id}
+                        productId={item.productId}
+                        productName={item.name}
+                        onSaved={() => setReviewProductId(null)}
+                        onCancel={() => setReviewProductId(null)}
+                      />
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#e9e5de]">
         <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">Shipping To</h3>

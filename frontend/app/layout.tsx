@@ -3,10 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { playfair } from '@/lib/fonts';
 import { AppProviders } from '@/providers/app-providers';
-import { SiteHeader } from '@/components/layouts/site-header';
-import { SiteFooter } from '@/components/layouts/site-footer';
-import { MobileBottomNav } from '@/components/layouts/mobile-bottom-nav';
-import { ContactWidgetLazy } from '@/components/shared/contact-widget/contact-widget-lazy';
+import { StorefrontChrome } from '@/components/layouts/storefront-chrome';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -62,11 +59,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <AppProviders>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-          <MobileBottomNav />
-          <ContactWidgetLazy />
+          <StorefrontChrome>{children}</StorefrontChrome>
         </AppProviders>
       </body>
     </html>

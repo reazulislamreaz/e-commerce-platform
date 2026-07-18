@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { productKeys } from '@/features/products';
 import { accountRepository } from './api';
 import type {
   AccountCoupon,
@@ -22,8 +23,7 @@ export const accountKeys = {
   all: ['account'] as const,
   orders: (userId: string) => [...accountKeys.all, 'orders', userId] as const,
   addresses: (userId: string) => [...accountKeys.all, 'addresses', userId] as const,
-  notifications: (userId: string) =>
-    [...accountKeys.all, 'notifications', userId] as const,
+  notifications: (userId: string) => [...accountKeys.all, 'notifications', userId] as const,
   coupons: (userId: string) => [...accountKeys.all, 'coupons', userId] as const,
   reviews: (userId: string) => [...accountKeys.all, 'reviews', userId] as const,
   returns: (userId: string) => [...accountKeys.all, 'returns', userId] as const,
@@ -99,6 +99,67 @@ export function useAccountReviews(userId: string | undefined) {
     () => accountRepository.getReviews(userId!),
     EMPTY_REVIEWS,
   );
+}
+
+export function useCreateReview(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { productId: string; rating: number; title: string; body: string }) => {
+      if (!accountRepository.createReview) {
+        return Promise.reject(new Error('createReview is not available'));
+      }
+      return accountRepository.createReview(input);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        userId
+          ? queryClient.invalidateQueries({ queryKey: accountKeys.reviews(userId) })
+          : Promise.resolve(),
+        queryClient.invalidateQueries({ queryKey: productKeys.all }),
+      ]);
+    },
+  });
+}
+
+export function useUpdateReview(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; rating?: number; title?: string; body?: string }) => {
+      if (!accountRepository.updateReview) {
+        return Promise.reject(new Error('updateReview is not available'));
+      }
+      const { id, ...body } = input;
+      return accountRepository.updateReview(id, body);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        userId
+          ? queryClient.invalidateQueries({ queryKey: accountKeys.reviews(userId) })
+          : Promise.resolve(),
+        queryClient.invalidateQueries({ queryKey: productKeys.all }),
+      ]);
+    },
+  });
+}
+
+export function useDeleteReview(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!accountRepository.deleteReview) {
+        return Promise.reject(new Error('deleteReview is not available'));
+      }
+      return accountRepository.deleteReview(id);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        userId
+          ? queryClient.invalidateQueries({ queryKey: accountKeys.reviews(userId) })
+          : Promise.resolve(),
+        queryClient.invalidateQueries({ queryKey: productKeys.all }),
+      ]);
+    },
+  });
 }
 
 export function useAccountReturns(userId: string | undefined) {

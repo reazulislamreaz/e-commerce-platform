@@ -20,7 +20,7 @@ ecommerce-platform/
 └── PROJECT_OVERVIEW.md       This document
 ```
 
-The platform foundation, identity, public catalog, inventory read model, and COD commerce stack (server cart/wishlist, addresses, coupons, orders, returns, notifications, preferences, contact/newsletter, and admin commerce APIs) are implemented. Online payment gateways remain deferred.
+The platform foundation, identity, public catalog, inventory read model, COD commerce stack (server cart/wishlist, addresses, coupons, orders, returns, notifications, preferences, contact/newsletter, and admin commerce APIs), moderated product reviews, and a role-gated `/admin` UI are implemented. Online payment gateways and review media/object storage remain deferred.
 
 ## Technology and runtime
 
@@ -137,6 +137,8 @@ Frontend requires `NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1`.
 | `GET /api/v1/products/:slug` | Implemented | Public product detail with variants, available stock, and published reviews |
 | `GET /api/v1/products/:slug/related` | Implemented | Related by category or collection |
 | `GET /api/v1/categories` / `GET /api/v1/brands` | Implemented | Public active taxonomy names |
+| `POST/GET/PATCH/DELETE /api/v1/reviews` | Implemented | Owner-scoped reviews; create requires a delivered purchase; creates as `PENDING` |
+| `GET/POST /api/v1/admin/reviews…` | Implemented | Admin list/detail/publish/reject with rating aggregate recompute |
 
 The global response interceptor wraps successful results as `{ "success": true, "message", "data", "meta"? }` and the exception filter returns `{ "success": false, "message", "error", "statusCode", "path", "timestamp" }` (validation details under `details`). This is the contract mandated by `CLAUDE.md`; keep new endpoints on it.
 
@@ -162,13 +164,13 @@ Prisma schema: `backend/prisma/schema.prisma`.
 
 Implemented identity models: `User`, `AuthSession`, `RefreshToken`, and `VerificationToken`.
 
-Implemented catalog/inventory models: `Brand`, hierarchical `Category`, `CatalogCollection`, `Product`, product/category and product/collection joins, `ProductColor`, `ProductMedia`, `ProductVariant`, immutable-window `ProductPrice`, `InventoryLocation`, `InventoryBalance`, append-only `InventoryMovement`, and `ProductReview` (schema only for future writes). Money is `BIGINT` poisha. PostgreSQL raw migration constraints enforce nonnegative money/stock, `reserved <= on_hand`, rating ranges, one active price, and one primary category/collection/media. `pg_trgm` indexes public product search. All timestamps are `timestamptz`.
+Implemented catalog/inventory models: `Brand`, hierarchical `Category`, `CatalogCollection`, `Product`, product/category and product/collection joins, `ProductColor`, `ProductMedia`, `ProductVariant`, immutable-window `ProductPrice`, `InventoryLocation`, `InventoryBalance`, append-only `InventoryMovement`, and `ProductReview` (moderated writes with one active review per user/product). Money is `BIGINT` poisha. PostgreSQL raw migration constraints enforce nonnegative money/stock, `reserved <= on_hand`, rating ranges, one active price, and one primary category/collection/media. `pg_trgm` indexes public product search. All timestamps are `timestamptz`.
 
 Use `PrismaService` through dependency injection. Always use `select`, cursor pagination, database indexes, and transactions where appropriate.
 
 ### Planned module boundaries
 
-Implemented modules: auth, users, mail, health, catalog, inventory, platform (idempotency/outbox/audit/retention), addresses, promotions, cart, wishlist, orders, returns, notifications, preferences, contact, newsletter, and admin-catalog. Inventory availability is embedded in catalog responses; checkout reservations and admin adjustments are live. Online payment gateway modules remain deferred.
+Implemented modules: auth, users, mail, health, catalog, inventory, platform (idempotency/outbox/audit/retention), addresses, promotions, cart, wishlist, orders, returns, reviews, notifications, preferences, contact, newsletter, and admin-catalog. Inventory availability is embedded in catalog responses; checkout reservations and admin adjustments are live. Online payment gateway modules remain deferred.
 
 When implementing one, create a focused NestJS module with controller, service, repository/data-access layer, DTOs, tests, Swagger annotations, and only the Prisma models/indexes necessary for that feature.
 
@@ -183,7 +185,7 @@ When implementing one, create a focused NestJS module with controller, service, 
 - `frontend/services/api-client.ts` — shared Axios client
 - `frontend/store/` — Redux store and client-only slices
 
-The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI. Auth, catalog, cart/wishlist (server-backed with Redux projection), checkout (COD), account commerce (addresses, orders, returns, coupons, notifications, preferences), contact, and newsletter are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Online payment methods remain deferred.
+The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI. Auth, catalog, cart/wishlist (server-backed with Redux projection), checkout (COD), account commerce (addresses, orders, returns, coupons, notifications, preferences, moderated reviews), contact, and newsletter are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. A role-gated `/admin` shell (ADMIN/SUPER_ADMIN) covers orders, returns, review moderation, inventory, coupons, catalog/taxonomy, contact, newsletter, and users; storefront chrome is isolated from admin routes. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Online payment methods remain deferred.
 
 ### State rules
 
@@ -205,10 +207,11 @@ npm run build --workspace=frontend
 npm run lint --workspace=frontend
 npm run lint --workspace=backend
 npm run test --workspace=backend
+npm run test:integration --workspace=backend
 npm run format
 ```
 
-GitHub Actions CI (`.github/workflows/ci.yml`) runs install, Prisma generate/validate, lint, backend tests, and both builds on every push/PR to `main`.
+GitHub Actions CI (`.github/workflows/ci.yml`) runs a quality job (install, Prisma generate/validate, lint, unit tests, builds) plus an integration job with Postgres/Redis services (`prisma migrate deploy`, seed, `test:integration`). COD/review HTTP smoke lives under `*.smoke.integration.ts`; see [docs/COD_SMOKE_CHECKLIST.md](./docs/COD_SMOKE_CHECKLIST.md).
 
 Backend unit tests use Jest (`*.spec.ts` next to the code under test); `auth.service.spec.ts` is the pattern to follow. Add targeted unit/integration tests with every business feature.
 

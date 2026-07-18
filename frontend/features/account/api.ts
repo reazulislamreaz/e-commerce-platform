@@ -76,6 +76,17 @@ export interface AccountRepository {
   }): Promise<ReturnRequest>;
   getReviews(userId?: string): Promise<AccountReview[]>;
   saveReviews(userId: string, items: AccountReview[]): Promise<void>;
+  createReview?(input: {
+    productId: string;
+    rating: number;
+    title: string;
+    body: string;
+  }): Promise<AccountReview>;
+  updateReview?(
+    id: string,
+    input: { rating?: number; title?: string; body?: string },
+  ): Promise<AccountReview>;
+  deleteReview?(id: string): Promise<void>;
   applyCoupon(
     code: string,
     subtotal: number,

@@ -74,11 +74,12 @@ Catalog, PDP, cart, checkout, coupons, wishlist, recently viewed, account (profi
 
 ### Explicit non-goals in frontend
 
-- No admin UI / vendor dashboard
+- No vendor marketplace dashboard (single-merchant admin UI ships at `/admin`)
 - No affiliate marketing
 - Google OAuth button **disabled** (no SDK/callback)
 - No Socket.IO / live dashboards
 - Static marketing/legal pages (about, FAQs, policies, store, size guide) — code-managed
+- Online payment UI (bKash/card) deferred; COD only
 
 ---
 
@@ -112,7 +113,18 @@ Catalog, PDP, cart, checkout, coupons, wishlist, recently viewed, account (profi
 | `/account/wishlist` | Same wishlist, account chrome | Member | Redux + API | Same as wishlist |
 | `/account/notifications` | Inbox + mark all read | Member | API | Notifications APIs |
 | `/account/coupons` | Available/used coupons | Member | API | `GET /coupons/mine` |
-| `/account/reviews` | Review history (empty) | Member | Empty until review UI | Own reviews list + create |
+| `/account/reviews` | Review history + edit/delete | Member | API | Own reviews list + create/update/delete |
+| `/admin` | Ops dashboard (queue counts) | Admin | API | Role-gated shell |
+| `/admin/orders` (+ `[id]`) | Fulfillment list/detail | Admin | API | Status + tracking |
+| `/admin/returns` (+ `[id]`) | Return triage | Admin | API | Approve/reject/complete |
+| `/admin/reviews` (+ `[id]`) | Review moderation | Admin | API | Publish/reject |
+| `/admin/inventory` | Balances + adjustments | Admin | API | Versioned adjust |
+| `/admin/coupons` | Coupon CRUD + deactivate | Admin | API | Admin promotions |
+| `/admin/products` (+ `[id]`) | Catalog products | Admin | API | Create/edit/publish |
+| `/admin/catalog` | Brands/categories/collections | Admin | API | Taxonomy CRUD |
+| `/admin/contact` | Contact inbox | Admin | API | Triage statuses |
+| `/admin/newsletter` | Subscriptions | Admin | API | Force unsubscribe |
+| `/admin/users` | Customers (+ admin create for Super Admin) | Admin | API | Status/role/delete |
 | `/account/returns` | Return requests | Member | API | Returns APIs |
 | `/account/exchanges` | Exchange requests | Member | API | Returns with `type=exchange` |
 | `/account/support` | Contact links | Member | Static | Optional tickets |
@@ -120,7 +132,7 @@ Catalog, PDP, cart, checkout, coupons, wishlist, recently viewed, account (profi
 | `/unsubscribe` | Newsletter unsubscribe | Public | API | Hashed token |
 | `/about` `/faqs` `/returns` `/shipping` `/privacy` `/terms` `/store` `/size-guide` `/contact` | Content | Public | Static / local form | Contact/newsletter only for forms |
 
-Account routes: client-side `AccountShell` redirect only — no Next middleware yet.
+Account and admin routes: Next middleware soft-gates anonymous visitors via `refresh_token` / `elevate_auth_hint`; `AccountShell` and `AdminShell` enforce membership and `ADMIN`/`SUPER_ADMIN` respectively.
 
 ---
 
@@ -266,8 +278,8 @@ Response envelope (CLAUDE.md / backend interceptor):
 | Role | Storefront | Backend |
 |------|------------|---------|
 | `CUSTOMER` | All account commerce | Own resources only |
-| `ADMIN` | No UI yet | Customers + business resources; cannot manage admins |
-| `SUPER_ADMIN` | No UI yet | Unrestricted; only role that manages admins |
+| `ADMIN` | `/admin/**` (not user role promotion) | Customers + business resources; cannot manage admins |
+| `SUPER_ADMIN` | `/admin/**` including create-admin/role | Unrestricted; only role that manages admins |
 
 Platform is **single-merchant**. No vendor role/UI.
 
@@ -284,7 +296,7 @@ See roadmap **§ Acceptance gate** and the architect questions in the chat. High
 5. Money storage: integer taka vs poisha (×100)?
 6. FREESHIP semantics confirmation
 7. Remember-me: browser-only vs longer refresh TTL?
-8. Reviews: enforce delivered purchase only when create UI ships?
+8. Reviews: **resolved** — create requires delivered purchase; status starts `PENDING`; admin publish/reject; review media deferred.
 
 ---
 
