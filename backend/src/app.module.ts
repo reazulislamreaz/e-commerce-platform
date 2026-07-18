@@ -11,6 +11,7 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { TransformResponseInterceptor } from '@/common/interceptors/transform-response.interceptor';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { CatalogModule } from '@/modules/catalog/catalog.module';
 import { HealthModule } from '@/modules/health/health.module';
 import { UsersModule } from '@/modules/users/users.module';
 
@@ -33,6 +34,7 @@ import { UsersModule } from '@/modules/users/users.module';
     HealthModule,
     AuthModule,
     UsersModule,
+    CatalogModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

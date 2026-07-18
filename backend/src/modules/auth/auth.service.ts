@@ -17,8 +17,10 @@ import type { RegisterDto } from './dto/register.dto';
 import type { JwtPayload } from './jwt.strategy';
 
 const ACCESS_TOKEN_TTL = '15m';
-const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const REMEMBER_ME_REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
 
 export interface SessionMeta {
   ip?: string;
@@ -28,6 +30,12 @@ export interface SessionMeta {
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+  /** Echoes the session's remember-me choice so the cookie max-age can match. */
+  rememberMe: boolean;
+}
+
+function refreshTtlMs(rememberMe: boolean): number {
+  return rememberMe ? REMEMBER_ME_REFRESH_TOKEN_TTL_MS : REFRESH_TOKEN_TTL_MS;
 }
 
 const userSelect = {
@@ -164,6 +172,120 @@ export class AuthService {
     return createHash('sha256').update(rawToken).digest('hex');
   }
 
+  /**
+   * Sends a password reset link. Responds identically whether or not the
+   * email belongs to an account, so account presence is never leaked.
+   * Only ACTIVE accounts receive a link: pending accounts must verify their
+   * email first and suspended accounts must not regain access via reset.
+   */
+  async forgotPassword(rawEmail: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: rawEmail.trim().toLowerCase() },
+      select: { id: true, email: true, firstName: true, status: true, deletedAt: true },
+    });
+    if (!user || user.deletedAt || user.status !== UserStatus.ACTIVE) return;
+
+    const rawToken = randomBytes(32).toString('base64url');
+    await this.prisma.$transaction([
+      // A fresh link supersedes older ones: only the newest token stays valid.
+      this.prisma.verificationToken.updateMany({
+        where: { userId: user.id, type: VerificationTokenType.PASSWORD_RESET, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.verificationToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: this.hashVerificationToken(rawToken),
+          type: VerificationTokenType.PASSWORD_RESET,
+          expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+        },
+      }),
+    ]);
+
+    const resetUrl = `${this.config.getOrThrow<string>('FRONTEND_ORIGIN')}/reset-password?token=${rawToken}`;
+    await this.mail.sendPasswordReset({
+      to: user.email,
+      firstName: user.firstName ?? '',
+      resetUrl,
+    });
+  }
+
+  /**
+   * Consumes a reset token and sets the new password. Every session of the
+   * user is revoked: a reset usually means the old credentials are suspect.
+   */
+  async resetPassword(rawToken: string, newPassword: string): Promise<void> {
+    const now = new Date();
+    const token = await this.prisma.verificationToken.findUnique({
+      where: { tokenHash: this.hashVerificationToken(rawToken) },
+      include: { user: { select: { id: true, status: true, deletedAt: true } } },
+    });
+    if (
+      !token ||
+      token.type !== VerificationTokenType.PASSWORD_RESET ||
+      token.usedAt ||
+      token.expiresAt <= now ||
+      token.user.deletedAt ||
+      token.user.status !== UserStatus.ACTIVE
+    )
+      throw new BadRequestException('Reset link is invalid or has expired');
+
+    const passwordHash = await argon2.hash(newPassword);
+    await this.prisma.$transaction(async (tx) => {
+      // Atomic claim: a token can reset the password exactly once.
+      const claimed = await tx.verificationToken.updateMany({
+        where: { id: token.id, usedAt: null },
+        data: { usedAt: now },
+      });
+      if (claimed.count === 0)
+        throw new BadRequestException('Reset link is invalid or has expired');
+      await tx.user.update({ where: { id: token.userId }, data: { passwordHash } });
+      await tx.authSession.updateMany({
+        where: { userId: token.userId, revokedAt: null },
+        data: { revokedAt: now },
+      });
+      await tx.refreshToken.updateMany({
+        where: { session: { userId: token.userId }, revokedAt: null },
+        data: { revokedAt: now },
+      });
+    });
+  }
+
+  /**
+   * Authenticated password change. Other sessions are revoked; the current
+   * session stays alive so the user is not logged out of the device they
+   * changed the password from.
+   */
+  async changePassword(
+    userId: string,
+    currentSessionId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, passwordHash: true },
+    });
+    if (!user || !(await argon2.verify(user.passwordHash, currentPassword)))
+      throw new BadRequestException('Current password is incorrect');
+    if (currentPassword === newPassword)
+      throw new BadRequestException('New password must be different from the current password');
+
+    const now = new Date();
+    const passwordHash = await argon2.hash(newPassword);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+      this.prisma.authSession.updateMany({
+        where: { userId, id: { not: currentSessionId }, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { session: { userId, id: { not: currentSessionId } }, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+    ]);
+  }
+
   async login(dto: LoginDto, meta: SessionMeta) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.trim().toLowerCase() },
@@ -177,19 +299,22 @@ export class AuthService {
           : 'Please verify your email address before signing in',
       );
 
+    const rememberMe = dto.rememberMe ?? false;
     const now = Date.now();
+    const ttlMs = refreshTtlMs(rememberMe);
     const rawRefreshToken = this.generateRefreshToken();
     const session = await this.prisma.authSession.create({
       data: {
         userId: user.id,
         ip: meta.ip,
         userAgent: meta.userAgent?.slice(0, 512),
-        expiresAt: new Date(now + REFRESH_TOKEN_TTL_MS),
+        rememberMe,
+        expiresAt: new Date(now + ttlMs),
         refreshTokens: {
           create: {
             tokenHash: this.hashRefreshToken(rawRefreshToken),
             familyId: randomUUID(),
-            expiresAt: new Date(now + REFRESH_TOKEN_TTL_MS),
+            expiresAt: new Date(now + ttlMs),
           },
         },
       },
@@ -200,6 +325,7 @@ export class AuthService {
       user: this.toSafeUser(user),
       accessToken: await this.signAccessToken(user, session.id),
       refreshToken: rawRefreshToken,
+      rememberMe,
     };
   }
 
@@ -235,6 +361,7 @@ export class AuthService {
     )
       throw new UnauthorizedException('Invalid refresh token');
 
+    const ttlMs = refreshTtlMs(session.rememberMe);
     const nextRefreshToken = await this.prisma.$transaction(async (tx) => {
       // Atomic claim: only one concurrent request can consume this token.
       const claimed = await tx.refreshToken.updateMany({
@@ -249,7 +376,7 @@ export class AuthService {
           sessionId: session.id,
           tokenHash: this.hashRefreshToken(raw),
           familyId: token.familyId,
-          expiresAt: new Date(now.getTime() + REFRESH_TOKEN_TTL_MS),
+          expiresAt: new Date(now.getTime() + ttlMs),
         },
         select: { id: true },
       });
@@ -259,7 +386,7 @@ export class AuthService {
       });
       await tx.authSession.update({
         where: { id: session.id },
-        data: { lastSeenAt: now, expiresAt: new Date(now.getTime() + REFRESH_TOKEN_TTL_MS) },
+        data: { lastSeenAt: now, expiresAt: new Date(now.getTime() + ttlMs) },
       });
       return raw;
     });
@@ -267,6 +394,7 @@ export class AuthService {
     return {
       accessToken: await this.signAccessToken(session.user, session.id),
       refreshToken: nextRefreshToken,
+      rememberMe: session.rememberMe,
     };
   }
 

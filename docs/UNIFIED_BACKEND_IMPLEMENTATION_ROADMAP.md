@@ -1,8 +1,10 @@
 # Elevate Apparel — Unified Backend & PostgreSQL Implementation Roadmap
 
-> **Status:** Planning complete. **Do not implement commerce modules until this document is accepted.**
+> **Status:** Phase 1–2 planning refreshed from a full frontend audit (2026-07-18). **Do not implement commerce modules until this document is accepted and blocking clarifications (§0) are answered.**
 >
-> **Scope rule:** Every decision is grounded in the current monorepo (`frontend/`, `backend/`, `PROJECT_OVERVIEW.md`, `CLAUDE.md`). Features not present in code or docs (wallets, subscriptions, affiliate, admin/vendor UIs, Socket.IO dashboards) are **out of scope** for v1 unless listed as explicit future extensions.
+> **Phase 1 companion:** [FRONTEND_ANALYSIS.md](./FRONTEND_ANALYSIS.md) — page inventory, entities, workflows, hardcoded rules.
+>
+> **Scope rule:** Every decision is grounded in the current monorepo (`frontend/`, `backend/`, `PROJECT_OVERVIEW.md`, `CLAUDE.md`). Features not present in frontend code (wallets, subscriptions, affiliate, admin/vendor UIs, Socket.IO dashboards) are **out of scope** for v1 unless listed as explicit future extensions.
 >
 > **Stack decision:** Continue **NestJS 11 + Prisma 7 + PostgreSQL 17 + Redis 7 + BullMQ**. Do not rewrite to Express.
 
@@ -10,35 +12,49 @@
 
 ## Document map (final deliverables)
 
-| # | Deliverable | Section |
-|---|-------------|---------|
-| 1 | Project Analysis | §1 |
+Maps to the architect brief (Phases 1–2 / deliverables 1–18) plus engineering detail sections.
+
+| # | Deliverable | Location |
+|---|-------------|----------|
+| 1 | Frontend Analysis | [FRONTEND_ANALYSIS.md](./FRONTEND_ANALYSIS.md) |
 | 2 | Feature Inventory | §2 |
-| 3 | Domain Breakdown | §3 |
-| 4 | Database Architecture | §4 |
-| 5 | ER Diagram | §5 |
-| 6 | Table Design | §6 |
-| 7 | API Specification | §7 |
-| 8 | Backend Architecture | §8 |
-| 9 | Folder Structure | §9 |
-| 10 | Module Dependency Graph | §10 |
-| 11 | Security Architecture | §11 |
-| 12 | Performance Strategy | §12 |
-| 13 | PostgreSQL Optimization | §13 |
-| 14 | Transaction Strategy | §14 |
-| 15 | Payment Integrity Strategy | §15 |
-| 16 | Registration Flow Strategy | §16 |
-| 17 | Caching Strategy | §17 |
-| 18 | Queue Strategy | §18 |
-| 19 | Deployment Strategy | §19 |
-| 20 | CI/CD Strategy | §20 |
-| 21 | Testing Strategy | §21 |
-| 22 | Step-by-Step Implementation Roadmap | §22 |
-| 23 | Module-by-Module Development Order | §23 |
-| 24 | Risk Assessment | §24 |
-| 25 | Future Scalability Plan | §25 |
+| 3 | Business Workflow Documentation | FRONTEND_ANALYSIS §5 + §16 / §15 |
+| 4 | Module Breakdown | §3 + §9 + §23 |
+| 5 | PostgreSQL Database Design | §4 + §6 + §13 |
+| 6 | Prisma Schema Plan | §6 (models per domain); implement schema-first per module |
+| 7 | ER Diagram | §5 |
+| 8 | API Specification | §7 |
+| 9 | NestJS Module Architecture | §8 + §9 + §10 |
+| 10 | Authentication Design | §11 + §16 + current `modules/auth` |
+| 11 | Authorization Design | §11 (RBAC) + `role-policy.ts` |
+| 12 | BullMQ Usage Plan | §18 |
+| 13 | Redis Usage Plan | §17 |
+| 14 | Security Architecture | §11 |
+| 15 | Performance Optimization Strategy | §12 + §13 |
+| 16 | Testing Strategy | §21 |
+| 17 | Deployment Strategy | §19 + §20 |
+| 18 | Step-by-Step Implementation Roadmap | §22 + §23 |
 
 **Mandatory build rule:** For every module: **Schema → Migration → Seed (if needed) → DTOs → Repository → Service → Controller → Swagger → Tests → Frontend repository swap**. Never ship an API without a finalized schema for that module.
+
+---
+
+## 0. Clarifications — DECIDED (2026-07-18)
+
+Stakeholder decisions. These are binding for all Phase 3+ implementation.
+
+| ID | Topic | Decision |
+|----|-------|----------|
+| C1 | Password reset | **Emailed reset link** with secure single-use token, **15–30 min expiry** (SHA-256 hash stored; align with verify-email pattern). Reset UI reads `?token=`. |
+| C2 | Guest order tracking | Public track by **Order Number + Email** (phone optional secondary factor). |
+| C3 | Cart / wishlist | **Server-side cart and wishlist**; guest cart identified by token, **merged into user cart on login**. |
+| C4 | Payments | COD **and** online methods accepted at checkout; bKash/card orders carry **`payment_pending`** status until gateway integration ships. |
+| C5 | Money unit | All monetary values stored as **`BIGINT` poisha** (taka × 100). API responses expose integer taka for storefront parity. |
+| C6 | FREESHIP | Free-shipping coupons **only remove the shipping charge** — never produce an item discount and never stack with percent/fixed coupons. |
+| C7 | Remember me | `rememberMe` flag on login **extends refresh token/session TTL**; access tokens stay short-lived (15 min). |
+| C8 | Reviews | **Create review schema now**; review write APIs implemented when the review UI ships (delivered-purchase rule applies then). |
+| C9 | Contact / newsletter | **Persist** contact messages and newsletter subscriptions in Postgres; emails via BullMQ; newsletter requires **explicit consent** (recorded at subscribe time) + unsubscribe token. |
+| C10 | Return window | *Provisional (not explicitly confirmed):* enforce frontend policy — **7 days from delivery, unworn + tags, sale items exchange-only**. Flag before Milestone 7 if different. |
 
 ---
 
@@ -50,36 +66,44 @@ Elevate Apparel is a Bangladesh-oriented premium apparel ecommerce storefront (B
 
 | App | Role | Maturity |
 |-----|------|----------|
-| `frontend/` | Next.js 16 storefront | Broad UI; commerce data mostly local |
-| `backend/` | NestJS 11 API (`/api/v1`) | Auth + health only |
+| `frontend/` | Next.js 16 storefront | Broad UI; commerce data mostly local — see [FRONTEND_ANALYSIS.md](./FRONTEND_ANALYSIS.md) |
+| `backend/` | NestJS 11 API (`/api/v1`) | Identity + public catalog + inventory read model implemented |
 | `docker-compose.yml` | Postgres 17 + Redis 7 | Local deps only |
 
-### What is real today
+### What is real today (backend)
 
-- **HTTP:** `POST /auth/register|login|refresh|logout`, `GET /health`
-- **DB:** single `"User"` table (UUID, email, passwordHash, Role, UserStatus, names, refreshTokenHash, soft delete)
-- **Auth:** JWT access 15m + Argon2-hashed refresh cookie (single hash per user — concurrency-unsafe)
-- **Frontend:** polished shop/PDP/cart/checkout/account; products from `features/products/data.ts`; account from `accountRepository` → localStorage
+| Area | State |
+|------|--------|
+| Health | `GET /health`, `GET /health/ready` (Postgres + Redis) |
+| Auth | register, verify-email, resend-verification, login, refresh (rotate + reuse revoke), logout |
+| Sessions | `AuthSession` + rotating `RefreshToken` (HMAC hash); JWT 15m with `sid`/`jti` |
+| Users admin | create admin, list/get, status, role, soft-delete (Super Admin / Admin policies) |
+| Mail | BullMQ `email` queue + nodemailer; verification emails |
+| Catalog | Public list/detail/facets/search/new/sale/related/batch endpoints; frontend HTTP-backed |
+| Inventory | Location + constrained balances + append-only opening movements; availability embedded in catalog |
+| DB | Identity plus catalog, variant, BIGINT price, inventory, and review-schema models |
+| Envelope | `{ success, message, data, meta? }` |
+| CI | `.github/workflows/ci.yml` — lint, Prisma, tests, builds |
 
 ### What is not implemented
 
-Products, inventory, carts (server), wishlists (server), coupons (server), orders, payments, reviews CRUD, returns, notifications (server), password reset, profile/phone persistence, contact/newsletter persistence, admin UI, affiliate, Google OAuth (button disabled), CI, automated tests, production Docker.
+Server cart/wishlist, inventory reservations, coupons, orders, payments, review write APIs, returns, in-app notifications, contact/newsletter persistence, admin commerce UI/APIs, affiliate, and Google OAuth.
 
 ### User journeys (from frontend)
 
 1. Browse → filter/sort/search → PDP → cart/wishlist
 2. Guest or member checkout → coupon (members) → COD/bKash/card selector → confirmation / account order
 3. Account: profile, password (simulated), addresses, orders, track, coupons, notifications, reviews list, returns/exchanges, settings
-4. Auth: register → login → refresh interceptor → logout; forgot/reset password UI only
-5. Contact / newsletter / WhatsApp order (no persistence)
+4. Auth: register → verify email → login → refresh interceptor → logout; forgot/reset password UI only
+5. Contact / newsletter / WhatsApp widget (no persistence)
 
 ### Roles (typed, backend enum)
 
-`SUPER_ADMIN` | `ADMIN` | `CUSTOMER` — storefront uses CUSTOMER only; no role-gated frontend routes yet. The platform is single-merchant: the `VENDOR` role and vendor domain were removed. SUPER_ADMIN has unrestricted access and exclusively manages admin accounts; ADMIN manages customers and business resources but can never modify another admin or Super Admin.
+`SUPER_ADMIN` | `ADMIN` | `CUSTOMER` — storefront uses CUSTOMER only; no role-gated frontend routes yet. Single-merchant platform (no `VENDOR`). SUPER_ADMIN manages admins; ADMIN manages customers/business resources only.
 
 ### Evidence sources
 
-- [PROJECT_OVERVIEW.md](../PROJECT_OVERVIEW.md), [CLAUDE.md](../CLAUDE.md)
+- [FRONTEND_ANALYSIS.md](./FRONTEND_ANALYSIS.md), [PROJECT_OVERVIEW.md](../PROJECT_OVERVIEW.md), [CLAUDE.md](../CLAUDE.md)
 - [backend/prisma/schema.prisma](../backend/prisma/schema.prisma)
 - [frontend/features/products/types.ts](../frontend/features/products/types.ts), [data.ts](../frontend/features/products/data.ts)
 - [frontend/features/account/storage.ts](../frontend/features/account/storage.ts)
@@ -93,15 +117,18 @@ Products, inventory, carts (server), wishlists (server), coupons (server), order
 
 | Feature | Notes |
 |---------|--------|
-| Register / Login / Refresh / Logout | Works; harden sessions |
-| Health liveness | No DB/Redis readiness |
+| Register + email verification + resend | PENDING_VERIFICATION → ACTIVE; BD phone E.164 unique |
+| Login / Refresh / Logout | Session + refresh rotation; reuse → revoke family |
+| Users admin APIs | Super Admin / Admin role policy |
+| Health liveness + readiness | DB + Redis |
+| Email queue | Verification (welcome path ready) |
+| Password reset / change + profile | Fully API-backed; reset email via BullMQ |
+| Catalog + inventory reads | 12 products seeded; filters/sorts/facets/search/PDP/stock/reviews API-backed |
 
 ### Implemented (UI + local/mock)
 
 | Feature | Data source |
 |---------|-------------|
-| Catalog (12 products), filters, sort, pagination | `data.ts` |
-| PDP variants, gallery, static reviews, related | local |
 | Cart / wishlist / recently viewed | Redux + localStorage |
 | Checkout, coupons, shipping ৳120, FREESHIP | local rules |
 | Account addresses, orders, notifications, coupons, returns, reviews list | localStorage |
@@ -109,7 +136,7 @@ Products, inventory, carts (server), wishlists (server), coupons (server), order
 
 ### Placeholders / simulated
 
-Forgot/reset/change password, Google login, contact/newsletter, bKash/card gateways, guest track-order (account-local only), settings preferences, profile phone.
+Google login, contact/newsletter, bKash/card gateways, guest track-order, settings preferences.
 
 ### Explicit non-goals (v1)
 
@@ -165,23 +192,22 @@ For each domain: purpose, business rules, tables, APIs, jobs, cache, permissions
 
 | Aspect | Design |
 |--------|--------|
-| Purpose | Brands, categories, collections, products, options, variants, media, prices |
-| Rules | Slug unique among active; SKU unique; prices immutable rows with validity; filters match frontend |
-| Tables | `brand`, `category`, `collection`, `product`, `product_category`, `product_collection`, `product_option`, `product_option_value`, `product_variant`, `variant_option_value`, `product_media`, `variant_price` |
-| APIs | Public list/detail/related/new/sale/search/categories/brands |
-| Jobs | Cache invalidation on publish |
-| Cache | Product-by-slug, category tree, homepage lists |
-| Search | `tsvector` + GIN; pg_trgm later if needed |
+| Purpose | Brands, hierarchical categories, collections, products, size/color variants, media, immutable price history |
+| Rules | UUID primary keys; unique slug/SKU; one active price/primary taxonomy/media; BIGINT poisha; indexed current-price/discount projections updated with price windows |
+| Tables | `brand`, `category`, `catalog_collection`, `product`, `product_category`, `product_collection`, `product_color`, `product_variant`, `product_media`, `product_price`, `product_review` (writes deferred per C8) |
+| APIs | Public list/detail/batch/related/new/sale/search/facets/categories/brands |
+| Jobs/cache | Deferred until write/admin APIs and measured cache benefit |
+| Search | `pg_trgm` GIN over active product name/description/color plus relational search |
 
 ### 3.6 Inventory
 
 | Aspect | Design |
 |--------|--------|
-| Purpose | On-hand/reserved stock, reservations, immutable movements |
-| Rules | Never sell past available; lock balances in ID order; movement is source of audit |
-| Tables | `inventory_location`, `inventory_balance`, `inventory_reservation`, `inventory_reservation_item`, `inventory_movement` |
-| APIs | Internal to checkout; admin adjust later |
-| Jobs | Expire reservations |
+| Purpose | On-hand/reserved stock and immutable movements; reservations added with checkout |
+| Rules | SQL CHECKs enforce nonnegative values and `reserved <= on_hand`; storefront reads `on_hand - reserved`; opening movement is idempotent |
+| Tables | **Now:** `inventory_location`, `inventory_balance`, `inventory_movement`. **Milestone 5:** reservation tables |
+| APIs | Internal service; availability embedded in catalog. Admin adjustment API waits for admin workflow |
+| Jobs | Reservation expiry begins in Milestone 5 |
 
 ### 3.7 Cart & Wishlist
 
@@ -369,15 +395,24 @@ Envelope (migrate to CLAUDE.md target):
 
 Auth: Bearer access JWT unless `@Public()`. Refresh: HTTP-only cookie `refresh_token`.
 
-### 7.1 Existing (harden)
+### 7.1 Existing (keep; extend)
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/health` | Public | Add readiness: DB + Redis |
-| POST | `/auth/register` | Public | Create user+profile+password+role; 409 on email |
-| POST | `/auth/login` | Public | Session + rotating refresh; reject non-ACTIVE |
-| POST | `/auth/refresh` | Cookie | Row-lock rotate; reuse → revoke family; JWT errors → 401 |
+| GET | `/health` | Public | Liveness |
+| GET | `/health/ready` | Public | Postgres + Redis |
+| POST | `/auth/register` | Public | PENDING_VERIFICATION + verification email; 409 on email/phone |
+| GET | `/auth/verify-email` | Public | Activates account |
+| POST | `/auth/resend-verification` | Public | Always 200 |
+| POST | `/auth/login` | Public | ACTIVE only; session + refresh cookie |
+| POST | `/auth/refresh` | Cookie | Rotate; reuse → revoke family |
 | POST | `/auth/logout` | Bearer | Revoke session |
+| POST | `/users/admins` | Super Admin | Create admin |
+| GET | `/users` | Admin+ | Cursor page; admins see customers only |
+| GET | `/users/:id` | Admin+ | |
+| PATCH | `/users/:id/status` | Admin+ | Suspend revokes sessions |
+| PATCH | `/users/:id/role` | Super Admin | SUPER_ADMIN never assignable |
+| DELETE | `/users/:id` | Admin+ | Soft delete + anonymize |
 
 ### 7.2 Identity (next)
 
@@ -659,22 +694,40 @@ Deadlock prevention: always lock resources in global ID order. Retry transient s
 
 ---
 
-## 16. Registration Flow Strategy
+## 16. Registration & Auth Flow Strategy
+
+**Already implemented** (keep; extend for password reset / change):
 
 ```text
 Client POST /auth/register
-  → validate DTO (names min length after trim, password policy)
-  → canonicalize email
+  → validate DTO (names, email, BD phone → E.164, password policy)
+  → canonicalize email lowercase
   → BEGIN
-       insert user (status ACTIVE for current product behavior, or PENDING + email verify)
-       insert user_profile, user_password, user_role(CUSTOMER), user_preference
-       insert security_event + outbox (welcome email)
+       insert user (PENDING_VERIFICATION, role CUSTOMER)
+       insert verification_token (EMAIL_VERIFICATION, SHA-256 hash, 24h)
+       enqueue email job (verification link)
   → COMMIT
-  → 201 user (no session) — frontend then calls login (current UX)
+  → 201 user (no session)
+
+Client GET /auth/verify-email?token=
+  → hash lookup → set emailVerifiedAt + ACTIVE → consume token
+
+Client POST /auth/login
+  → only ACTIVE + verified; create AuthSession + RefreshToken; set HTTP-only cookie
+  → return accessToken + user
+
+Client POST /auth/refresh → rotate; reuse → revoke family + session
+Client POST /auth/logout → revoke session + tokens
 ```
 
-Future: email verification before ACTIVE; OAuth link via `oauth_account`.  
-Concurrent register: rely on unique index, map P2002 → 409.
+**Still to implement (after C1, C7):**
+
+- `POST /auth/forgot-password` (always 200; enqueue reset email)
+- `POST /auth/reset-password` (token + new password; revoke sessions)
+- `POST /auth/change-password` (authenticated; current + new; revoke other sessions optional)
+- Optional: `rememberMe` on login extends refresh `expiresAt`
+
+OAuth (`oauth_account`) deferred — Google button disabled. Concurrent register: unique email/phone → 409.
 
 ---
 
@@ -694,16 +747,18 @@ CDN for media URLs only.
 
 ## 18. Queue Strategy
 
-BullMQ already configured; use **after** outbox insert:
+BullMQ is live for **email**. Use queues only where async adds value:
 
-| Queue | Jobs |
-|-------|------|
-| `email` | Welcome, reset password, order confirmation, shipping |
-| `notification` | Fan-out in-app |
-| `inventory` | Reservation expiry |
-| `payments` | Webhook retry / reconcile |
+| Queue | Jobs | Status |
+|-------|------|--------|
+| `email` | Verification, welcome, reset password, order confirmation, shipping | Live (verification) |
+| `notification` | Fan-out in-app after order/status events | Planned |
+| `inventory` | Reservation expiry | Planned |
+| `payments` | Webhook retry / reconcile | Planned (M8) |
 
-Workers are horizontally scalable. No Socket.IO in v1 (not required by storefront).
+Pattern: write outbox/domain row in same DB transaction → worker processes → retry with exponential backoff → DLQ/logging. Do **not** queue simple CRUD.
+
+Workers are horizontally scalable. No Socket.IO in v1.
 
 ---
 
@@ -721,15 +776,16 @@ Workers are horizontally scalable. No Socket.IO in v1 (not required by storefron
 
 ## 20. CI/CD Strategy
 
-GitHub Actions (currently missing):
+GitHub Actions **exists** (`.github/workflows/ci.yml`): install, Prisma generate/validate, lint, backend tests, both builds on push/PR to `main`.
 
-1. `lint` frontend + backend  
-2. `prisma validate` + migrate against ephemeral Postgres  
-3. unit tests  
-4. e2e auth + critical commerce  
-5. `build` both workspaces  
+Extend over milestones:
 
-Deploy: build images → migrate → rolling update → smoke `/health` readiness.
+1. Keep current lint + Prisma validate + unit tests + builds  
+2. Add ephemeral Postgres for integration tests  
+3. Add e2e: auth + catalog read + COD place order + track  
+4. OpenAPI / contract snapshot vs frontend types  
+
+Deploy: build images → `prisma migrate deploy` → rolling update → smoke `/health/ready`.
 
 ---
 
@@ -748,56 +804,57 @@ Every module checklist (§22) requires tests before “done.”
 
 ## 22. Step-by-Step Implementation Roadmap
 
-### Milestone 0 — Foundation hardening (no new commerce tables yet)
+### Milestone 0 — Foundation (mostly done — verify gaps only)
 
-1. Response envelope decision + interceptor + frontend unwrap  
-2. Refresh JWT errors → 401; transactional multi-session tokens (schema § Identity)  
-3. JwtStrategy loads user status  
-4. Health readiness (DB + Redis)  
-5. Register unique → 409; name MinLength  
-6. Soft-delete email policy  
-7. Docker/Node 20 alignment; CI lint/build  
-8. Swagger completeness for auth  
+Already shipped: envelope, sessions + refresh rotation, JwtStrategy status checks, readiness health, register 409, email verification, CI, Node 20 Docker, auth Swagger, users admin.
 
-**Exit:** Auth safe for multi-device; CI green.
+Remaining M0 gaps (if any): soft-delete email anonymization audit, auth throttle coverage, exclude `/auth/login` from refresh-on-401 interceptor on frontend, Next middleware for `/account/**`.
 
-### Milestone 1 — Identity completion
+**Exit:** No commerce tables yet; auth + CI green.
 
-Schema: profile, password table split, verification_token, prefs.  
-APIs: forgot/reset, `/users/me`, change password.  
-Frontend: wire password pages + profile phone.
+### Milestone 1 — Identity completion — **SHIPPED (2026-07-18)**
 
-### Milestone 2 — Catalog + inventory (first commerce vertical)
+- `VerificationTokenType.PASSWORD_RESET` + `auth_session.remember_me` (migration `20260718082405`)
+- APIs: `POST /auth/forgot-password` (30-min single-use link, enumeration-safe), `POST /auth/reset-password` (revokes all sessions), `POST /auth/change-password` (revokes other sessions), `GET/PATCH /users/me` (names + BD phone)
+- `rememberMe` on login → 30-day refresh session (7-day default), preserved across rotations
+- Password-reset email via BullMQ `email` queue (brand template)
+- Frontend wired: forgot/reset (token from `?token=`), change password, profile (incl. phone), login sends `rememberMe`
+- Deferred to Milestone 7: `user_preference` (settings toggles persist with notifications module, where they take effect)
 
-Schema: catalog, prices, inventory (platform-owned products; no vendor tables).  
-Seed from `data.ts` (prices × 100 → poisha).  
-APIs: public product endpoints.  
-Frontend: `httpProductCatalog`; Server Components fetch API/cache.
+### Milestone 2 — Catalog + inventory — **SHIPPED (2026-07-18)**
 
-### Milestone 3 — Addresses + profile polish
+- PostgreSQL: brand, hierarchical category, collection, product joins, colors, media, UUID variants, immutable price windows, BIGINT poisha projections, location/balance/movement, review schema
+- Raw constraints: one active price/primary taxonomy/media; money/rating/stock checks; `reserved <= on_hand`; movement idempotency; `pg_trgm` GIN search
+- Idempotent seed imports all 12 frontend products, 102 variants, published fixture reviews, and opening inventory without overwriting live balances on rerun
+- Public API: list (all frontend filters + six sorts + offset meta), facets, search, new, sale, detail by UUID/slug, related, batch IDs, categories, brands
+- Inventory remains internal; catalog batches availability as `on_hand - reserved` without N+1. Reservations ship with checkout (M5)
+- Frontend active `productCatalog` is HTTP-backed across homepage, shop/category/search, PDP, autocomplete, cart/wishlist/recent resolution, and sitemap; fixture remains seed/test-only
+- Quality: 70 unit tests total + 3 PostgreSQL integration tests; backend/frontend lint and builds pass
 
-Address CRUD; default partial unique.
+### Milestone 3 — Addresses
 
-### Milestone 4 — Promotions
+Address CRUD; one default per `(user, type)` partial unique.
 
-Coupon tables; validate API; fix FREESHIP semantics; `GET /coupons/mine`.
+### Milestone 4 — Promotions (after C6)
 
-### Milestone 5 — COD checkout & orders
+Coupon tables; validate API; FREESHIP = free shipping only; `GET /coupons/mine`.
 
-Idempotency + inventory reservation + order snapshots + track API.  
+### Milestone 5 — COD checkout & orders (after C2, C4)
+
+Idempotency + inventory reservation + order snapshots (incl. email/notes) + track API.  
 Frontend: checkout → `POST /orders`; confirmation/track from API.
 
-### Milestone 6 — Cart / wishlist sync
+### Milestone 6 — Cart / wishlist sync (only if C3 chooses server)
 
 Server cart/wishlist; merge on login.
 
-### Milestone 7 — Reviews, returns, notifications, contact, newsletter
+### Milestone 7 — Reviews, returns, notifications, contact, newsletter (C8–C10)
 
 ### Milestone 8 — Online payments (bKash/card) + refunds + ledger
 
-### Milestone 9 — Email workers, cache warming, search tuning
+### Milestone 9 — Cache warming, search tuning, email templates polish
 
-### Milestone 10 — Admin APIs (optional UI later), partitioning ops, load test, prod cutover
+### Milestone 10 — Admin commerce APIs (optional UI later), ops, load test, prod cutover
 
 ---
 
@@ -874,21 +931,22 @@ A module is **done** only when:
 
 ## Acceptance gate (before coding commerce)
 
-1. Stakeholders accept this unified roadmap.  
-2. Milestone 0 identity hardening plan approved (sessions + envelope + CI).  
-3. Money unit (poisha) and FREESHIP semantics accepted.  
-4. PENDING vs ACTIVE registration policy accepted.  
+1. Stakeholders accept this unified roadmap **and** [FRONTEND_ANALYSIS.md](./FRONTEND_ANALYSIS.md).  
+2. All blocking clarifications **§0 (C1–C10)** answered in writing.  
+3. Money unit (C5) and FREESHIP semantics (C6) accepted.  
+4. Registration policy confirmed as-is: **PENDING_VERIFICATION until email verified** (already live).  
+5. Milestone 0 gaps closed or explicitly deferred.
 
-**After acceptance:** implement Milestone 0, then Milestone 2 (catalog) as the first customer-visible commerce delivery.
+**After acceptance:** close M0 gaps → Milestone 1 (auth completion) → Milestone 2 (catalog) as the first customer-visible commerce delivery.
 
 ---
 
 ## Related documents
 
+- [FRONTEND_ANALYSIS.md](./FRONTEND_ANALYSIS.md) — Phase 1 frontend source-of-truth audit  
 - [PROJECT_OVERVIEW.md](../PROJECT_OVERVIEW.md) — current runtime reality  
 - [CLAUDE.md](../CLAUDE.md) — engineering standards & brand theme  
-- Cursor plans: Backend Engineering Review; PostgreSQL Database Architecture (detailed column-level schema)
 
 ---
 
-*Last updated: 2026-07-18. Update this file whenever module order, schema boundaries, or API contracts change.*
+*Last updated: 2026-07-18 (Phase 1–2 refresh from full frontend audit). Update whenever module order, schema boundaries, or API contracts change.*

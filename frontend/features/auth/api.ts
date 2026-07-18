@@ -8,7 +8,7 @@ export interface LoginResult {
   accessToken: string;
 }
 
-export async function login(input: LoginInput): Promise<LoginResult> {
+export async function login(input: LoginInput & { rememberMe?: boolean }): Promise<LoginResult> {
   const { data } = await apiClient.post<ApiEnvelope<LoginResult>>('/auth/login', input);
   return data.data;
 }
@@ -35,4 +35,30 @@ export async function resendVerification(email: string): Promise<void> {
 
 export async function logout(): Promise<void> {
   await apiClient.post('/auth/logout');
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  await apiClient.post('/auth/forgot-password', { email });
+}
+
+export async function resetPassword(input: { token: string; password: string }): Promise<void> {
+  await apiClient.post('/auth/reset-password', input);
+}
+
+export async function changePassword(input: {
+  currentPassword: string;
+  password: string;
+}): Promise<void> {
+  await apiClient.post('/auth/change-password', input);
+}
+
+export interface UpdateProfileInput {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
+export async function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
+  const { data } = await apiClient.patch<ApiEnvelope<AuthUser>>('/users/me', input);
+  return data.data;
 }

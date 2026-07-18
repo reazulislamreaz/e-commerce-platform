@@ -1,42 +1,34 @@
 'use client';
 
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
-
-const schema = z
-  .object({
-    currentPassword: z.string().min(1, 'Current password is required'),
-    password: z
-      .string()
-      .min(12, 'Password must be at least 12 characters')
-      .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Include upper, lower, and a digit'),
-    confirmPassword: z.string(),
-  })
-  .refine((v) => v.password === v.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
-
-type Input = z.infer<typeof schema>;
+import { useChangePassword } from '@/features/auth/hooks';
+import { changePasswordSchema, type ChangePasswordInput } from '@/features/auth/schemas';
 
 export default function ChangePasswordPage() {
-  const [done, setDone] = useState(false);
+  const changePassword = useChangePassword();
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<Input>({ resolver: zodResolver(schema) });
+  } = useForm<ChangePasswordInput>({ resolver: zodResolver(changePasswordSchema) });
 
-  const onSubmit = handleSubmit(async () => {
-    // Backend password-change endpoint will replace this local confirmation.
-    await new Promise((r) => setTimeout(r, 400));
-    setDone(true);
-    reset();
+  const onSubmit = handleSubmit(async (input) => {
+    await changePassword
+      .mutateAsync({ currentPassword: input.currentPassword, password: input.password })
+      .then(() => reset())
+      .catch(() => undefined);
   });
+
+  const serverError =
+    changePassword.isError &&
+    (axios.isAxiosError<{ message?: string }>(changePassword.error) &&
+    changePassword.error.response?.status === 400
+      ? (changePassword.error.response.data.message ?? 'Current password is incorrect.')
+      : 'Something went wrong. Please try again.');
 
   return (
     <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
@@ -47,25 +39,32 @@ export default function ChangePasswordPage() {
         <FormField
           label="Current password"
           type="password"
+          autoComplete="current-password"
           error={errors.currentPassword?.message}
           {...register('currentPassword')}
         />
         <FormField
           label="New password"
           type="password"
+          autoComplete="new-password"
           error={errors.password?.message}
           {...register('password')}
         />
         <FormField
           label="Confirm new password"
           type="password"
+          autoComplete="new-password"
           error={errors.confirmPassword?.message}
           {...register('confirmPassword')}
         />
-        {done && (
-          <p className="text-sm text-[#8fbf8f]">
-            Password update requested. You will receive a confirmation email when the API is
-            connected.
+        {changePassword.isSuccess && (
+          <p className="text-sm text-[#8fbf8f]" role="status">
+            Password updated. Other devices have been signed out.
+          </p>
+        )}
+        {serverError && (
+          <p role="alert" className="text-sm text-red-300">
+            {serverError}
           </p>
         )}
         <button
@@ -73,7 +72,7 @@ export default function ChangePasswordPage() {
           disabled={isSubmitting}
           className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-5 py-3 text-[11px] font-bold uppercase text-[#18120b] disabled:opacity-50"
         >
-          Update Password
+          {isSubmitting ? 'Updating…' : 'Update Password'}
         </button>
       </form>
     </div>

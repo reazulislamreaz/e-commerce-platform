@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { getNewArrivals } from '@/features/products';
+import { productCatalog } from '@/features/products';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'New Arrivals',
   description: 'Fresh Elevate Apparel drops — just landed.',
 };
 
-export default function NewArrivalsPage() {
-  const products = getNewArrivals();
+export default async function NewArrivalsPage() {
+  const products = await productCatalog.newArrivals();
 
   return (
     <main id="main-content" className="flex-1 bg-black">

@@ -1,9 +1,11 @@
 import type { MetadataRoute } from 'next';
-import { getAllProducts } from '@/features/products';
+import { productCatalog } from '@/features/products';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const dynamic = 'force-dynamic';
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = [
     '',
     '/shop',
@@ -29,7 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: path === '' ? 1 : 0.7,
   }));
 
-  const products = getAllProducts().map((product) => ({
+  const products = (await productCatalog.list({ page: 1, pageSize: 100 })).items.map((product) => ({
     url: `${siteUrl}/product/${product.slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,

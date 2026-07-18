@@ -17,7 +17,7 @@ import { WishlistButton } from '@/components/shared/wishlist-button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { itemAdded } from '@/store/slices/cart-slice';
 import { productViewed } from '@/store/slices/recently-viewed-slice';
-import { getProductById } from '@/features/products';
+import { useProductsByIds } from '@/features/products';
 import {
   buildProductOrderWhatsAppHref,
   buildTelHref,
@@ -35,6 +35,8 @@ export function ProductDetailClient({
   const dispatch = useAppDispatch();
   const router = useRouter();
   const recentIds = useAppSelector((s) => s.recentlyViewed.productIds);
+  const recentProductIds = recentIds.filter((id) => id !== product.id).slice(0, 4);
+  const recentProducts = useProductsByIds(recentProductIds);
 
   const [activeImage, setActiveImage] = useState(0);
   const [size, setSize] = useState(p.sizes[0] ?? 'M');
@@ -60,11 +62,12 @@ export function ProductDetailClient({
       ? Math.round((1 - p.price / p.compareAtPrice) * 100)
       : 0;
 
-  const recentlyViewed = recentIds
-    .filter((id) => id !== p.id)
-    .map((id) => getProductById(id))
-    .filter(Boolean)
-    .slice(0, 4) as CatalogProduct[];
+  const recentlyViewed = recentProductIds.flatMap((id) => {
+    const item = recentProducts.data?.find(
+      (candidate) => candidate.id === id || candidate.legacyId === id,
+    );
+    return item ? [item] : [];
+  });
 
   const contact = getContactConfig();
   const whatsappOrderHref = buildProductOrderWhatsAppHref(

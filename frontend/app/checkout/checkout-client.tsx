@@ -11,7 +11,7 @@ import { FormField } from '@/components/common/form-field';
 import { formatTaka } from '@/lib/currency';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { cartCleared } from '@/store/slices/cart-slice';
-import { selectAuthUser, selectCartItems } from '@/store/selectors';
+import { selectAuthUser, selectCartHydrated, selectCartItems } from '@/store/selectors';
 import {
   cartSubtotal,
   resolveCartLines,
@@ -22,6 +22,7 @@ import {
   type CustomerOrder,
   type SavedAddress,
 } from '@/features/account';
+import { useProductsByIds } from '@/features/products';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(80),
@@ -42,7 +43,12 @@ export function CheckoutClient() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const items = useAppSelector(selectCartItems);
+  const cartHydrated = useAppSelector(selectCartHydrated);
   const user = useAppSelector(selectAuthUser);
+  const products = useProductsByIds(
+    items.map(({ productId }) => productId),
+    cartHydrated,
+  );
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [appliedCode, setAppliedCode] = useState<string | undefined>();
@@ -50,7 +56,10 @@ export function CheckoutClient() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const lines = useMemo(() => resolveCartLines(items), [items]);
+  const lines = useMemo(
+    () => resolveCartLines(items, products.data ?? []),
+    [items, products.data],
+  );
 
   const subtotal = cartSubtotal(lines);
   const shipping = shippingForSubtotal(subtotal, appliedCode === 'FREESHIP');
@@ -174,6 +183,14 @@ export function CheckoutClient() {
       setSubmitting(false);
     }
   });
+
+  if (!cartHydrated || (items.length > 0 && products.isLoading)) {
+    return (
+      <main className="flex flex-1 items-center justify-center bg-black px-5 py-20">
+        <p className="text-sm text-[#b5b0a8]">Loading checkout…</p>
+      </main>
+    );
+  }
 
   if (lines.length === 0) {
     return (

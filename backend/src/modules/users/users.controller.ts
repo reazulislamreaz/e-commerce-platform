@@ -28,6 +28,7 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { ListUsersQueryDto } from './dto/list-users.query.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -49,6 +50,27 @@ export class UsersController {
   @ApiConflictResponse({ description: 'Email is already registered' })
   createAdmin(@Body() dto: CreateAdminDto) {
     return this.users.createAdmin(dto);
+  }
+
+  // `me` routes are declared before `:id` so the static segment wins routing.
+  @Roles(Role.CUSTOMER, Role.ADMIN)
+  @Get('me')
+  @ApiOperation({ summary: 'Get the signed-in user profile' })
+  @ApiOkResponse({ type: UserResponseDto })
+  getMe(@CurrentUser() actor: JwtPayload) {
+    return this.users.getMe(actor.sub);
+  }
+
+  @Roles(Role.CUSTOMER, Role.ADMIN)
+  @Patch('me')
+  @ApiOperation({
+    summary: 'Update the signed-in user profile',
+    description: 'Updates first/last name and Bangladeshi phone. Email cannot be changed here.',
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiConflictResponse({ description: 'Phone number is already registered' })
+  updateMe(@CurrentUser() actor: JwtPayload, @Body() dto: UpdateMeDto) {
+    return this.users.updateMe(actor.sub, dto);
   }
 
   @Get()

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { getAllProducts } from '@/features/products';
+import { productCatalog } from '@/features/products';
 
 type Props = { searchParams: Promise<{ q?: string }> };
 
@@ -19,7 +19,11 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function SearchPage({ searchParams }: Props) {
   const { q } = await searchParams;
   const query = q?.trim() ?? '';
-  const products = getAllProducts();
+  const filters = query ? { query } : undefined;
+  const [initialResult, initialFacets] = await Promise.all([
+    productCatalog.list({ filters, page: 1, pageSize: 8 }),
+    productCatalog.facets(),
+  ]);
 
   return (
     <main id="main-content" className="flex-1 bg-black">
@@ -32,9 +36,11 @@ export default async function SearchPage({ searchParams }: Props) {
         </h1>
         <div className="mt-8">
           <ShopCatalog
-            products={products}
+            remote
+            initialResult={initialResult}
+            initialFacets={initialFacets}
             title={query ? 'Matching Products' : 'All Products'}
-            initialFilters={query ? { query } : undefined}
+            initialFilters={filters}
           />
         </div>
       </section>

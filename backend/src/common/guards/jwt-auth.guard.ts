@@ -1,4 +1,4 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -8,14 +8,30 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private readonly reflector: Reflector) {
     super();
   }
+
   canActivate(context: ExecutionContext): boolean | Promise<boolean> {
-    if (
-      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ])
-    )
-      return true;
-    return super.canActivate(context) as boolean | Promise<boolean>;
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    const result = super.canActivate(context) as boolean | Promise<boolean>;
+    if (!isPublic) return result;
+    // Public routes still hydrate `req.user` when a Bearer token is present.
+    return Promise.resolve(result).catch(() => true);
+  }
+
+  handleRequest<TUser>(
+    err: Error | null,
+    user: TUser,
+    _info: unknown,
+    context: ExecutionContext,
+  ): TUser {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return (user ?? undefined) as TUser;
+    if (err || !user) throw err ?? new UnauthorizedException();
+    return user;
   }
 }

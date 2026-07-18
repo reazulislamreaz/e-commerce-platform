@@ -3,6 +3,8 @@
 import { useMemo, useState, useTransition } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import type { CatalogProduct, ProductFilters, ProductSort } from '@/features/products/types';
+import type { ProductFacets, ProductPage } from '@/features/products';
+import { useProductFacets, useProductList } from '@/features/products';
 import {
   filterProducts,
   getFilterFacets,
@@ -21,15 +23,22 @@ const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
   { value: 'rating', label: 'Top Rated' },
   { value: 'discount', label: 'Biggest Discount' },
 ];
+const EMPTY_PRODUCTS: CatalogProduct[] = [];
 
 export function ShopCatalog({
   products,
   title = 'All Products',
   initialFilters,
+  remote = false,
+  initialResult,
+  initialFacets,
 }: {
-  products: CatalogProduct[];
+  products?: CatalogProduct[];
   title?: string;
   initialFilters?: Partial<ProductFilters>;
+  remote?: boolean;
+  initialResult?: ProductPage;
+  initialFacets?: ProductFacets;
 }) {
   const { filters, setFilters, clear, activeCount } = useShopFilters(initialFilters);
   const [sort, setSort] = useState<ProductSort>('featured');
@@ -37,17 +46,29 @@ export function ShopCatalog({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [, startTransition] = useTransition();
 
-  const facets = useMemo(() => getFilterFacets(products), [products]);
+  const localProducts = products ?? EMPTY_PRODUCTS;
+  const remoteResult = useProductList(
+    { filters, sort, page, pageSize: PAGE_SIZE },
+    { enabled: remote, initialData: initialResult },
+  );
+  const remoteFacets = useProductFacets({
+    enabled: remote,
+    initialData: initialFacets,
+  });
+  const localFacets = useMemo(() => getFilterFacets(localProducts), [localProducts]);
+  const facets = remote ? (remoteFacets.data ?? localFacets) : localFacets;
 
   const filtered = useMemo(() => {
-    const next = sortProducts(filterProducts(products, filters), sort);
+    const next = sortProducts(filterProducts(localProducts, filters), sort);
     return next;
-  }, [products, filters, sort]);
+  }, [localProducts, filters, sort]);
 
-  const paged = useMemo(
+  const localPage = useMemo(
     () => paginateProducts(filtered, page, PAGE_SIZE),
     [filtered, page],
   );
+  const paged = remote ? (remoteResult.data ?? initialResult ?? localPage) : localPage;
+  const count = remote ? paged.total : filtered.length;
 
   const updateFilters = (next: ProductFilters) => {
     startTransition(() => {
@@ -70,7 +91,7 @@ export function ShopCatalog({
       />
 
       <div>
-        <CatalogToolbar title={title} count={filtered.length}>
+        <CatalogToolbar title={title} count={count}>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -100,10 +121,18 @@ export function ShopCatalog({
           </div>
         </CatalogToolbar>
 
-        <ProductGrid
-          products={paged.items}
-          emptyMessage="No products match your filters. Try clearing some filters."
-        />
+        {remoteResult.isError ? (
+          <div role="alert" className="rounded-[4px] border border-red-900/60 bg-red-950/30 p-5 text-sm text-red-300">
+            We couldn&apos;t load the catalog. Please try again.
+          </div>
+        ) : remoteResult.isFetching && !remoteResult.data ? (
+          <p className="py-10 text-center text-sm text-[#b5b0a8]">Loading products…</p>
+        ) : (
+          <ProductGrid
+            products={paged.items}
+            emptyMessage="No products match your filters. Try clearing some filters."
+          />
+        )}
 
         {paged.totalPages > 1 && (
           <nav

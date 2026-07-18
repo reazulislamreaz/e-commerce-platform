@@ -12,13 +12,18 @@ import {
   resolveCartLines,
   shippingForSubtotal,
 } from '@/features/cart/pricing';
+import { useProductsByIds } from '@/features/products';
 
 export function CartClient() {
   const dispatch = useAppDispatch();
   const items = useAppSelector(selectCartItems);
   const hydrated = useAppSelector(selectCartHydrated);
+  const products = useProductsByIds(
+    items.map(({ productId }) => productId),
+    hydrated,
+  );
 
-  if (!hydrated) {
+  if (!hydrated || (items.length > 0 && products.isLoading)) {
     return (
       <main id="main-content" className="flex flex-1 items-center justify-center bg-black py-20">
         <p className="text-sm text-[#b5b0a8]">Loading bag…</p>
@@ -26,7 +31,7 @@ export function CartClient() {
     );
   }
 
-  const lines = resolveCartLines(items);
+  const lines = resolveCartLines(items, products.data ?? []);
   const subtotal = cartSubtotal(lines);
   const shipping = shippingForSubtotal(subtotal);
   const total = subtotal + shipping;

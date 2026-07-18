@@ -25,6 +25,8 @@ export interface ProductReview {
 
 export interface CatalogProduct {
   id: string;
+  /** Temporary migration key for browser state created before the catalog API. */
+  legacyId?: string;
   name: string;
   slug: string;
   price: number;

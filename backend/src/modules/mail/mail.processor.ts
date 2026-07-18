@@ -3,8 +3,17 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Job } from 'bullmq';
 import { createTransport, type Transporter } from 'nodemailer';
-import { EMAIL_QUEUE, EmailJobName, type VerificationEmail } from './mail.types';
-import { renderVerificationEmail } from './templates/verification-email.template';
+import {
+  EMAIL_QUEUE,
+  EmailJobName,
+  type PasswordResetEmail,
+  type VerificationEmail,
+} from './mail.types';
+import { renderPasswordResetEmail } from './templates/password-reset-email.template';
+import {
+  renderVerificationEmail,
+  type RenderedEmail,
+} from './templates/verification-email.template';
 
 /**
  * Email worker. Sends through SMTP when credentials are configured;
@@ -33,27 +42,33 @@ export class MailProcessor extends WorkerHost {
 
   async process(job: Job): Promise<void> {
     switch (job.name) {
-      case EmailJobName.VERIFICATION:
-        await this.sendVerification(job.data as VerificationEmail);
+      case EmailJobName.VERIFICATION: {
+        const email = job.data as VerificationEmail;
+        await this.deliver(email.to, renderVerificationEmail(email), email.verifyUrl);
         return;
+      }
+      case EmailJobName.PASSWORD_RESET: {
+        const email = job.data as PasswordResetEmail;
+        await this.deliver(email.to, renderPasswordResetEmail(email), email.resetUrl);
+        return;
+      }
       default:
         this.logger.warn(`Unknown email job "${job.name}" (id ${job.id ?? 'n/a'}) skipped`);
     }
   }
 
-  private async sendVerification(email: VerificationEmail): Promise<void> {
-    const rendered = renderVerificationEmail(email);
+  private async deliver(to: string, rendered: RenderedEmail, actionUrl: string): Promise<void> {
     if (!this.transporter) {
-      this.logger.log(`[SMTP not configured] Verification link for ${email.to}: ${email.verifyUrl}`);
+      this.logger.log(`[SMTP not configured] "${rendered.subject}" link for ${to}: ${actionUrl}`);
       return;
     }
     await this.transporter.sendMail({
       from: this.from,
-      to: email.to,
+      to,
       subject: rendered.subject,
       text: rendered.text,
       html: rendered.html,
     });
-    this.logger.log(`Verification email sent to ${email.to}`);
+    this.logger.log(`"${rendered.subject}" email sent to ${to}`);
   }
 }

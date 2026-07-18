@@ -2,15 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageHero } from '@/components/shared/page-hero';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { getSaleProducts } from '@/features/products';
+import { productCatalog } from '@/features/products';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Sale',
   description: 'Elevate Apparel sale — up to 40% off select pieces.',
 };
 
-export default function SalePage() {
-  const products = getSaleProducts();
+export default async function SalePage() {
+  const products = await productCatalog.onSale();
 
   return (
     <main id="main-content" className="flex-1 bg-black">

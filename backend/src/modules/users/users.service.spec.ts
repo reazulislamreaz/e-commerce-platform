@@ -120,6 +120,46 @@ describe('UsersService', () => {
     });
   });
 
+  describe('self profile (me)', () => {
+    it('returns the signed-in user profile', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'cust-1', email: 'c@example.com' });
+      await expect(service.getMe('cust-1')).resolves.toEqual({
+        id: 'cust-1',
+        email: 'c@example.com',
+      });
+    });
+
+    it('normalizes the phone on self update', async () => {
+      prisma.user.update.mockResolvedValue({ id: 'cust-1' });
+      await service.updateMe('cust-1', { firstName: 'Rahim', phone: '01712345678' });
+      const args = prisma.user.update.mock.calls[0][0] as {
+        data: { firstName: string; phone: string };
+      };
+      expect(args.data.firstName).toBe('Rahim');
+      expect(args.data.phone).toBe('+8801712345678');
+    });
+
+    it('leaves the phone untouched when not provided', async () => {
+      prisma.user.update.mockResolvedValue({ id: 'cust-1' });
+      await service.updateMe('cust-1', { lastName: 'Khan' });
+      const args = prisma.user.update.mock.calls[0][0] as { data: Record<string, unknown> };
+      expect('phone' in args.data).toBe(false);
+    });
+
+    it('maps a duplicate phone to 409', async () => {
+      prisma.user.update.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('unique', {
+          code: 'P2002',
+          clientVersion: 'test',
+          meta: { target: ['phone'] },
+        }),
+      );
+      await expect(service.updateMe('cust-1', { phone: '01712345678' })).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+  });
+
   describe('list scoping', () => {
     it('forces the CUSTOMER role filter for admins', async () => {
       prisma.user.findMany.mockResolvedValue([]);

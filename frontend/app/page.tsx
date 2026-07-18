@@ -12,9 +12,11 @@ import {
   Truck,
 } from 'lucide-react';
 import { formatTaka } from '@/lib/currency';
-import { getAllProducts, getNewArrivals, getSaleProducts } from '@/features/products';
+import { productCatalog } from '@/features/products';
 import type { CatalogProduct } from '@/features/products/types';
 import { NewsletterForm } from '@/components/shared/newsletter-form';
+
+export const dynamic = 'force-dynamic';
 
 const collections = [
   { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.webp' },
@@ -22,8 +24,6 @@ const collections = [
   { title: 'NEW\nARRIVALS', href: '/new-arrivals', image: 'collection-new.webp' },
   { title: 'SALE\nUP TO 40% OFF', href: '/sale', image: 'collection-sale.webp' },
 ];
-
-const featuredProducts = getAllProducts().slice(0, 6);
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -217,18 +217,17 @@ function CollectionGrid() {
   );
 }
 
-function Featured() {
+function Featured({ products }: { products: CatalogProduct[] }) {
   return (
     <section className="mx-auto max-w-[1400px] px-3 pt-5 sm:px-6 sm:pt-4">
       <SectionHeader title="Featured Products" href="/shop" />
-      <ProductRail products={featuredProducts} />
+      <ProductRail products={products} />
     </section>
   );
 }
 
 /** Fresh drops — drives discovery without replacing Featured */
-function NewArrivals() {
-  const products = getNewArrivals().slice(0, 6);
+function NewArrivals({ products }: { products: CatalogProduct[] }) {
   if (products.length === 0) return null;
 
   return (
@@ -240,9 +239,7 @@ function NewArrivals() {
 }
 
 /** Single purposeful promo — urgency without clutter */
-function SalePromo() {
-  const saleCount = getSaleProducts().length;
-
+function SalePromo({ saleCount }: { saleCount: number }) {
   return (
     <section className="mx-auto mt-8 max-w-[1400px] px-3 sm:px-6">
       <Link
@@ -375,15 +372,20 @@ function Instagram() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const [featured, newArrivals, sale] = await Promise.all([
+    productCatalog.list({ page: 1, pageSize: 6 }),
+    productCatalog.newArrivals(),
+    productCatalog.onSale(),
+  ]);
   return (
     <main id="main-content" className="flex-1 bg-black">
       <Hero />
       <Benefits />
       <CollectionGrid />
-      <Featured />
-      <NewArrivals />
-      <SalePromo />
+      <Featured products={featured.items} />
+      <NewArrivals products={newArrivals.slice(0, 6)} />
+      <SalePromo saleCount={sale.length} />
       <About />
       <Newsletter />
       <Instagram />

@@ -1,16 +1,20 @@
 import type { CartItem } from '@/store/slices/cart-slice';
 import type { CatalogProduct } from '@/features/products/types';
-import { getProductById } from '@/features/products';
 
 export interface CartLine {
   item: CartItem;
   product: CatalogProduct;
 }
 
-export function resolveCartLines(items: CartItem[]): CartLine[] {
+export function resolveCartLines(items: CartItem[], products: CatalogProduct[]): CartLine[] {
+  const byId = new Map<string, CatalogProduct>();
+  for (const product of products) {
+    byId.set(product.id, product);
+    if (product.legacyId) byId.set(product.legacyId, product);
+  }
   const lines: CartLine[] = [];
   for (const item of items) {
-    const product = getProductById(item.productId);
+    const product = byId.get(item.productId);
     if (product) lines.push({ item, product });
   }
   return lines;

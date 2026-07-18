@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { getProductsByCollection } from '@/features/products';
+import { productCatalog } from '@/features/products';
+
+export const dynamic = 'force-dynamic';
 
 const collections = {
   men: {
@@ -38,15 +40,21 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const key = slug as CollectionKey;
   if (!(key in collections)) notFound();
 
-  const products = getProductsByCollection(key);
+  const filters = { collections: [key] };
+  const [initialResult, initialFacets] = await Promise.all([
+    productCatalog.list({ filters, page: 1, pageSize: 8 }),
+    productCatalog.facets(),
+  ]);
 
   return (
     <main id="main-content" className="flex-1 bg-black">
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
         <ShopCatalog
-          products={products}
+          remote
+          initialResult={initialResult}
+          initialFacets={initialFacets}
           title={collections[key].title}
-          initialFilters={{ collections: [key] }}
+          initialFilters={filters}
         />
       </section>
     </main>

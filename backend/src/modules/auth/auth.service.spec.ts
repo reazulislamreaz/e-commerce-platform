@@ -76,7 +76,10 @@ const registerInput = {
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: ReturnType<typeof createPrismaMock>;
-  const mail = { sendEmailVerification: jest.fn().mockResolvedValue(undefined) };
+  const mail = {
+    sendEmailVerification: jest.fn().mockResolvedValue(undefined),
+    sendPasswordReset: jest.fn().mockResolvedValue(undefined),
+  };
 
   beforeEach(async () => {
     prisma = createPrismaMock();
@@ -247,11 +250,190 @@ describe('AuthService', () => {
 
       expect(result.accessToken).toBe('jwt');
       expect(result.refreshToken).toHaveLength(64);
+      expect(result.rememberMe).toBe(false);
       const createArgs = prisma.authSession.create.mock.calls[0][0] as {
-        data: { refreshTokens: { create: { tokenHash: string } } };
+        data: { rememberMe: boolean; refreshTokens: { create: { tokenHash: string } } };
       };
+      expect(createArgs.data.rememberMe).toBe(false);
       expect(createArgs.data.refreshTokens.create.tokenHash).toMatch(/^[0-9a-f]{64}$/);
       expect(createArgs.data.refreshTokens.create.tokenHash).not.toContain(result.refreshToken);
+    });
+
+    it('extends the session lifetime when rememberMe is set', async () => {
+      prisma.user.findUnique.mockResolvedValue(baseUser);
+      argonVerify.mockResolvedValue(true);
+      prisma.authSession.create.mockResolvedValue({ id: 'session-1' });
+
+      const before = Date.now();
+      const result = await service.login(
+        { email: baseUser.email, password: 'x', rememberMe: true },
+        {},
+      );
+
+      expect(result.rememberMe).toBe(true);
+      const createArgs = prisma.authSession.create.mock.calls[0][0] as {
+        data: { rememberMe: boolean; expiresAt: Date };
+      };
+      expect(createArgs.data.rememberMe).toBe(true);
+      const ttl = createArgs.data.expiresAt.getTime() - before;
+      expect(ttl).toBeGreaterThan(29 * 24 * 60 * 60 * 1000);
+      expect(ttl).toBeLessThanOrEqual(30 * 24 * 60 * 60 * 1000 + 5_000);
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('is silent for unknown, deleted, or non-active accounts', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await service.forgotPassword('ghost@example.com');
+      prisma.user.findUnique.mockResolvedValue({
+        ...baseUser,
+        status: UserStatus.PENDING_VERIFICATION,
+      });
+      await service.forgotPassword(baseUser.email);
+      prisma.user.findUnique.mockResolvedValue({ ...baseUser, status: UserStatus.SUSPENDED });
+      await service.forgotPassword(baseUser.email);
+      expect(mail.sendPasswordReset).not.toHaveBeenCalled();
+    });
+
+    it('invalidates older reset tokens and emails a fresh link for active accounts', async () => {
+      prisma.user.findUnique.mockResolvedValue(baseUser);
+      prisma.verificationToken.create.mockResolvedValue({ id: 'vt-r1' });
+
+      await service.forgotPassword(baseUser.email);
+
+      expect(prisma.verificationToken.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: baseUser.id,
+            type: VerificationTokenType.PASSWORD_RESET,
+            usedAt: null,
+          }) as unknown,
+        }),
+      );
+      const tokenArgs = prisma.verificationToken.create.mock.calls[0][0] as {
+        data: { tokenHash: string; type: VerificationTokenType; expiresAt: Date };
+      };
+      expect(tokenArgs.data.type).toBe(VerificationTokenType.PASSWORD_RESET);
+      expect(tokenArgs.data.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(30 * 60 * 1000);
+      const email = mail.sendPasswordReset.mock.calls[0][0] as { resetUrl: string };
+      expect(email.resetUrl).toMatch(/^http:\/\/localhost:3000\/reset-password\?token=/);
+      expect(email.resetUrl).not.toContain(tokenArgs.data.tokenHash);
+    });
+  });
+
+  describe('resetPassword', () => {
+    const resetToken = {
+      id: 'vt-r1',
+      userId: baseUser.id,
+      tokenHash: 'hash',
+      type: VerificationTokenType.PASSWORD_RESET,
+      expiresAt: new Date(Date.now() + 60_000),
+      usedAt: null,
+      user: { id: baseUser.id, status: UserStatus.ACTIVE, deletedAt: null },
+    };
+
+    it('sets the new password and revokes every session', async () => {
+      prisma.verificationToken.findUnique.mockResolvedValue(resetToken);
+      prisma.verificationToken.updateMany.mockResolvedValue({ count: 1 });
+      prisma.user.update.mockResolvedValue({});
+      prisma.authSession.updateMany.mockResolvedValue({ count: 1 });
+      prisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.resetPassword('raw-token', 'NewStrongPassw0rd!');
+
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: baseUser.id },
+          data: { passwordHash: 'hashed' },
+        }),
+      );
+      expect(prisma.authSession.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: baseUser.id }) as unknown,
+        }),
+      );
+    });
+
+    it('rejects expired tokens', async () => {
+      prisma.verificationToken.findUnique.mockResolvedValue({
+        ...resetToken,
+        expiresAt: new Date(Date.now() - 1),
+      });
+      await expect(service.resetPassword('expired', 'NewStrongPassw0rd!')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rejects already-used tokens', async () => {
+      prisma.verificationToken.findUnique.mockResolvedValue({
+        ...resetToken,
+        usedAt: new Date(),
+      });
+      await expect(service.resetPassword('used', 'NewStrongPassw0rd!')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects email-verification tokens presented as reset tokens', async () => {
+      prisma.verificationToken.findUnique.mockResolvedValue({
+        ...resetToken,
+        type: VerificationTokenType.EMAIL_VERIFICATION,
+      });
+      await expect(service.resetPassword('wrong-type', 'NewStrongPassw0rd!')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rejects tokens of suspended users', async () => {
+      prisma.verificationToken.findUnique.mockResolvedValue({
+        ...resetToken,
+        user: { ...resetToken.user, status: UserStatus.SUSPENDED },
+      });
+      await expect(service.resetPassword('suspended', 'NewStrongPassw0rd!')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('changePassword', () => {
+    it('rejects a wrong current password', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: baseUser.id, passwordHash: 'hash' });
+      argonVerify.mockResolvedValue(false);
+      await expect(
+        service.changePassword(baseUser.id, 'session-1', 'wrong', 'NewStrongPassw0rd!'),
+      ).rejects.toThrow('Current password is incorrect');
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects reusing the current password', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: baseUser.id, passwordHash: 'hash' });
+      argonVerify.mockResolvedValue(true);
+      await expect(
+        service.changePassword(baseUser.id, 'session-1', 'SamePassw0rd!!', 'SamePassw0rd!!'),
+      ).rejects.toThrow('New password must be different');
+    });
+
+    it('updates the hash and revokes every other session', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: baseUser.id, passwordHash: 'hash' });
+      argonVerify.mockResolvedValue(true);
+      prisma.user.update.mockResolvedValue({});
+      prisma.authSession.updateMany.mockResolvedValue({ count: 1 });
+      prisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.changePassword(baseUser.id, 'session-1', 'CurrentPassw0rd!', 'NewStrongPassw0rd!');
+
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { passwordHash: 'hashed' } }),
+      );
+      expect(prisma.authSession.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: baseUser.id,
+            id: { not: 'session-1' },
+          }) as unknown,
+        }),
+      );
     });
   });
 
@@ -269,6 +451,7 @@ describe('AuthService', () => {
       session: {
         id: 'session-1',
         userId: baseUser.id,
+        rememberMe: false,
         revokedAt: null,
         expiresAt: new Date(Date.now() + 60_000),
         user: baseUser,

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ProductCard } from '@/components/shared/product-card';
-import { getProductById } from '@/features/products';
+import { useProductsByIds } from '@/features/products';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { wishlistCleared } from '@/store/slices/wishlist-slice';
 import {
@@ -24,9 +24,13 @@ export function WishlistGrid({
   const ids = useAppSelector(selectWishlistIds);
   const count = useAppSelector(selectWishlistCount);
   const hydrated = useAppSelector(selectWishlistHydrated);
-  const products = ids.map((id) => getProductById(id)).filter((p) => p != null);
+  const resolved = useProductsByIds(ids, hydrated);
+  const products = ids.flatMap((id) => {
+    const product = resolved.data?.find((item) => item.id === id || item.legacyId === id);
+    return product ? [{ ...product, id }] : [];
+  });
 
-  if (!hydrated) {
+  if (!hydrated || (ids.length > 0 && resolved.isLoading)) {
     return <p className="py-8 text-sm text-[#b5b0a8]">Loading wishlist…</p>;
   }
 

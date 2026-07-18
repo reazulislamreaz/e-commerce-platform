@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { SEARCH_DIALOG_LIMIT, searchProducts, searchSuggestions } from '@/features/products';
+import { SEARCH_DIALOG_LIMIT, searchSuggestions, useProductSearch } from '@/features/products';
 import { formatTaka } from '@/lib/currency';
 import { readStorage, writeStorage } from '@/lib/storage';
 
@@ -13,6 +13,7 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [recentVersion, setRecentVersion] = useState(0);
 
   const recent = useMemo(() => {
@@ -36,7 +37,8 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  const results = useMemo(() => searchProducts(query, SEARCH_DIALOG_LIMIT), [query]);
+  const search = useProductSearch(deferredQuery, open && deferredQuery.trim().length > 0);
+  const results = (search.data ?? []).slice(0, SEARCH_DIALOG_LIMIT);
 
   const commitSearch = (value: string) => {
     const q = value.trim();

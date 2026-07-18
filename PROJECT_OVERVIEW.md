@@ -4,7 +4,7 @@
 
 This document describes the repository as it exists today. Read [CLAUDE.md](./CLAUDE.md) first for mandatory engineering rules, then use this document to understand the current architecture, implementation status, and safe development workflow.
 
-For the unified NestJS + PostgreSQL implementation plan (domains, schema, APIs, security, and module order), see [docs/UNIFIED_BACKEND_IMPLEMENTATION_ROADMAP.md](./docs/UNIFIED_BACKEND_IMPLEMENTATION_ROADMAP.md). Do not implement commerce modules until that roadmap is accepted.
+For Phase 1 frontend analysis (source of truth for APIs/entities), see [docs/FRONTEND_ANALYSIS.md](./docs/FRONTEND_ANALYSIS.md). For the unified NestJS + PostgreSQL implementation plan (domains, schema, APIs, security, and module order), see [docs/UNIFIED_BACKEND_IMPLEMENTATION_ROADMAP.md](./docs/UNIFIED_BACKEND_IMPLEMENTATION_ROADMAP.md). Do not implement commerce modules until that roadmap is accepted and blocking clarifications are answered.
 
 ## Purpose and current stage
 
@@ -20,7 +20,7 @@ ecommerce-platform/
 └── PROJECT_OVERVIEW.md       This document
 ```
 
-The platform foundation is implemented. Product, order, payment, and admin business features are intentionally not implemented yet. Do not claim that empty module directories are functioning features.
+The platform foundation, identity, public catalog, and inventory read model are implemented. Orders, payments, promotions, addresses, server carts/wishlists, and the remaining account commerce modules are not implemented yet.
 
 ## Technology and runtime
 
@@ -60,7 +60,7 @@ npm ci
 docker compose up -d
 npm run prisma:generate --workspace=backend
 npm run prisma:migrate --workspace=backend
-npm run prisma:seed --workspace=backend   # creates the single Super Admin (SEED_SUPER_ADMIN_* env vars)
+npm run prisma:seed --workspace=backend   # Super Admin + storefront catalog/opening inventory
 ```
 
 ```bash
@@ -113,15 +113,30 @@ Frontend requires `NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1`.
 | `POST /api/v1/auth/register` | Implemented | Creates a PENDING_VERIFICATION account and emails a verification link; duplicate email/phone → 409 |
 | `GET /api/v1/auth/verify-email` | Implemented | Consumes the emailed token; sets `emailVerifiedAt` and activates the account |
 | `POST /api/v1/auth/resend-verification` | Implemented | Re-sends the link; always 200 (no account enumeration) |
-| `POST /api/v1/auth/login`    | Implemented | Verified accounts only; creates an auth session; sets HTTP-only refresh cookie |
-| `POST /api/v1/auth/refresh`  | Implemented | Rotates refresh token; reuse revokes the whole token family  |
+| `POST /api/v1/auth/login`    | Implemented | Verified accounts only; creates an auth session; sets HTTP-only refresh cookie. Optional `rememberMe` extends the refresh session to 30 days (default 7) |
+| `POST /api/v1/auth/refresh`  | Implemented | Rotates refresh token; reuse revokes the whole token family; preserves the session's remember-me TTL |
 | `POST /api/v1/auth/logout`   | Implemented | Revokes the current session and all of its refresh tokens    |
+| `POST /api/v1/auth/forgot-password` | Implemented | Emails a single-use reset link (30 min expiry); always 200 (no account enumeration); ACTIVE accounts only |
+| `POST /api/v1/auth/reset-password`  | Implemented | Consumes the reset token, sets the new password, revokes every session |
+| `POST /api/v1/auth/change-password` | Implemented | Authenticated; requires current password; revokes all other sessions |
+| `GET /api/v1/users/me`       | Implemented | Signed-in user profile (any role)                            |
+| `PATCH /api/v1/users/me`     | Implemented | Self-service update of names and BD phone (E.164, unique → 409); email immutable |
 | `POST /api/v1/users/admins`  | Implemented | Super Admin only: create an admin account                    |
 | `GET /api/v1/users`          | Implemented | Cursor-paginated list; admins see customers only             |
 | `GET /api/v1/users/:id`      | Implemented | Admins may read customer accounts only                       |
 | `PATCH /api/v1/users/:id/status` | Implemented | Activate/suspend; suspension revokes all sessions        |
 | `PATCH /api/v1/users/:id/role`   | Implemented | Super Admin only; SUPER_ADMIN never assignable            |
 | `DELETE /api/v1/users/:id`   | Implemented | Soft delete + email anonymization + session revocation       |
+| `GET /api/v1/products`       | Implemented | Public server-side filters, six sort modes, availability, offset pagination |
+| `GET /api/v1/products/facets` | Implemented | Public category/subcategory/brand/size/color/price facets |
+| `GET /api/v1/products/search` | Implemented | Public autocomplete search |
+| `GET /api/v1/products/new-arrivals` | Implemented | Public new-arrival rail |
+| `GET /api/v1/products/on-sale` | Implemented | Public sale rail |
+| `GET /api/v1/products/by-ids` | Implemented | Batch resolver for Redux cart/wishlist/recently-viewed state |
+| `GET /api/v1/products/id/:id` | Implemented | Public product detail by UUID |
+| `GET /api/v1/products/:slug` | Implemented | Public product detail with variants, available stock, and published reviews |
+| `GET /api/v1/products/:slug/related` | Implemented | Related by category or collection |
+| `GET /api/v1/categories` / `GET /api/v1/brands` | Implemented | Public active taxonomy names |
 
 The global response interceptor wraps successful results as `{ "success": true, "message", "data", "meta"? }` and the exception filter returns `{ "success": false, "message", "error", "statusCode", "path", "timestamp" }` (validation details under `details`). This is the contract mandated by `CLAUDE.md`; keep new endpoints on it.
 
@@ -132,6 +147,8 @@ The global response interceptor wraps successful results as `{ "success": true, 
 - Access JWTs expire in 15 minutes and carry `sub`, `email`, `role`, `sid` (session id), and `jti`. `JwtStrategy` re-validates the user's existence/status on every request, so suspension or deletion takes effect immediately.
 - Refresh tokens are opaque random values in an HTTP-only cookie, stored server-side only as HMAC-SHA256 hashes in `refresh_token` rows that belong to an `auth_session` (one session per login/device). Tokens rotate on every refresh; replaying a consumed token revokes the entire token family and its session.
 - Registration requires first name, last name, email, password, and a unique Bangladeshi mobile number (accepted as `01XXXXXXXXX` or `+8801XXXXXXXXX`, stored in E.164; see `common/utils/bd-phone.ts`). Accounts start as `PENDING_VERIFICATION` and can log in only after clicking the emailed verification link (24h expiry, single-use, SHA-256 hash stored in `verification_token`). There is no SMS/phone verification.
+- Password recovery uses the same `verification_token` table with type `PASSWORD_RESET`: single-use emailed link, 30-minute expiry, newest link supersedes older ones, and a successful reset revokes every session. Password change (authenticated) requires the current password and revokes all other sessions. The password policy (12–128 chars, upper+lower+digit) is shared via `common/decorators/is-account-password.decorator.ts`.
+- "Remember me" is a login flag persisted on `auth_session`; it extends the refresh cookie/session TTL to 30 days (7 days otherwise) and is preserved across refresh rotations. Access tokens stay at 15 minutes.
 - Email delivery goes through `modules/mail/MailService`, which enqueues jobs on the BullMQ `email` queue (5 attempts, exponential backoff); `MailProcessor` sends via nodemailer SMTP (`SMTP_*` / `MAIL_FROM` env vars, Gmail app password locally). When `SMTP_USER` is unset in development the worker logs the verification link instead of sending.
 - `@Public()` bypasses global JWT authentication.
 - `@Roles(...)` works with the global `RolesGuard`.
@@ -143,13 +160,15 @@ When adding authenticated endpoints, use DTOs and decorators/guards; never add a
 
 Prisma schema: `backend/prisma/schema.prisma`.
 
-Implemented models: `User` (UUID primary key, unique email, unique E.164 phone, role/status, `emailVerifiedAt`, soft-delete timestamp), `AuthSession`, `RefreshToken`, and `VerificationToken` (mapped to snake_case tables). All timestamps are `timestamptz`. Migrations are committed under `backend/prisma/migrations/`.
+Implemented identity models: `User`, `AuthSession`, `RefreshToken`, and `VerificationToken`.
+
+Implemented catalog/inventory models: `Brand`, hierarchical `Category`, `CatalogCollection`, `Product`, product/category and product/collection joins, `ProductColor`, `ProductMedia`, `ProductVariant`, immutable-window `ProductPrice`, `InventoryLocation`, `InventoryBalance`, append-only `InventoryMovement`, and `ProductReview` (schema only for future writes). Money is `BIGINT` poisha. PostgreSQL raw migration constraints enforce nonnegative money/stock, `reserved <= on_hand`, rating ranges, one active price, and one primary category/collection/media. `pg_trgm` indexes public product search. All timestamps are `timestamptz`.
 
 Use `PrismaService` through dependency injection. Always use `select`, cursor pagination, database indexes, and transactions where appropriate.
 
 ### Planned module boundaries
 
-Create Nest feature modules on demand (do not leave empty stub directories in the tree). Expected domains when implementing commerce APIs: customers, products, categories, brands, inventory, cart, wishlist, orders, payments, coupons, reviews, upload, notifications, dashboard, analytics, settings, and addresses. The `users` module (admin/user management) is implemented.
+Implemented modules: auth, users, mail, health, catalog, and inventory. Create remaining feature modules on demand; do not leave empty stubs. Inventory is internal in Milestone 2: availability is embedded in catalog responses, while admin adjustment and checkout reservation workflows ship with their consuming UI/domain.
 
 When implementing one, create a focused NestJS module with controller, service, repository/data-access layer, DTOs, tests, Swagger annotations, and only the Prisma models/indexes necessary for that feature.
 
@@ -164,13 +183,13 @@ When implementing one, create a focused NestJS module with controller, service, 
 - `frontend/services/api-client.ts` — shared Axios client
 - `frontend/store/` — Redux store and client-only slices
 
-The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI: shared header (search suggestions, wishlist, account menu, live cart badge), footer support links, merchandised homepage, shop/category/new/sale catalogs with sidebar + mobile filters/sort/pagination, product detail (variants, gallery zoom, reviews, related + recently viewed), cart and checkout (coupons, COD/bKash/card), wishlist, guest order confirmation, track order, and a full customer account area (profile, addresses, orders, notifications, coupons, returns/exchanges, support, settings). Auth login/register remain API-backed; session, cart, wishlist, and account commerce data persist in localStorage until products/orders APIs ship. Catalog data is still local placeholder content in `frontend/features/products/data.ts`. Affiliate marketing is intentionally not implemented. No vendor dashboard or admin UI is implemented yet.
+The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI. Auth and catalog are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Cart/wishlist identifiers and account commerce data remain browser state until their server modules ship.
 
 ### State rules
 
 - Redux is only for client state: `auth`, `cart`, `wishlist`, and `recentlyViewed` slices (`frontend/store/`). Prefer shared selectors from `frontend/store/selectors.ts`.
-- TanStack Query owns all API/server state. Auth mutations live in `features/auth/hooks.ts`; product Query hooks are ready in `features/products/hooks.ts` against `features/products/api.ts`.
-- Commerce domains use swappable repositories: `features/products/api.ts` (`productCatalog`) and `features/account/api.ts` (`accountRepository`). Local/mock implementations are the default until Nest modules ship — swap the export, not the pages.
+- TanStack Query owns API/server state. Auth mutations and catalog queries live in their feature hooks.
+- `features/products/api.ts` exports the active `httpProductCatalog`; the local adapter remains for tests/seed parity. `features/account/api.ts` remains local until account commerce modules ship.
 - Cart pricing helpers live in `features/cart/pricing.ts` (shared by bag + checkout).
 - Axios reads the Redux access token, attaches it as a Bearer token, and retries one failed request after calling `/auth/refresh`. A failed refresh signs the client out. With “Remember me”, auth persists in localStorage; without it, sessionStorage only.
 - Forms must use React Hook Form and Zod; `features/auth/schemas.ts` is the pattern to follow.

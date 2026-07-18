@@ -5,8 +5,11 @@
  */
 export {
   productCatalog,
+  httpProductCatalog,
   localProductCatalog,
   type ProductCatalog,
+  type ProductFacets,
+  type ProductPage,
 } from './api';
 
 export {
@@ -14,6 +17,8 @@ export {
   useProductList,
   useProductSearch,
   useProductBySlug,
+  useProductsByIds,
+  useProductFacets,
 } from './hooks';
 
 export {

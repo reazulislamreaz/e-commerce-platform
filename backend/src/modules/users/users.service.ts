@@ -12,6 +12,7 @@ import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { PrismaService } from '@/prisma/prisma.service';
 import type { CreateAdminDto } from './dto/create-admin.dto';
 import type { ListUsersQueryDto } from './dto/list-users.query.dto';
+import type { UpdateMeDto } from './dto/update-me.dto';
 import { canAssignRole, canManage } from './role-policy';
 
 const userSelect = {
@@ -61,6 +62,33 @@ export class UsersService {
             : 'Email is already registered',
         );
       }
+      throw error;
+    }
+  }
+
+  /** Profile of the signed-in user. JwtStrategy already rejects inactive accounts. */
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: userSelect });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  /** Self-service profile update: names and phone only (email is immutable here). */
+  async updateMe(userId: string, dto: UpdateMeDto) {
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          // DTO validation guarantees the format; normalization cannot fail here.
+          ...(dto.phone !== undefined ? { phone: normalizeBdPhone(dto.phone) as string } : {}),
+        },
+        select: userSelect,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')
+        throw new ConflictException('Phone number is already registered');
       throw error;
     }
   }

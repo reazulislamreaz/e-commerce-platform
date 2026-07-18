@@ -24,18 +24,25 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Public } from '@/common/decorators/public.decorator';
-import { AuthService } from './auth.service';
+import {
+  AuthService,
+  REFRESH_TOKEN_TTL_MS,
+  REMEMBER_ME_REFRESH_TOKEN_TTL_MS,
+} from './auth.service';
 import { AccessTokenResponseDto, AuthUserDto, LoginResponseDto } from './dto/auth-response.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailQueryDto } from './dto/verify-email.query.dto';
 import type { JwtPayload } from './jwt.strategy';
 
 const REFRESH_COOKIE = 'refresh_token';
 const REFRESH_COOKIE_PATH = '/api/v1/auth';
-const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -107,8 +114,58 @@ export class AuthController {
       ip: request.ip,
       userAgent: request.headers['user-agent'],
     });
-    this.setRefreshCookie(response, result.refreshToken);
+    this.setRefreshCookie(response, result.refreshToken, result.rememberMe);
     return { user: result.user, accessToken: result.accessToken };
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @HttpCode(200)
+  @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Request a password reset link',
+    description:
+      'Emails a single-use reset link valid for 30 minutes. Always responds 200 so account existence is never leaked.',
+  })
+  @ApiOkResponse({ description: 'If an active account exists for this email, a link was sent' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.auth.forgotPassword(dto.email);
+    return {
+      data: null,
+      message: 'If an account exists for this email, a reset link has been sent.',
+    };
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @HttpCode(200)
+  @Post('reset-password')
+  @ApiOperation({
+    summary: 'Reset the password with an emailed token',
+    description: 'Consumes the reset token, sets the new password, and revokes every session.',
+  })
+  @ApiOkResponse({ description: 'Password updated; all sessions revoked' })
+  @ApiBadRequestResponse({ description: 'Invalid, expired, or already-used reset link' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.auth.resetPassword(dto.token, dto.password);
+    return { data: null, message: 'Password updated. You can now sign in.' };
+  }
+
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @HttpCode(200)
+  @Post('change-password')
+  @ApiOperation({
+    summary: 'Change the password of the signed-in user',
+    description:
+      'Requires the current password. Every other session is revoked; the current session stays signed in.',
+  })
+  @ApiOkResponse({ description: 'Password updated; other sessions revoked' })
+  @ApiBadRequestResponse({ description: 'Current password is incorrect or new password reused' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
+  async changePassword(@CurrentUser() user: JwtPayload, @Body() dto: ChangePasswordDto) {
+    await this.auth.changePassword(user.sub, user.sid, dto.currentPassword, dto.password);
+    return { data: null, message: 'Password updated.' };
   }
 
   @Public()
@@ -123,7 +180,7 @@ export class AuthController {
     const token = request.cookies?.[REFRESH_COOKIE] as string | undefined;
     if (!token) throw new UnauthorizedException('Refresh token is required');
     const result = await this.auth.refresh(token);
-    this.setRefreshCookie(response, result.refreshToken);
+    this.setRefreshCookie(response, result.refreshToken, result.rememberMe);
     return { accessToken: result.accessToken };
   }
 
@@ -141,13 +198,13 @@ export class AuthController {
     response.clearCookie(REFRESH_COOKIE, { path: REFRESH_COOKIE_PATH });
   }
 
-  private setRefreshCookie(response: Response, token: string): void {
+  private setRefreshCookie(response: Response, token: string, rememberMe: boolean): void {
     response.cookie(REFRESH_COOKIE, token, {
       httpOnly: true,
       secure: this.config.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       path: REFRESH_COOKIE_PATH,
-      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+      maxAge: rememberMe ? REMEMBER_ME_REFRESH_TOKEN_TTL_MS : REFRESH_TOKEN_TTL_MS,
     });
   }
 }
