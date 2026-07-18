@@ -35,8 +35,12 @@ export class NotificationsRepository {
     });
   }
 
-  findByDedupeKey(userId: string, dedupeKey: string): Promise<NotificationRecord | null> {
-    return this.prisma.notification.findFirst({
+  findByDedupeKey(
+    userId: string,
+    dedupeKey: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<NotificationRecord | null> {
+    return tx.notification.findFirst({
       where: { userId, dedupeKey },
     });
   }

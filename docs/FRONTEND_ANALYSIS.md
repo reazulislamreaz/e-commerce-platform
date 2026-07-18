@@ -94,29 +94,30 @@ Catalog, PDP, cart, checkout, coupons, wishlist, recently viewed, account (profi
 | `/search` | Full-text search | Public | Local | `GET /search` or products `query` |
 | `/product/[slug]` | PDP variants, reviews, related | Public | Local + Redux | Product detail, stock, reviews, related |
 | `/cart` | Lines + shipping estimate | Public | Redux | Quote/pricing; optional server cart |
-| `/checkout` | Address, coupon, payment, place order | Public | Local | Authoritative checkout + order create |
-| `/order-confirmation` | Guest receipt | Public | sessionStorage | Secure guest order lookup |
-| `/wishlist` | Saved products | Public | Redux | Optional server wishlist |
-| `/track-order` | Status by order number | Public UI; member data | Local orders | Secure track (guest+member) |
+| `/checkout` | Address, coupon, COD payment, place order | Public | API | Authoritative COD checkout + order create |
+| `/order-confirmation` | Guest confirmation | Public | Session display of API order | Track via number+email |
+| `/wishlist` | Saved products | Public | Redux + API merge | Server wishlist for members |
+| `/track-order` | Status by order number + email | Public | API | `GET /orders/track` |
 | `/login` | Login + remember me | Public | Live API | Done (harden) |
 | `/register` | Signup + resend verify | Public | Live API | Done |
 | `/verify-email` | Consume token | Public | Live API | Done |
-| `/forgot-password` | Request reset | Public | Simulated | Forgot-password + email |
-| `/reset-password` | Reset via code | Public | Simulated | Reset-password |
-| `/account` | Dashboard summary | Member | Local + Redux | Summary aggregates |
-| `/account/profile` | Edit names; phone discarded | Member | Redux | `GET/PATCH /users/me` |
-| `/account/password` | Change password | Member | Simulated | Change-password |
-| `/account/addresses` | Shipping addresses | Member | localStorage | Address CRUD |
-| `/account/orders` | Order history | Member | localStorage | `GET /orders` |
-| `/account/orders/[id]` | Order detail + timeline | Member | localStorage | `GET /orders/:id` |
-| `/account/wishlist` | Same wishlist, account chrome | Member | Redux | Same as wishlist |
-| `/account/notifications` | Inbox + mark all read | Member | Seeded local | Notifications APIs |
-| `/account/coupons` | Available/used coupons | Member | Seeded local | `GET /coupons/mine` |
-| `/account/reviews` | Review history (empty) | Member | localStorage | Own reviews list + create |
-| `/account/returns` | Return requests | Member | localStorage | Returns APIs |
-| `/account/exchanges` | Exchange requests | Member | localStorage | Returns with `type=exchange` |
+| `/forgot-password` | Request reset | Public | Live API | Forgot-password + email |
+| `/reset-password` | Reset via token | Public | Live API | Reset-password |
+| `/account` | Dashboard summary | Member | API + Redux | Summary aggregates |
+| `/account/profile` | Edit names/phone | Member | Live API | `GET/PATCH /users/me` |
+| `/account/password` | Change password | Member | Live API | Change-password |
+| `/account/addresses` | Shipping addresses | Member | API | Address CRUD |
+| `/account/orders` | Order history | Member | API | `GET /orders` |
+| `/account/orders/[id]` | Order detail + timeline | Member | API | `GET /orders/:id` |
+| `/account/wishlist` | Same wishlist, account chrome | Member | Redux + API | Same as wishlist |
+| `/account/notifications` | Inbox + mark all read | Member | API | Notifications APIs |
+| `/account/coupons` | Available/used coupons | Member | API | `GET /coupons/mine` |
+| `/account/reviews` | Review history (empty) | Member | Empty until review UI | Own reviews list + create |
+| `/account/returns` | Return requests | Member | API | Returns APIs |
+| `/account/exchanges` | Exchange requests | Member | API | Returns with `type=exchange` |
 | `/account/support` | Contact links | Member | Static | Optional tickets |
-| `/account/settings` | Prefs + clear local + logout | Member | Component state | Prefs + logout |
+| `/account/settings` | Prefs + logout | Member | API | Prefs + logout |
+| `/unsubscribe` | Newsletter unsubscribe | Public | API | Hashed token |
 | `/about` `/faqs` `/returns` `/shipping` `/privacy` `/terms` `/store` `/size-guide` `/contact` | Content | Public | Static / local form | Contact/newsletter only for forms |
 
 Account routes: client-side `AccountShell` redirect only — no Next middleware yet.
@@ -146,7 +147,7 @@ Account routes: client-side `AccountShell` redirect only — no Next middleware 
 
 ### Checkout / order (`features/account/storage.ts`)
 
-- **PaymentMethod:** `cod | bkash | card`
+- **PaymentMethod:** `cod` (bKash/card deferred)
 - **OrderStatus:** pending | confirmed | processing | shipped | delivered | cancelled | returned
 - **CustomerOrder:** id, number (`EA…`), createdAt, status, items (snapshotted), subtotal, shipping, discount, total, couponCode?, shippingAddress, paymentMethod, trackingNumber?, timeline[]
 - Checkout collects email + notes but **does not** put them on the order object today — backend must persist both

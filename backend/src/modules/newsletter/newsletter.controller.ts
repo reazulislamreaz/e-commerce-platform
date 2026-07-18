@@ -9,6 +9,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Role } from '@/generated/prisma/client';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { OptionalUser } from '@/common/decorators/optional-user.decorator';
@@ -36,6 +37,7 @@ export class NewsletterController {
   @Public()
   @Post()
   @HttpCode(201)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Subscribe to the newsletter' })
   @ApiCreatedResponse({ type: NewsletterSubscribeResponseDto })
   subscribe(

@@ -116,9 +116,40 @@ export class PromotionsService {
 
   async redeemCoupon(
     input: RedeemCouponInput,
-    tx?: Prisma.TransactionClient,
+    tx: Prisma.TransactionClient,
   ): Promise<void> {
+    await this.promotions.lockCouponById(input.couponId, tx);
     await this.promotions.createRedemption(input, tx);
+  }
+
+  /**
+   * Lock the coupon row, re-validate eligibility, and return a fresh quote inside a transaction.
+   */
+  async quoteCouponLocked(
+    code: string,
+    subtotalPoisha: bigint,
+    userId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<CouponQuote> {
+    const normalizedCode = this.normalizeCode(code);
+    const coupon = await this.promotions.findCouponByCode(normalizedCode, tx);
+    if (!coupon) {
+      throw new BadRequestException(INVALID_COUPON_MESSAGE);
+    }
+    await this.promotions.lockCouponById(coupon.id, tx);
+    const locked = await this.promotions.findCouponByCode(normalizedCode, tx);
+    if (!locked) {
+      throw new BadRequestException(INVALID_COUPON_MESSAGE);
+    }
+    await this.assertCouponEligible(locked, subtotalPoisha, userId, tx);
+    const { discountPoisha, shippingWaived } = this.computeReward(locked, subtotalPoisha);
+    return {
+      couponId: locked.id,
+      code: locked.code,
+      discountPoisha,
+      shippingWaived,
+      title: locked.title,
+    };
   }
 
   async listAdminCoupons() {

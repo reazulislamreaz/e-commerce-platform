@@ -8,16 +8,21 @@ import { unsubscribeNewsletter } from '@/features/newsletter/api';
 function UnsubscribeInner() {
   const params = useSearchParams();
   const token = params.get('token') ?? '';
-  const [status, setStatus] = useState<'loading' | 'done' | 'missing'>('loading');
+  const [status, setStatus] = useState<'loading' | 'done' | 'missing'>(() =>
+    token ? 'loading' : 'missing',
+  );
 
   useEffect(() => {
-    if (!token) {
-      setStatus('missing');
-      return;
-    }
+    if (!token) return;
+    let cancelled = false;
     void unsubscribeNewsletter(token)
       .catch(() => undefined)
-      .finally(() => setStatus('done'));
+      .finally(() => {
+        if (!cancelled) setStatus('done');
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   return (

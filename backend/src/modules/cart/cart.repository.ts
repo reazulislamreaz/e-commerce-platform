@@ -31,15 +31,21 @@ export type ActiveVariantRecord = Prisma.ProductVariantGetPayload<{
 export class CartRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findByUserId(userId: string): Promise<CartWithItems | null> {
-    return this.prisma.cart.findUnique({
+  findByUserId(
+    userId: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<CartWithItems | null> {
+    return tx.cart.findUnique({
       where: { userId },
       include: cartWithItemsInclude,
     });
   }
 
-  findByGuestTokenHash(guestTokenHash: string): Promise<CartWithItems | null> {
-    return this.prisma.cart.findUnique({
+  findByGuestTokenHash(
+    guestTokenHash: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<CartWithItems | null> {
+    return tx.cart.findUnique({
       where: { guestTokenHash },
       include: cartWithItemsInclude,
     });
@@ -66,8 +72,12 @@ export class CartRepository {
     });
   }
 
-  touchCart(cartId: string, expiresAt: Date | null): Promise<{ version: number }> {
-    return this.prisma.cart.update({
+  touchCart(
+    cartId: string,
+    expiresAt: Date | null,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<{ version: number }> {
+    return tx.cart.update({
       where: { id: cartId },
       data: {
         version: { increment: 1 },
@@ -100,8 +110,8 @@ export class CartRepository {
     });
   }
 
-  deleteAllItems(cartId: string) {
-    return this.prisma.cartItem.deleteMany({ where: { cartId } });
+  deleteAllItems(cartId: string, tx: Prisma.TransactionClient = this.prisma) {
+    return tx.cartItem.deleteMany({ where: { cartId } });
   }
 
   deleteCart(cartId: string) {

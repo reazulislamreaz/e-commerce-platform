@@ -42,23 +42,33 @@ export class NotificationsService {
     return { updated };
   }
 
-  async createForUser(input: CreateNotificationInput): Promise<NotificationRecord> {
+  async createForUser(
+    input: CreateNotificationInput,
+    tx?: Prisma.TransactionClient,
+  ): Promise<NotificationRecord> {
     const href = sanitizeHref(input.href);
 
     if (input.dedupeKey) {
-      const existing = await this.notifications.findByDedupeKey(input.userId, input.dedupeKey);
+      const existing = await this.notifications.findByDedupeKey(
+        input.userId,
+        input.dedupeKey,
+        tx,
+      );
       if (existing) return existing;
     }
 
-    return this.notifications.create({
-      userId: input.userId,
-      type: input.type,
-      title: input.title.trim(),
-      body: input.body.trim(),
-      href: href ?? null,
-      dedupeKey: input.dedupeKey ?? null,
-      payload: (input.payload ?? Prisma.JsonNull) as Prisma.InputJsonValue,
-    });
+    return this.notifications.create(
+      {
+        userId: input.userId,
+        type: input.type,
+        title: input.title.trim(),
+        body: input.body.trim(),
+        href: href ?? null,
+        dedupeKey: input.dedupeKey ?? null,
+        payload: (input.payload ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+      },
+      tx,
+    );
   }
 }
 

@@ -32,6 +32,15 @@ function readAuth(): PersistedAuth {
   }
 }
 
+function setAuthHintCookie(enabled: boolean) {
+  if (typeof document === 'undefined') return;
+  if (enabled) {
+    document.cookie = 'elevate_auth_hint=1; Path=/; SameSite=Lax; Max-Age=2592000';
+  } else {
+    document.cookie = 'elevate_auth_hint=; Path=/; SameSite=Lax; Max-Age=0';
+  }
+}
+
 function persistAuth(auth: {
   accessToken: string | null;
   user: AuthUser | null;
@@ -40,6 +49,7 @@ function persistAuth(auth: {
   if (!auth.accessToken || !auth.user) {
     removeStorage('auth');
     if (typeof window !== 'undefined') sessionStorage.removeItem('elevate:auth-session');
+    setAuthHintCookie(false);
     return;
   }
 
@@ -48,6 +58,8 @@ function persistAuth(auth: {
     user: auth.user,
     rememberMe: auth.rememberMe,
   };
+
+  setAuthHintCookie(true);
 
   if (auth.rememberMe) {
     writeStorage('auth', payload);

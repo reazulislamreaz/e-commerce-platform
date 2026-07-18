@@ -24,6 +24,13 @@ export class PromotionsRepository {
     });
   }
 
+  /** Row-lock a coupon for concurrent redemption safety. */
+  async lockCouponById(couponId: string, tx: Prisma.TransactionClient): Promise<void> {
+    await tx.$queryRaw`
+      SELECT id FROM coupon WHERE id = ${couponId}::uuid FOR UPDATE
+    `;
+  }
+
   listActiveCoupons(now = new Date()): Promise<CouponWithPromotion[]> {
     return this.prisma.coupon.findMany({
       where: {

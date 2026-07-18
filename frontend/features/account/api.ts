@@ -40,20 +40,23 @@ export interface AccountRepository {
   getOrder?(id: string): Promise<CustomerOrder>;
   saveOrders(userId: string, orders: CustomerOrder[]): Promise<void>;
   placeOrder(userId: string | null, order: CustomerOrder): Promise<CustomerOrder>;
-  placeOrderCheckout?(input: {
-    fullName: string;
-    phone: string;
-    email: string;
-    line1: string;
-    line2?: string;
-    city: string;
-    district: string;
-    postalCode: string;
-    paymentMethod: 'cod';
-    notes?: string;
-    couponCode?: string;
-    items: Array<{ variantId: string; quantity: number }>;
-  }): Promise<CustomerOrder>;
+  placeOrderCheckout?(
+    input: {
+      fullName: string;
+      phone: string;
+      email: string;
+      line1: string;
+      line2?: string;
+      city: string;
+      district: string;
+      postalCode: string;
+      paymentMethod: 'cod';
+      notes?: string;
+      couponCode?: string;
+      items: Array<{ variantId: string; quantity: number }>;
+    },
+    idempotencyKey?: string,
+  ): Promise<CustomerOrder>;
   trackOrder?(number: string, email: string): Promise<CustomerOrder>;
   getNotifications(userId?: string): Promise<AccountNotification[]>;
   saveNotifications(userId: string, items: AccountNotification[]): Promise<void>;

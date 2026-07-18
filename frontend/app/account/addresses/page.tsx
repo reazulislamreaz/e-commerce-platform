@@ -10,7 +10,6 @@ import { selectAuthUser } from '@/store/selectors';
 import {
   accountRepository,
   useAccountAddresses,
-  type SavedAddress,
 } from '@/features/account';
 
 const schema = z.object({

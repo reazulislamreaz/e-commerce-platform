@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  NotificationType,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
@@ -15,6 +16,7 @@ import { poishaToTaka, STANDARD_SHIPPING_POISHA } from '@/common/utils/money';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { CartService } from '@/modules/cart/cart.service';
 import { InventoryService } from '@/modules/inventory/inventory.service';
+import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
 import { IdempotencyService } from '@/modules/platform/idempotency.service';
 import { OUTBOX_EVENT, OutboxService } from '@/modules/platform/outbox.service';
@@ -74,6 +76,7 @@ export class OrdersService {
     private readonly idempotency: IdempotencyService,
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   computeCheckoutTotals(input: {
@@ -142,27 +145,9 @@ export class OrdersService {
       0n,
     );
 
-    let discountPoisha = 0n;
-    let shippingWaived = false;
-    let couponId: string | null = null;
-    let normalizedCouponCode: string | undefined;
-
-    if (dto.couponCode) {
-      if (!userId) {
-        throw new BadRequestException('Sign in to apply coupons');
-      }
-      const quote = await this.promotions.quoteCoupon(dto.couponCode, subtotalPoisha, userId);
-      discountPoisha = quote.discountPoisha;
-      shippingWaived = quote.shippingWaived;
-      couponId = quote.couponId;
-      normalizedCouponCode = quote.code;
+    if (dto.couponCode && !userId) {
+      throw new BadRequestException('Sign in to apply coupons');
     }
-
-    const totals = this.computeCheckoutTotals({
-      subtotalPoisha,
-      discountPoisha,
-      shippingWaived,
-    });
 
     const phone = normalizeBdPhone(dto.phone) ?? dto.phone.trim();
     const email = dto.email.trim().toLowerCase();
@@ -181,6 +166,30 @@ export class OrdersService {
           body: claim.responseBody as OrderResponseDto,
         };
       }
+
+      let discountPoisha = 0n;
+      let shippingWaived = false;
+      let couponId: string | null = null;
+      let normalizedCouponCode: string | undefined;
+
+      if (dto.couponCode && userId) {
+        const quote = await this.promotions.quoteCouponLocked(
+          dto.couponCode,
+          subtotalPoisha,
+          userId,
+          tx,
+        );
+        discountPoisha = quote.discountPoisha;
+        shippingWaived = quote.shippingWaived;
+        couponId = quote.couponId;
+        normalizedCouponCode = quote.code;
+      }
+
+      const totals = this.computeCheckoutTotals({
+        subtotalPoisha,
+        discountPoisha,
+        shippingWaived,
+      });
 
       const orderId = await this.createOrderRecord(
         tx,
@@ -206,7 +215,7 @@ export class OrdersService {
         tx,
       );
 
-      if (couponId && normalizedCouponCode) {
+      if (couponId && normalizedCouponCode && userId) {
         await this.promotions.redeemCoupon(
           {
             couponId,
@@ -219,7 +228,7 @@ export class OrdersService {
         );
       }
 
-      await this.cart.clearAfterCheckout(userId, guestToken);
+      await this.cart.clearAfterCheckout(userId, guestToken, tx);
 
       const created = await tx.customerOrder.findUniqueOrThrow({
         where: { id: orderId },
@@ -244,6 +253,21 @@ export class OrdersService {
         },
         tx,
       );
+
+      if (userId) {
+        await this.notifications.createForUser(
+          {
+            userId,
+            type: NotificationType.ORDER_STATUS,
+            title: 'Order confirmed',
+            body: `Your order ${created.number} has been confirmed.`,
+            href: `/account/orders/${orderId}`,
+            dedupeKey: `order:${orderId}:confirmed`,
+            payload: { orderId, status: OrderStatus.CONFIRMED },
+          },
+          tx,
+        );
+      }
 
       await this.idempotency.saveResponse(
         IDEMPOTENCY_SCOPE_CREATE,
@@ -370,6 +394,38 @@ export class OrdersService {
         },
         tx,
       );
+
+      await this.outbox.enqueue(
+        OUTBOX_EVENT.ORDER_STATUS_EMAIL,
+        order.id,
+        {
+          orderId: order.id,
+          orderNumber: order.number,
+          email: order.email,
+          status: mapStatusToApi(dto.status),
+          note: dto.note?.trim() || null,
+        },
+        tx,
+      );
+
+      if (order.userId) {
+        const statusLabel = mapStatusToApi(dto.status);
+        await this.notifications.createForUser(
+          {
+            userId: order.userId,
+            type:
+              dto.status === OrderStatus.SHIPPED
+                ? NotificationType.SHIPPING
+                : NotificationType.ORDER_STATUS,
+            title: `Order ${statusLabel}`,
+            body: `Your order ${order.number} is now ${statusLabel}.`,
+            href: `/account/orders/${order.id}`,
+            dedupeKey: `order:${order.id}:${dto.status}`,
+            payload: { orderId: order.id, status: dto.status },
+          },
+          tx,
+        );
+      }
 
       const updated = await tx.customerOrder.findUniqueOrThrow({
         where: { id: order.id },
@@ -579,7 +635,7 @@ export class OrdersService {
 
   private toOrderResponse(order: OrderDetailRecord): OrderResponseDto {
     if (!order.address) {
-      throw new Error(`Order ${order.id} is missing address snapshot`);
+      throw new BadRequestException(`Order ${order.id} is missing address snapshot`);
     }
 
     return {

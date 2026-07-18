@@ -4,6 +4,7 @@ import { OrderStatus } from '@/generated/prisma/client';
 import { STANDARD_SHIPPING_POISHA, takaToPoisha } from '@/common/utils/money';
 import { CartService } from '@/modules/cart/cart.service';
 import { InventoryService } from '@/modules/inventory/inventory.service';
+import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
 import { IdempotencyService } from '@/modules/platform/idempotency.service';
 import { OutboxService } from '@/modules/platform/outbox.service';
@@ -27,6 +28,7 @@ describe('OrdersService', () => {
         { provide: IdempotencyService, useValue: {} },
         { provide: OutboxService, useValue: {} },
         { provide: AuditService, useValue: {} },
+        { provide: NotificationsService, useValue: { createForUser: jest.fn() } },
       ],
     }).compile();
 

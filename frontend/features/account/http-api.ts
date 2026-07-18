@@ -41,11 +41,6 @@ async function postData<T>(
   return unwrapData(data);
 }
 
-async function patchData<T>(path: string, body?: unknown): Promise<T> {
-  const { data } = await apiClient.patch<ApiResponse<T>>(path, body);
-  return unwrapData(data);
-}
-
 async function deleteData(path: string): Promise<void> {
   await apiClient.delete(path);
 }
@@ -89,9 +84,9 @@ export const httpAccountRepository: AccountRepository = {
     return order;
   },
 
-  async placeOrderCheckout(input: PlaceOrderInput) {
+  async placeOrderCheckout(input: PlaceOrderInput, idempotencyKey?: string) {
     return postData<CustomerOrder>('/orders', input, {
-      headers: { 'Idempotency-Key': crypto.randomUUID() },
+      headers: { 'Idempotency-Key': idempotencyKey ?? crypto.randomUUID() },
     });
   },
 

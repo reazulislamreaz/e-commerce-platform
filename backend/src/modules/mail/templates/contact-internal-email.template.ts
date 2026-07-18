@@ -36,9 +36,9 @@ export function renderContactInternalEmail({
               <td style="padding:20px 32px 28px;">
                 <h1 style="margin:0;font-size:22px;line-height:1.3;color:#ffffff;">New contact message</h1>
                 <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#b5b0a8;">
-                  <strong style="color:#ffffff;">${name}</strong> &lt;${email}&gt;
+                  <strong style="color:#ffffff;">${escapeHtml(name)}</strong> &lt;${escapeHtml(email)}&gt;
                 </p>
-                <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#e3bb78;">${subject}</p>
+                <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#e3bb78;">${escapeHtml(subject)}</p>
                 <p style="margin:16px 0 0;font-size:13px;line-height:1.7;color:#eee9e1;white-space:pre-wrap;">${escapeHtml(body)}</p>
                 <p style="margin:16px 0 0;font-size:11px;line-height:1.6;color:#8b867d;">Message ID: ${messageId}</p>
               </td>

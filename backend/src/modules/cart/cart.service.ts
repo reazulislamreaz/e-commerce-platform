@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@/generated/prisma/client';
 import { poishaToTaka } from '@/common/utils/money';
 import { generateOpaqueToken, sha256Hex } from '@/common/utils/hash';
 import { InventoryService } from '@/modules/inventory/inventory.service';
@@ -151,21 +152,26 @@ export class CartService {
     }));
   }
 
-  async clearAfterCheckout(userId: string | null, guestToken?: string): Promise<void> {
+  async clearAfterCheckout(
+    userId: string | null,
+    guestToken: string | undefined,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
     if (userId) {
-      const record = await this.cart.findByUserId(userId);
+      const record = await this.cart.findByUserId(userId, tx);
       if (record) {
-        await this.cart.deleteAllItems(record.id);
-        await this.touchCart(record);
+        await this.cart.deleteAllItems(record.id, tx);
+        const expiresAt = record.userId ? null : this.guestExpiresAt();
+        await this.cart.touchCart(record.id, expiresAt, tx);
       }
       return;
     }
 
     if (guestToken) {
-      const record = await this.cart.findByGuestTokenHash(sha256Hex(guestToken));
+      const record = await this.cart.findByGuestTokenHash(sha256Hex(guestToken), tx);
       if (record) {
-        await this.cart.deleteAllItems(record.id);
-        await this.touchCart(record);
+        await this.cart.deleteAllItems(record.id, tx);
+        await this.cart.touchCart(record.id, this.guestExpiresAt(), tx);
       }
     }
   }

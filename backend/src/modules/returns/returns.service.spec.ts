@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { OrderStatus, ReturnStatus, ReturnType } from '@/generated/prisma/client';
 import { InventoryService } from '@/modules/inventory/inventory.service';
+import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
 import { ReturnsRepository } from './returns.repository';
 import { ReturnsService } from './returns.service';
@@ -31,6 +32,7 @@ describe('ReturnsService', () => {
         { provide: ReturnsRepository, useValue: repository },
         { provide: InventoryService, useValue: { restockReturn: jest.fn() } },
         { provide: AuditService, useValue: { write: jest.fn() } },
+        { provide: NotificationsService, useValue: { createForUser: jest.fn() } },
       ],
     }).compile();
 

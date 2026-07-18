@@ -48,7 +48,7 @@ Stakeholder decisions. These are binding for all Phase 3+ implementation.
 | C1 | Password reset | **Emailed reset link** with secure single-use token, **15–30 min expiry** (SHA-256 hash stored; align with verify-email pattern). Reset UI reads `?token=`. |
 | C2 | Guest order tracking | Public track by **Order Number + Email** (phone optional secondary factor). |
 | C3 | Cart / wishlist | **Server-side cart and wishlist**; guest cart identified by token, **merged into user cart on login**. |
-| C4 | Payments | COD **and** online methods accepted at checkout; bKash/card orders carry **`payment_pending`** status until gateway integration ships. |
+| C4 | Payments | **COD only for v1 checkout.** Online methods (bKash/card) are deferred; UI notes they are coming soon. |
 | C5 | Money unit | All monetary values stored as **`BIGINT` poisha** (taka × 100). API responses expose integer taka for storefront parity. |
 | C6 | FREESHIP | Free-shipping coupons **only remove the shipping charge** — never produce an item discount and never stack with percent/fixed coupons. |
 | C7 | Remember me | `rememberMe` flag on login **extends refresh token/session TTL**; access tokens stay short-lived (15 min). |
@@ -75,19 +75,23 @@ Elevate Apparel is a Bangladesh-oriented premium apparel ecommerce storefront (B
 | Area | State |
 |------|--------|
 | Health | `GET /health`, `GET /health/ready` (Postgres + Redis) |
-| Auth | register, verify-email, resend-verification, login, refresh (rotate + reuse revoke), logout |
-| Sessions | `AuthSession` + rotating `RefreshToken` (HMAC hash); JWT 15m with `sid`/`jti` |
-| Users admin | create admin, list/get, status, role, soft-delete (Super Admin / Admin policies) |
-| Mail | BullMQ `email` queue + nodemailer; verification emails |
+| Auth | register, verify-email, resend-verification, login, refresh (rotate + reuse revoke), logout, forgot/reset/change password |
+| Sessions | `AuthSession` + rotating `RefreshToken` (HMAC hash); JWT 15m with `sid`/`jti`; remember-me TTL |
+| Users admin | create admin, list/get, status, role, soft-delete (Super Admin / Admin policies); `GET/PATCH /users/me` |
+| Mail | BullMQ `email` queue + nodemailer; verification, password reset, order, contact, newsletter |
 | Catalog | Public list/detail/facets/search/new/sale/related/batch endpoints; frontend HTTP-backed |
-| Inventory | Location + constrained balances + append-only opening movements; availability embedded in catalog |
-| DB | Identity plus catalog, variant, BIGINT price, inventory, and review-schema models |
+| Inventory | Location + constrained balances + append-only movements; checkout reserve/release/ship/return; admin adjust |
+| Commerce | Server cart/wishlist (guest merge), addresses, coupons, COD orders/tracking/fulfillment, returns |
+| Comms | Notifications, preferences/consent, contact, newsletter unsubscribe |
+| Admin APIs | Catalog/inventory/coupons/orders/returns/contact/newsletter (Swagger; no admin UI) |
+| Platform | Idempotency, outbox, audit log, Redis throttling, retention purge |
+| DB | Identity plus catalog, variant, BIGINT price, inventory, review-schema, and full COD commerce models |
 | Envelope | `{ success, message, data, meta? }` |
 | CI | `.github/workflows/ci.yml` — lint, Prisma, tests, builds |
 
 ### What is not implemented
 
-Server cart/wishlist, inventory reservations, coupons, orders, payments, review write APIs, returns, in-app notifications, contact/newsletter persistence, admin commerce UI/APIs, affiliate, and Google OAuth.
+Online payment gateways (bKash/card), review write/moderation APIs (schema retained per C8), admin dashboard UI, affiliate, Google OAuth, object-storage upload transport.
 
 ### User journeys (from frontend)
 
@@ -121,22 +125,26 @@ Server cart/wishlist, inventory reservations, coupons, orders, payments, review 
 | Login / Refresh / Logout | Session + refresh rotation; reuse → revoke family |
 | Users admin APIs | Super Admin / Admin role policy |
 | Health liveness + readiness | DB + Redis |
-| Email queue | Verification (welcome path ready) |
+| Email queue | Verification, password reset, order, contact, newsletter |
 | Password reset / change + profile | Fully API-backed; reset email via BullMQ |
 | Catalog + inventory reads | 12 products seeded; filters/sorts/facets/search/PDP/stock/reviews API-backed |
+| Server cart / wishlist | Guest cookie cart + login merge; authenticated wishlist merge |
+| Addresses / coupons | CRUD + validate/mine; ELEVATE10 + FREESHIP |
+| COD orders + admin fulfillment | Atomic checkout, reservations, track-by-number+email, ship/deliver/cancel |
+| Returns / notifications / preferences | 7-day window; sale exchange-only; in-app notifications from domain events |
+| Contact / newsletter | Persisted + throttled; consent + hashed unsubscribe |
+| Admin catalog / inventory / coupons | Swagger APIs with audit |
 
 ### Implemented (UI + local/mock)
 
 | Feature | Data source |
 |---------|-------------|
-| Cart / wishlist / recently viewed | Redux + localStorage |
-| Checkout, coupons, shipping ৳120, FREESHIP | local rules |
-| Account addresses, orders, notifications, coupons, returns, reviews list | localStorage |
+| Recently viewed | Redux + localStorage |
 | Static pages (about, FAQs, policies, store, size guide) | code |
 
 ### Placeholders / simulated
 
-Google login, contact/newsletter, bKash/card gateways, guest track-order, settings preferences.
+Google login, bKash/card gateways, review-create UI.
 
 ### Explicit non-goals (v1)
 

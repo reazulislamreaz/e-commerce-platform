@@ -29,6 +29,7 @@ export class OutboxService implements OnModuleInit, OnModuleDestroy {
         this.logger.error({ err: error }, 'Outbox relay failed');
       });
     }, 2_000);
+    this.timer.unref();
   }
 
   onModuleDestroy(): void {

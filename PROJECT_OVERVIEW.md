@@ -20,7 +20,7 @@ ecommerce-platform/
 └── PROJECT_OVERVIEW.md       This document
 ```
 
-The platform foundation, identity, public catalog, and inventory read model are implemented. Orders, payments, promotions, addresses, server carts/wishlists, and the remaining account commerce modules are not implemented yet.
+The platform foundation, identity, public catalog, inventory read model, and COD commerce stack (server cart/wishlist, addresses, coupons, orders, returns, notifications, preferences, contact/newsletter, and admin commerce APIs) are implemented. Online payment gateways remain deferred.
 
 ## Technology and runtime
 
@@ -168,7 +168,7 @@ Use `PrismaService` through dependency injection. Always use `select`, cursor pa
 
 ### Planned module boundaries
 
-Implemented modules: auth, users, mail, health, catalog, and inventory. Create remaining feature modules on demand; do not leave empty stubs. Inventory is internal in Milestone 2: availability is embedded in catalog responses, while admin adjustment and checkout reservation workflows ship with their consuming UI/domain.
+Implemented modules: auth, users, mail, health, catalog, inventory, platform (idempotency/outbox/audit/retention), addresses, promotions, cart, wishlist, orders, returns, notifications, preferences, contact, newsletter, and admin-catalog. Inventory availability is embedded in catalog responses; checkout reservations and admin adjustments are live. Online payment gateway modules remain deferred.
 
 When implementing one, create a focused NestJS module with controller, service, repository/data-access layer, DTOs, tests, Swagger annotations, and only the Prisma models/indexes necessary for that feature.
 
@@ -183,14 +183,14 @@ When implementing one, create a focused NestJS module with controller, service, 
 - `frontend/services/api-client.ts` — shared Axios client
 - `frontend/store/` — Redux store and client-only slices
 
-The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI. Auth and catalog are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Cart/wishlist identifiers and account commerce data remain browser state until their server modules ship.
+The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI. Auth, catalog, cart/wishlist (server-backed with Redux projection), checkout (COD), account commerce (addresses, orders, returns, coupons, notifications, preferences), contact, and newsletter are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Online payment methods remain deferred.
 
 ### State rules
 
 - Redux is only for client state: `auth`, `cart`, `wishlist`, and `recentlyViewed` slices (`frontend/store/`). Prefer shared selectors from `frontend/store/selectors.ts`.
 - TanStack Query owns API/server state. Auth mutations and catalog queries live in their feature hooks.
-- `features/products/api.ts` exports the active `httpProductCatalog`; the local adapter remains for tests/seed parity. `features/account/api.ts` remains local until account commerce modules ship.
-- Cart pricing helpers live in `features/cart/pricing.ts` (shared by bag + checkout).
+- `features/products/api.ts` exports the active `httpProductCatalog`; the local adapter remains for tests/seed parity. `features/account/api.ts` exports the HTTP `accountRepository` (local storage remains for isolated tests only).
+- Cart pricing helpers live in `features/cart/pricing.ts` (shared by bag + checkout). Server cart/wishlist hydrate and merge through feature APIs.
 - Axios reads the Redux access token, attaches it as a Bearer token, and retries one failed request after calling `/auth/refresh`. A failed refresh signs the client out. With “Remember me”, auth persists in localStorage; without it, sessionStorage only.
 - Forms must use React Hook Form and Zod; `features/auth/schemas.ts` is the pattern to follow.
 - Do not pre-create empty Nest module folders. Add `controller` / `service` / `dto` when implementing a feature.

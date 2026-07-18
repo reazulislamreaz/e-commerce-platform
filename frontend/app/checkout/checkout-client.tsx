@@ -53,6 +53,7 @@ export function CheckoutClient() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   const lines = useMemo(
     () => resolveCartLines(items, products.data ?? []),
@@ -112,25 +113,29 @@ export function CheckoutClient() {
     setSubmitError(null);
 
     try {
-      const order = await accountRepository.placeOrderCheckout!({
-        fullName: values.fullName,
-        phone: values.phone,
-        email: values.email,
-        line1: values.line1,
-        line2: values.line2,
-        city: values.city,
-        district: values.district,
-        postalCode: values.postalCode,
-        paymentMethod: 'cod',
-        notes: values.notes,
-        couponCode: appliedCode,
-        items: lines.map(({ item }) => ({
-          variantId: item.variantId,
-          quantity: item.quantity,
-        })),
-      });
+      const order = await accountRepository.placeOrderCheckout!(
+        {
+          fullName: values.fullName,
+          phone: values.phone,
+          email: values.email,
+          line1: values.line1,
+          line2: values.line2,
+          city: values.city,
+          district: values.district,
+          postalCode: values.postalCode,
+          paymentMethod: 'cod',
+          notes: values.notes,
+          couponCode: appliedCode,
+          items: lines.map(({ item }) => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+          })),
+        },
+        idempotencyKey,
+      );
 
       dispatch(cartCleared());
+      setIdempotencyKey(crypto.randomUUID());
 
       if (user) {
         router.push(`/account/orders/${order.id}?confirmed=1`);
@@ -207,6 +212,13 @@ export function CheckoutClient() {
                 error={errors.postalCode?.message}
                 {...register('postalCode')}
               />
+              <div className="sm:col-span-2">
+                <FormField
+                  label="Order notes (optional)"
+                  error={errors.notes?.message}
+                  {...register('notes')}
+                />
+              </div>
             </div>
 
             <div>

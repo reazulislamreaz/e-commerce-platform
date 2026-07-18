@@ -4,11 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  NotificationType,
   OrderStatus,
   ReturnStatus,
   ReturnType,
 } from '@/generated/prisma/client';
 import { InventoryService } from '@/modules/inventory/inventory.service';
+import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import type { AdminReturnActionDto } from './dto/admin-return-action.dto';
@@ -25,6 +27,7 @@ export class ReturnsService {
     private readonly returns: ReturnsRepository,
     private readonly inventory: InventoryService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(userId: string, dto: CreateReturnDto): Promise<ReturnRequestResponseDto> {
@@ -67,6 +70,19 @@ export class ReturnsService {
               note: 'Return requested',
             },
           },
+        },
+        tx,
+      );
+
+      await this.notifications.createForUser(
+        {
+          userId,
+          type: NotificationType.RETURN_STATUS,
+          title: 'Return requested',
+          body: `Your ${dto.type} request for order ${order.number} was submitted.`,
+          href: '/account/returns',
+          dedupeKey: `return:${created.id}:pending`,
+          payload: { returnId: created.id, status: ReturnStatus.PENDING },
         },
         tx,
       );
@@ -164,6 +180,19 @@ export class ReturnsService {
         tx,
       );
 
+      await this.notifications.createForUser(
+        {
+          userId: current.userId,
+          type: NotificationType.RETURN_STATUS,
+          title: 'Return completed',
+          body: `Your return for order ${current.order.number} has been completed.`,
+          href: '/account/returns',
+          dedupeKey: `return:${id}:completed`,
+          payload: { returnId: id, status: ReturnStatus.COMPLETED },
+        },
+        tx,
+      );
+
       return toDetailResponse(updated);
     });
   }
@@ -214,6 +243,20 @@ export class ReturnsService {
           resourceId: id,
           before: { status: current.status },
           after: { status, note: note ?? null },
+        },
+        tx,
+      );
+
+      const statusLabel = status === ReturnStatus.APPROVED ? 'approved' : 'rejected';
+      await this.notifications.createForUser(
+        {
+          userId: current.userId,
+          type: NotificationType.RETURN_STATUS,
+          title: `Return ${statusLabel}`,
+          body: `Your return for order ${current.order.number} was ${statusLabel}.`,
+          href: '/account/returns',
+          dedupeKey: `return:${id}:${status}`,
+          payload: { returnId: id, status },
         },
         tx,
       );
