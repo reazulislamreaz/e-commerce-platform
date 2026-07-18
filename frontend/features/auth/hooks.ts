@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useAppDispatch } from '@/store/hooks';
 import { authenticated, signedOut } from '@/store/slices/auth-slice';
-import { login, logout, register } from './api';
+import { login, logout, register, resendVerification, verifyEmail } from './api';
 import type { LoginInput } from './schemas';
 
 export function useLogin() {
@@ -27,6 +27,14 @@ export function useLogin() {
 
 export function useRegister() {
   return useMutation({ mutationFn: register });
+}
+
+export function useVerifyEmail() {
+  return useMutation({ mutationFn: verifyEmail });
+}
+
+export function useResendVerification() {
+  return useMutation({ mutationFn: resendVerification });
 }
 
 export function useLogout() {

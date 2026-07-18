@@ -4,6 +4,8 @@
 
 This document describes the repository as it exists today. Read [CLAUDE.md](./CLAUDE.md) first for mandatory engineering rules, then use this document to understand the current architecture, implementation status, and safe development workflow.
 
+For the unified NestJS + PostgreSQL implementation plan (domains, schema, APIs, security, and module order), see [docs/UNIFIED_BACKEND_IMPLEMENTATION_ROADMAP.md](./docs/UNIFIED_BACKEND_IMPLEMENTATION_ROADMAP.md). Do not implement commerce modules until that roadmap is accepted.
+
 ## Purpose and current stage
 
 This is an enterprise e-commerce platform foundation. It is a single npm workspace containing two independently deployable applications:
@@ -18,7 +20,7 @@ ecommerce-platform/
 └── PROJECT_OVERVIEW.md       This document
 ```
 
-The platform foundation is implemented. Product, order, payment, vendor, and admin business features are intentionally not implemented yet. Do not claim that empty module directories are functioning features.
+The platform foundation is implemented. Product, order, payment, and admin business features are intentionally not implemented yet. Do not claim that empty module directories are functioning features.
 
 ## Technology and runtime
 
@@ -58,6 +60,7 @@ npm ci
 docker compose up -d
 npm run prisma:generate --workspace=backend
 npm run prisma:migrate --workspace=backend
+npm run prisma:seed --workspace=backend   # creates the single Super Admin (SEED_SUPER_ADMIN_* env vars)
 ```
 
 ```bash
@@ -103,23 +106,36 @@ Frontend requires `NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1`.
 
 ### Implemented API surface
 
-| Route                        | State       | Notes                                               |
-| ---------------------------- | ----------- | --------------------------------------------------- |
-| `GET /api/v1/health`         | Implemented | Public liveness endpoint                            |
-| `POST /api/v1/auth/register` | Implemented | Validated customer account creation                 |
-| `POST /api/v1/auth/login`    | Implemented | Access token response plus HTTP-only refresh cookie |
-| `POST /api/v1/auth/refresh`  | Implemented | Rotates refresh token and returns an access token   |
-| `POST /api/v1/auth/logout`   | Implemented | Requires access token; invalidates refresh token    |
+| Route                        | State       | Notes                                                        |
+| ---------------------------- | ----------- | ------------------------------------------------------------ |
+| `GET /api/v1/health`         | Implemented | Public liveness endpoint                                     |
+| `GET /api/v1/health/ready`   | Implemented | Readiness probe: checks PostgreSQL and Redis, 503 on failure |
+| `POST /api/v1/auth/register` | Implemented | Creates a PENDING_VERIFICATION account and emails a verification link; duplicate email/phone → 409 |
+| `GET /api/v1/auth/verify-email` | Implemented | Consumes the emailed token; sets `emailVerifiedAt` and activates the account |
+| `POST /api/v1/auth/resend-verification` | Implemented | Re-sends the link; always 200 (no account enumeration) |
+| `POST /api/v1/auth/login`    | Implemented | Verified accounts only; creates an auth session; sets HTTP-only refresh cookie |
+| `POST /api/v1/auth/refresh`  | Implemented | Rotates refresh token; reuse revokes the whole token family  |
+| `POST /api/v1/auth/logout`   | Implemented | Revokes the current session and all of its refresh tokens    |
+| `POST /api/v1/users/admins`  | Implemented | Super Admin only: create an admin account                    |
+| `GET /api/v1/users`          | Implemented | Cursor-paginated list; admins see customers only             |
+| `GET /api/v1/users/:id`      | Implemented | Admins may read customer accounts only                       |
+| `PATCH /api/v1/users/:id/status` | Implemented | Activate/suspend; suspension revokes all sessions        |
+| `PATCH /api/v1/users/:id/role`   | Implemented | Super Admin only; SUPER_ADMIN never assignable            |
+| `DELETE /api/v1/users/:id`   | Implemented | Soft delete + email anonymization + session revocation       |
 
-The global response interceptor currently wraps successful results as `{ "data": ... }`. Preserve this contract unless deliberately migrating all clients and Swagger documentation to the response shape mandated by `CLAUDE.md`.
+The global response interceptor wraps successful results as `{ "success": true, "message", "data", "meta"? }` and the exception filter returns `{ "success": false, "message", "error", "statusCode", "path", "timestamp" }` (validation details under `details`). This is the contract mandated by `CLAUDE.md`; keep new endpoints on it.
 
 ### Auth and authorization
 
-- Roles: `SUPER_ADMIN`, `ADMIN`, `VENDOR`, `CUSTOMER`
-- Access JWTs expire in 15 minutes.
-- Refresh tokens expire in 7 days, are stored only as Argon2 hashes, rotate on use, and are sent in HTTP-only cookies.
+- Roles: `SUPER_ADMIN`, `ADMIN`, `CUSTOMER` (the `VENDOR` role was removed; the platform is single-merchant)
+- Role hierarchy: `SUPER_ADMIN` has unrestricted access (the `RolesGuard` grants it every role-gated route) and is the only role that can manage admin accounts or change roles. `ADMIN` manages customers and business resources but can never create, modify, promote, suspend, or delete another admin or Super Admin. `CUSTOMER` has customer-scoped permissions only. Hierarchy rules live in `backend/src/modules/users/role-policy.ts`.
+- Access JWTs expire in 15 minutes and carry `sub`, `email`, `role`, `sid` (session id), and `jti`. `JwtStrategy` re-validates the user's existence/status on every request, so suspension or deletion takes effect immediately.
+- Refresh tokens are opaque random values in an HTTP-only cookie, stored server-side only as HMAC-SHA256 hashes in `refresh_token` rows that belong to an `auth_session` (one session per login/device). Tokens rotate on every refresh; replaying a consumed token revokes the entire token family and its session.
+- Registration requires first name, last name, email, password, and a unique Bangladeshi mobile number (accepted as `01XXXXXXXXX` or `+8801XXXXXXXXX`, stored in E.164; see `common/utils/bd-phone.ts`). Accounts start as `PENDING_VERIFICATION` and can log in only after clicking the emailed verification link (24h expiry, single-use, SHA-256 hash stored in `verification_token`). There is no SMS/phone verification.
+- Email delivery goes through `modules/mail/MailService`, which enqueues jobs on the BullMQ `email` queue (5 attempts, exponential backoff); `MailProcessor` sends via nodemailer SMTP (`SMTP_*` / `MAIL_FROM` env vars, Gmail app password locally). When `SMTP_USER` is unset in development the worker logs the verification link instead of sending.
 - `@Public()` bypasses global JWT authentication.
 - `@Roles(...)` works with the global `RolesGuard`.
+- Auth routes have tighter throttling (register 5/min, login 10/min, refresh 30/min, resend-verification 3/min).
 
 When adding authenticated endpoints, use DTOs and decorators/guards; never add authorization checks to a controller body.
 
@@ -127,13 +143,13 @@ When adding authenticated endpoints, use DTOs and decorators/guards; never add a
 
 Prisma schema: `backend/prisma/schema.prisma`.
 
-The only implemented domain model is `User`, with UUID primary keys, unique email, role/status fields, soft-delete timestamp, timestamps, and role/status plus created-at indexes. The initial migration is committed at `backend/prisma/migrations/20260715111344_init`.
+Implemented models: `User` (UUID primary key, unique email, unique E.164 phone, role/status, `emailVerifiedAt`, soft-delete timestamp), `AuthSession`, `RefreshToken`, and `VerificationToken` (mapped to snake_case tables). All timestamps are `timestamptz`. Migrations are committed under `backend/prisma/migrations/`.
 
 Use `PrismaService` through dependency injection. Always use `select`, cursor pagination, database indexes, and transactions where appropriate.
 
 ### Planned module boundaries
 
-Create Nest feature modules on demand (do not leave empty stub directories in the tree). Expected domains when implementing commerce APIs: users, vendors, customers, products, categories, brands, inventory, cart, wishlist, orders, payments, coupons, reviews, upload, notifications, dashboard, analytics, settings, and addresses.
+Create Nest feature modules on demand (do not leave empty stub directories in the tree). Expected domains when implementing commerce APIs: customers, products, categories, brands, inventory, cart, wishlist, orders, payments, coupons, reviews, upload, notifications, dashboard, analytics, settings, and addresses. The `users` module (admin/user management) is implemented.
 
 When implementing one, create a focused NestJS module with controller, service, repository/data-access layer, DTOs, tests, Swagger annotations, and only the Prisma models/indexes necessary for that feature.
 
@@ -166,16 +182,20 @@ Before handing off a change, run the relevant commands:
 
 ```bash
 npm run build --workspace=backend
+npm run build --workspace=frontend
 npm run lint --workspace=frontend
 npm run lint --workspace=backend
+npm run test --workspace=backend
 npm run format
 ```
 
-Add targeted unit/integration tests with every business feature. Do not treat the current lack of automated tests as permission to skip new tests.
+GitHub Actions CI (`.github/workflows/ci.yml`) runs install, Prisma generate/validate, lint, backend tests, and both builds on every push/PR to `main`.
+
+Backend unit tests use Jest (`*.spec.ts` next to the code under test); `auth.service.spec.ts` is the pattern to follow. Add targeted unit/integration tests with every business feature.
 
 ## Deployment notes
 
-Both apps have multi-stage Dockerfiles. Before production use, revise them to run as non-root users, provide production environment variables through the deployment platform, run Prisma migrations through a controlled deployment step, configure a real CORS origin, and use managed PostgreSQL/Redis/object storage.
+Both apps have multi-stage Dockerfiles pinned to Node 20 (matching `.nvmrc`) that build from the repository root (`docker build -f backend/Dockerfile .`) and run as the non-root `node` user. Before production use, provide production environment variables through the deployment platform, run Prisma migrations through a controlled deployment step (`prisma migrate deploy`), configure a real CORS origin, and use managed PostgreSQL/Redis/object storage.
 
 ## Working rules for future agents
 

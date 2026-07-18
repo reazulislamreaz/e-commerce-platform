@@ -1,18 +1,57 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
+import { MailCheck } from 'lucide-react';
 import { FormField } from '@/components/common/form-field';
 import { GoogleLoginButton } from '@/features/auth/components/google-login-button';
-import { useLogin, useRegister } from '@/features/auth/hooks';
+import { useRegister, useResendVerification } from '@/features/auth/hooks';
 import { registerSchema, type RegisterInput } from '@/features/auth/schemas';
 
+function CheckInbox({ email }: { email: string }) {
+  const resend = useResendVerification();
+  return (
+    <div className="space-y-5 text-center" role="status">
+      <MailCheck aria-hidden className="mx-auto size-12 text-[#e3bb78]" strokeWidth={1.5} />
+      <div>
+        <h2 className="text-xl font-bold uppercase tracking-[-.02em] text-white">
+          Check your inbox
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-[#b5b0a8]">
+          We sent a verification link to <span className="font-semibold text-white">{email}</span>.
+          Click the link to activate your account, then sign in.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => resend.mutate(email)}
+        disabled={resend.isPending || resend.isSuccess}
+        className="text-sm font-semibold text-[#e3bb78] transition-colors hover:text-[#eec98a] disabled:opacity-60"
+      >
+        {resend.isSuccess
+          ? 'Verification email re-sent'
+          : resend.isPending
+            ? 'Sending…'
+            : 'Resend verification email'}
+      </button>
+      <p className="text-sm text-[#b5b0a8]">
+        Already verified?{' '}
+        <Link
+          href="/login"
+          className="font-semibold text-[#e3bb78] transition-colors hover:text-[#eec98a]"
+        >
+          Sign In
+        </Link>
+      </p>
+    </div>
+  );
+}
+
 export function RegisterForm() {
-  const router = useRouter();
   const registerMutation = useRegister();
-  const login = useLogin();
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -21,14 +60,16 @@ export function RegisterForm() {
 
   const onSubmit = handleSubmit(async (input) => {
     await registerMutation.mutateAsync(input);
-    await login.mutateAsync({ email: input.email, password: input.password });
-    router.push('/');
+    setSubmittedEmail(input.email);
   });
+
+  if (submittedEmail) return <CheckInbox email={submittedEmail} />;
 
   const serverError =
     registerMutation.isError &&
-    (axios.isAxiosError(registerMutation.error) && registerMutation.error.response?.status === 409
-      ? 'This email is already registered.'
+    (axios.isAxiosError<{ message?: string }>(registerMutation.error) &&
+    registerMutation.error.response?.status === 409
+      ? (registerMutation.error.response.data.message ?? 'This account is already registered.')
       : 'Something went wrong. Please try again.');
 
   return (
@@ -59,6 +100,16 @@ export function RegisterForm() {
         placeholder="Email"
         error={errors.email?.message}
         {...register('email')}
+      />
+      <FormField
+        label="Mobile number"
+        hideLabel
+        type="tel"
+        autoComplete="tel"
+        placeholder="Mobile number (e.g. 01712345678)"
+        hint="Bangladeshi mobile number — 01712345678 or +8801712345678."
+        error={errors.phone?.message}
+        {...register('phone')}
       />
       <FormField
         label="Password"

@@ -28,7 +28,20 @@ async function bootstrap(): Promise<void> {
   );
   const document = SwaggerModule.createDocument(
     app,
-    new DocumentBuilder().setTitle('E-commerce API').setVersion('1.0').addBearerAuth().build(),
+    new DocumentBuilder()
+      .setTitle('E-commerce API')
+      .setDescription(
+        'Elevate Apparel REST API. Successful responses are wrapped as ' +
+          '`{ success, message, data, meta? }`; errors as `{ success: false, message, error, statusCode, path, timestamp }`.',
+      )
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addCookieAuth('refresh_token', {
+        type: 'apiKey',
+        in: 'cookie',
+        description: 'HTTP-only rotating refresh token set by /auth/login',
+      })
+      .build(),
   );
   SwaggerModule.setup('docs', app, document);
   await app.listen(config.getOrThrow<number>('PORT'));

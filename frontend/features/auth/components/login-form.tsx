@@ -29,10 +29,12 @@ function LoginFormInner() {
     router.push(next);
   });
 
+  // Surface the backend's specific 401 reason (e.g. unverified email, suspended).
   const serverError =
     login.isError &&
-    (axios.isAxiosError(login.error) && login.error.response?.status === 401
-      ? 'Invalid email or password.'
+    (axios.isAxiosError<{ message?: string }>(login.error) &&
+    login.error.response?.status === 401
+      ? (login.error.response.data.message ?? 'Invalid email or password.')
       : 'Something went wrong. Please try again.');
 
   return (

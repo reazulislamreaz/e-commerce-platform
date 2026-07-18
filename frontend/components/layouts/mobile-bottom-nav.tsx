@@ -2,17 +2,25 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutGrid, ShoppingBag, UserRound } from 'lucide-react';
+import { Home, LayoutGrid, ShoppingBag, UserRound, type LucideIcon } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser, selectCartCount } from '@/store/selectors';
 import { isActiveNav } from './site-nav';
 
-const items = [
+interface BottomNavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: boolean;
+  authAware?: boolean;
+}
+
+const items: readonly BottomNavItem[] = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Shop', href: '/shop', icon: LayoutGrid },
   { label: 'Cart', href: '/cart', icon: ShoppingBag, badge: true },
   { label: 'Account', href: '/account', icon: UserRound, authAware: true },
-] as const;
+];
 
 export function MobileBottomNav() {
   const pathname = usePathname();

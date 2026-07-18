@@ -12,6 +12,7 @@ import { TransformResponseInterceptor } from '@/common/interceptors/transform-re
 import { PrismaModule } from '@/prisma/prisma.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { HealthModule } from '@/modules/health/health.module';
+import { UsersModule } from '@/modules/users/users.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { HealthModule } from '@/modules/health/health.module';
     PrismaModule,
     HealthModule,
     AuthModule,
+    UsersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

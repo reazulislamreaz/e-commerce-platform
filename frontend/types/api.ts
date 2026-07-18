@@ -1,8 +1,9 @@
+/** Minimal success shape — every backend response includes at least `data`. */
 export interface ApiEnvelope<T> {
   data: T;
 }
 
-/** Target contract from CLAUDE.md — migrate clients when backend adopts it. */
+/** Live backend contract: `{ success, message, data, meta? }`. */
 export interface ApiResponse<T, M = Record<string, unknown>> {
   success: boolean;
   message: string;
