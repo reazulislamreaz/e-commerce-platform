@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role } from '@/generated/prisma/client';
 
 /**
  * Role hierarchy policy — the single source of truth for who may manage whom.

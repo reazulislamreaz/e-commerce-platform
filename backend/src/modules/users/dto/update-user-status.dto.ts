@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIn } from 'class-validator';
-import { UserStatus } from '@prisma/client';
+import { UserStatus } from '@/generated/prisma/client';
 
 const ASSIGNABLE_STATUSES = [UserStatus.ACTIVE, UserStatus.SUSPENDED] as const;
 

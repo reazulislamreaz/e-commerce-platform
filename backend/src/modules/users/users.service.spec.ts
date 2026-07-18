@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { Prisma, Role, UserStatus } from '@prisma/client';
+import { Prisma, Role, UserStatus } from '@/generated/prisma/client';
 import { AuthService } from '@/modules/auth/auth.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { PrismaService } from '@/prisma/prisma.service';

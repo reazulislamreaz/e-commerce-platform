@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, type User, UserStatus, VerificationTokenType } from '@prisma/client';
+import { Prisma, type User, UserStatus, VerificationTokenType } from '@/generated/prisma/client';
 import * as argon2 from 'argon2';
 import { normalizeBdPhone } from '@/common/utils/bd-phone';
 import { MailService } from '@/modules/mail/mail.service';

@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, UnauthorizedException } from '@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
-import { Prisma, Role, UserStatus, VerificationTokenType } from '@prisma/client';
+import { Prisma, Role, UserStatus, VerificationTokenType } from '@/generated/prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
 import { MailService } from '@/modules/mail/mail.service';

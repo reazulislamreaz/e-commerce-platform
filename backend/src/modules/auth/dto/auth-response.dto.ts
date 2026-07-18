@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role, UserStatus } from '@prisma/client';
+import { Role, UserStatus } from '@/generated/prisma/client';
 
 export class AuthUserDto {
   @ApiProperty({ format: 'uuid' })

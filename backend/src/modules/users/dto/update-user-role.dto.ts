@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIn } from 'class-validator';
-import { Role } from '@prisma/client';
+import { Role } from '@/generated/prisma/client';
 
 const ASSIGNABLE_ROLES = [Role.ADMIN, Role.CUSTOMER] as const;
 

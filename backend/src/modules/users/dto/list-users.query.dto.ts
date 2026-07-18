@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
-import { Role, UserStatus } from '@prisma/client';
+import { Role, UserStatus } from '@/generated/prisma/client';
 
 export class ListUsersQueryDto {
   @ApiPropertyOptional({ description: 'Cursor: id of the last item from the previous page' })

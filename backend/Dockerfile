@@ -15,9 +15,8 @@ COPY package.json package-lock.json ./
 COPY backend/package.json backend/
 RUN npm ci --workspace=backend --omit=dev && npm cache clean --force
 COPY backend/prisma backend/prisma
-# Prisma client is generated into the workspace node_modules tree during build.
-COPY --from=build /repo/node_modules/.prisma /app/node_modules/.prisma
-COPY --from=build /repo/node_modules/@prisma/client /app/node_modules/@prisma/client
+COPY backend/prisma.config.ts backend/prisma.config.ts
+# Prisma Client is generated into src/generated (compiled into dist by nest build).
 COPY --from=build /repo/backend/dist backend/dist
 USER node
 WORKDIR /app/backend
