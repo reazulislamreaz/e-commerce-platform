@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/shared/page-hero';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
 import { getNewArrivals } from '@/features/products';
 
@@ -13,21 +12,6 @@ export default function NewArrivalsPage() {
 
   return (
     <main id="main-content" className="flex-1 bg-black">
-      <PageHero
-        variant="centered"
-        eyebrow="Just Landed"
-        title={
-          <>
-            NEW <span className="text-[#e3bb78]">ARRIVALS</span>
-          </>
-        }
-        description="The latest cuts, colors, and essentials — limited runs, built to elevate."
-        image="/images/home/collection-new.webp"
-        cta={{ href: '/shop', label: 'Browse Shop' }}
-        secondaryCta={{ href: '/category/men', label: "Men's" }}
-      />
-
-      {/* Unique: numbered drop strip */}
       <section className="border-b border-[#2d2a27] bg-[#111110]">
         <div className="mx-auto flex max-w-[1400px] gap-0 overflow-x-auto px-3 sm:px-6">
           {['Drop 01 — Tees', 'Drop 02 — Hoodies', 'Drop 03 — Bottoms', 'Drop 04 — Essentials'].map(

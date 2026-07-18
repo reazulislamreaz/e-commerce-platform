@@ -33,8 +33,7 @@ export const metadata: Metadata = {
     locale: 'en_BD',
     siteName: 'Elevate Apparel',
     title: 'ElevateApparel — Elevate Your Everyday Style',
-    description:
-      'Premium-quality apparel for men and women. Designed for comfort and confidence.',
+    description: 'Premium-quality apparel for men and women. Designed for comfort and confidence.',
     images: [{ url: '/images/home/hero.webp', width: 1920, height: 1080, alt: 'Elevate Apparel' }],
   },
   twitter: {
