@@ -9,7 +9,7 @@ describe('Catalog + Inventory integration', () => {
   const prisma = new PrismaService();
   const catalogRepository = new CatalogRepository(prisma);
   const inventoryRepository = new InventoryRepository(prisma);
-  const inventory = new InventoryService(inventoryRepository);
+  const inventory = new InventoryService(inventoryRepository, prisma);
   const catalog = new CatalogService(catalogRepository, inventory);
 
   beforeAll(() => prisma.$connect());

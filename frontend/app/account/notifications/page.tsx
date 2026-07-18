@@ -15,7 +15,7 @@ export default function NotificationsPage() {
   const markAllRead = async () => {
     const next = items.map((n) => ({ ...n, read: true }));
     setData(next);
-    await accountRepository.saveNotifications(user.id, next);
+    await accountRepository.markAllNotificationsRead?.();
   };
 
   if (loading) {

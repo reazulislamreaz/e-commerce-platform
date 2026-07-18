@@ -127,6 +127,49 @@ export class CartService {
     return { cart: await this.toResponse(updated), guestCookie };
   }
 
+  async resolveCheckoutLines(
+    userId: string | null,
+    guestToken: string | undefined,
+    explicitItems?: Array<{ variantId: string; quantity: number }>,
+  ): Promise<Array<{ variantId: string; quantity: number }>> {
+    if (explicitItems && explicitItems.length > 0) {
+      return explicitItems.map((item) => ({
+        variantId: item.variantId,
+        quantity: item.quantity,
+      }));
+    }
+
+    const actor = userId ? ({ sub: userId } as JwtPayload) : undefined;
+    const record = await this.resolveCartForRead(actor, guestToken);
+    if (!record || record.items.length === 0) {
+      throw new BadRequestException('Cart is empty');
+    }
+
+    return record.items.map((item) => ({
+      variantId: item.variantId,
+      quantity: item.quantity,
+    }));
+  }
+
+  async clearAfterCheckout(userId: string | null, guestToken?: string): Promise<void> {
+    if (userId) {
+      const record = await this.cart.findByUserId(userId);
+      if (record) {
+        await this.cart.deleteAllItems(record.id);
+        await this.touchCart(record);
+      }
+      return;
+    }
+
+    if (guestToken) {
+      const record = await this.cart.findByGuestTokenHash(sha256Hex(guestToken));
+      if (record) {
+        await this.cart.deleteAllItems(record.id);
+        await this.touchCart(record);
+      }
+    }
+  }
+
   async mergeGuestIntoUser(
     userId: string,
     guestToken: string | undefined,

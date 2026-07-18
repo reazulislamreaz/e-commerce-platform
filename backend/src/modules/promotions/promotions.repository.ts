@@ -81,4 +81,96 @@ export class PromotionsRepository {
       })
       .then(() => undefined);
   }
+
+  listAdminCoupons(): Promise<CouponWithPromotion[]> {
+    return this.prisma.coupon.findMany({
+      where: { deletedAt: null },
+      include: couponWithPromotion,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
+  }
+
+  findAdminCouponById(id: string): Promise<CouponWithPromotion | null> {
+    return this.prisma.coupon.findFirst({
+      where: { id, deletedAt: null },
+      include: couponWithPromotion,
+    });
+  }
+
+  createAdminCoupon(
+    data: {
+      code: string;
+      title: string;
+      description: string;
+      rewardType: Prisma.PromotionCreateInput['rewardType'];
+      percentOff: number | null;
+      fixedOffPoisha: bigint | null;
+      minOrderPoisha: bigint;
+      startsAt: Date;
+      endsAt: Date | null;
+      maxRedemptionsPerUser: number;
+    },
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<CouponWithPromotion> {
+    return tx.coupon.create({
+      data: {
+        code: data.code,
+        title: data.title,
+        description: data.description,
+        maxRedemptionsPerUser: data.maxRedemptionsPerUser,
+        promotion: {
+          create: {
+            name: data.title,
+            rewardType: data.rewardType,
+            percentOff: data.percentOff,
+            fixedOffPoisha: data.fixedOffPoisha,
+            minOrderPoisha: data.minOrderPoisha,
+            startsAt: data.startsAt,
+            endsAt: data.endsAt,
+          },
+        },
+      },
+      include: couponWithPromotion,
+    });
+  }
+
+  updateAdminCoupon(
+    id: string,
+    couponData: Prisma.CouponUpdateInput,
+    promotionData: Prisma.PromotionUpdateInput,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<CouponWithPromotion> {
+    return tx.coupon
+      .update({
+        where: { id },
+        data: {
+          ...couponData,
+          promotion: { update: promotionData },
+        },
+        include: couponWithPromotion,
+      });
+  }
+
+  deactivateCouponPromotion(
+    promotionId: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<void> {
+    return tx.promotion
+      .update({
+        where: { id: promotionId },
+        data: { status: PromotionStatus.DISABLED },
+      })
+      .then(() => undefined);
+  }
+
+  async listCouponRedemptions(couponId: string, cursor?: string, limit = 20) {
+    const items = await this.prisma.couponRedemption.findMany({
+      where: { couponId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    const hasMore = items.length > limit;
+    return { items: hasMore ? items.slice(0, limit) : items, hasMore };
+  }
 }

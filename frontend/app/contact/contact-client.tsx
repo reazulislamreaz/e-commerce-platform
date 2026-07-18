@@ -3,13 +3,39 @@
 import { useState, type FormEvent } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import Link from 'next/link';
+import axios from 'axios';
+import { submitContact } from '@/features/contact/api';
 
 export default function ContactClient() {
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSent(true);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    setSubmitting(true);
+    setError(null);
+    try {
+      await submitContact({
+        name: String(formData.get('name') ?? ''),
+        email: String(formData.get('email') ?? ''),
+        subject: String(formData.get('subject') ?? ''),
+        message: String(formData.get('message') ?? ''),
+        website: String(formData.get('website') ?? ''),
+      });
+      setSent(true);
+      form.reset();
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? ((err.response?.data as { message?: string } | undefined)?.message ??
+          'Could not send your message. Please try again.')
+        : 'Could not send your message. Please try again.';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -106,7 +132,7 @@ export default function ContactClient() {
               </button>
             </div>
           ) : (
-            <form onSubmit={onSubmit} className="mt-6 space-y-4">
+            <form onSubmit={(e) => void onSubmit(e)} className="mt-6 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Name" name="name" required placeholder="Your name" />
                 <Field
@@ -130,11 +156,21 @@ export default function ContactClient() {
                   className="w-full resize-y rounded-[4px] border border-[#37332c] bg-[#1a1815] px-3.5 py-3 text-sm text-white outline-none placeholder:text-[#8b867d] focus:border-[#e3bb78] focus:ring-2 focus:ring-[#e3bb78]/15"
                 />
               </label>
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                className="absolute left-[-9999px] h-0 w-0 opacity-0"
+                aria-hidden="true"
+              />
+              {error && <p className="text-xs text-red-400">{error}</p>}
               <button
                 type="submit"
-                className="w-full border border-[#efc677] bg-[#e5bd79] py-3 text-xs font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a] sm:w-auto sm:px-10"
+                disabled={submitting}
+                className="w-full border border-[#efc677] bg-[#e5bd79] py-3 text-xs font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a] disabled:opacity-50 sm:w-auto sm:px-10"
               >
-                Send Message
+                {submitting ? 'Sending…' : 'Send Message'}
               </button>
             </form>
           )}

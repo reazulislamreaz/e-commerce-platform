@@ -1,12 +1,12 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
-import { useAccountOrders } from '@/features/account';
+import { accountRepository, type CustomerOrder } from '@/features/account';
 import { formatTaka } from '@/lib/currency';
 
 function OrderDetailInner() {
@@ -14,8 +14,16 @@ function OrderDetailInner() {
   const searchParams = useSearchParams();
   const confirmed = searchParams.get('confirmed') === '1';
   const user = useAppSelector(selectAuthUser)!;
-  const { data: orders, loading } = useAccountOrders(user.id);
-  const order = orders.find((o) => o.id === id);
+  const [order, setOrder] = useState<CustomerOrder | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    void accountRepository
+      .getOrder?.(id)
+      .then(setOrder)
+      .catch(() => setOrder(null))
+      .finally(() => setLoading(false));
+  }, [id, user.id]);
 
   if (loading) {
     return <p className="text-sm text-[#b5b0a8]">Loading order…</p>;
@@ -52,7 +60,7 @@ function OrderDetailInner() {
             )}
           </div>
           <Link
-            href={`/track-order?number=${order.number}`}
+            href={`/track-order?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(user.email)}`}
             className="rounded-[4px] border border-[#37332c] px-3 py-2 text-[10px] font-bold uppercase text-white hover:border-[#e3bb78]"
           >
             Track Order

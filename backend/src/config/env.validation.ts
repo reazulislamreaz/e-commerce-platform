@@ -31,4 +31,5 @@ export const envValidationSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.optional().allow(''),
   }),
+  CONTACT_INBOX: Joi.string().email().optional().allow(''),
 });

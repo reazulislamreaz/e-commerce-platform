@@ -1,23 +1,39 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
-import { useAppSelector } from '@/store/hooks';
-import { selectAuthUser } from '@/store/selectors';
-import { useAccountOrders } from '@/features/account';
+import { accountRepository, type CustomerOrder } from '@/features/account';
 
 function TrackOrderInner() {
   const params = useSearchParams();
-  const user = useAppSelector(selectAuthUser);
-  const { data: orders } = useAccountOrders(user?.id);
   const [number, setNumber] = useState(params.get('number') ?? '');
-  const [submitted, setSubmitted] = useState(Boolean(params.get('number')));
+  const [email, setEmail] = useState(params.get('email') ?? '');
+  const [order, setOrder] = useState<CustomerOrder | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  const order = useMemo(() => {
-    if (!submitted || !user || !number.trim()) return null;
-    return orders.find((o) => o.number.toLowerCase() === number.trim().toLowerCase());
-  }, [submitted, user, number, orders]);
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+    setOrder(null);
+    try {
+      const result = await accountRepository.trackOrder!(number.trim(), email.trim());
+      setOrder(result);
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? ((err.response?.data as { message?: string } | undefined)?.message ??
+          'Order not found. Check the number and email used at checkout.')
+        : 'Order not found. Check the number and email used at checkout.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main id="main-content" className="flex-1 bg-black">
@@ -27,38 +43,38 @@ function TrackOrderInner() {
         </p>
         <h1 className="mt-2 text-3xl font-extrabold text-white">Track Order</h1>
         <p className="mt-2 text-sm text-[#b5b0a8]">
-          Enter your order number to see the latest status.
+          Enter your order number and the email used at checkout.
         </p>
 
-        <form
-          className="mt-6 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSubmitted(true);
-          }}
-        >
+        <form className="mt-6 space-y-4" onSubmit={(e) => void onSubmit(e)}>
           <FormField
             label="Order number"
             value={number}
             onChange={(e) => setNumber(e.target.value)}
             placeholder="e.g. EA12345678"
+            required
+          />
+          <FormField
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@email.com"
+            required
           />
           <button
             type="submit"
-            className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-5 py-3 text-[11px] font-bold uppercase text-[#18120b]"
+            disabled={loading}
+            className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-5 py-3 text-[11px] font-bold uppercase text-[#18120b] disabled:opacity-50"
           >
-            Track
+            {loading ? 'Tracking…' : 'Track'}
           </button>
         </form>
 
         {submitted && (
           <div className="mt-8 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-            {!user ? (
-              <p className="text-sm text-[#b5b0a8]">
-                Sign in to track orders linked to your account, or contact support with your order
-                number.
-              </p>
-            ) : order ? (
+            {error && <p className="text-sm text-[#b5b0a8]">{error}</p>}
+            {order && (
               <div>
                 <p className="font-semibold text-white">Order #{order.number}</p>
                 <p className="mt-1 capitalize text-[#e3bb78]">{order.status}</p>
@@ -76,10 +92,6 @@ function TrackOrderInner() {
                   ))}
                 </ol>
               </div>
-            ) : (
-              <p className="text-sm text-[#b5b0a8]">
-                No order found with that number in your account.
-              </p>
             )}
           </div>
         )}
@@ -90,7 +102,13 @@ function TrackOrderInner() {
 
 export default function TrackOrderPage() {
   return (
-    <Suspense fallback={<main className="flex-1 bg-black py-20 text-center text-[#b5b0a8]">Loading…</main>}>
+    <Suspense
+      fallback={
+        <main className="flex flex-1 items-center justify-center bg-black">
+          <p className="text-sm text-[#b5b0a8]">Loading…</p>
+        </main>
+      }
+    >
       <TrackOrderInner />
     </Suspense>
   );

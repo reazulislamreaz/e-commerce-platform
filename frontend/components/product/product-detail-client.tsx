@@ -89,6 +89,9 @@ export function ProductDetailClient({
         quantity: qty,
       }),
     );
+    void import('@/features/cart/api').then(({ upsertServerCartItem }) =>
+      upsertServerCartItem(variantId, qty).catch(() => undefined),
+    );
     setAddedMsg(true);
     window.setTimeout(() => setAddedMsg(false), 2000);
   };
@@ -104,6 +107,9 @@ export function ProductDetailClient({
         color,
         quantity: qty,
       }),
+    );
+    void import('@/features/cart/api').then(({ upsertServerCartItem }) =>
+      upsertServerCartItem(variantId, qty).catch(() => undefined),
     );
     router.push('/checkout');
   };

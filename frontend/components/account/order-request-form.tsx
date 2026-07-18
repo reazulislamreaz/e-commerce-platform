@@ -51,19 +51,12 @@ export function OrderRequestForm({
   const onSubmit = handleSubmit(async (values) => {
     const order = orders.find((o) => o.id === values.orderId);
     if (!order) return;
-    const prefix = type === 'return' ? 'ret' : 'ex';
-    const next: ReturnRequest = {
-      id: `${prefix}-${crypto.randomUUID()}`,
+    const next = await accountRepository.createReturnRequest!({
       orderId: order.id,
-      orderNumber: order.number,
-      reason: values.reason,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
       type,
-    };
-    const all = [...requests, next];
-    await accountRepository.saveReturnRequests(user.id, all);
-    setData(all);
+      reason: values.reason,
+    });
+    setData([next, ...requests]);
     reset();
     void reload();
   });

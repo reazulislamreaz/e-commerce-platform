@@ -101,11 +101,14 @@ export function CartClient() {
                     <button
                       type="button"
                       aria-label="Remove item"
-                      onClick={() =>
+                      onClick={() => {
                         dispatch(
                           itemRemoved({ productId: item.productId, variantId: item.variantId }),
-                        )
-                      }
+                        );
+                        void import('@/features/cart/api').then(({ removeServerCartItem }) =>
+                          removeServerCartItem(item.variantId).catch(() => undefined),
+                        );
+                      }}
                       className="p-1 text-[#8b867d] hover:text-red-400"
                     >
                       <Trash2 className="size-4" strokeWidth={1.5} />
@@ -115,15 +118,19 @@ export function CartClient() {
                     <button
                       type="button"
                       aria-label="Decrease"
-                      onClick={() =>
+                      onClick={() => {
+                        const quantity = item.quantity - 1;
                         dispatch(
                           itemQuantitySet({
                             productId: item.productId,
                             variantId: item.variantId,
-                            quantity: item.quantity - 1,
+                            quantity,
                           }),
-                        )
-                      }
+                        );
+                        void import('@/features/cart/api').then(({ setServerCartItemQuantity }) =>
+                          setServerCartItemQuantity(item.variantId, quantity).catch(() => undefined),
+                        );
+                      }}
                       className="p-2 text-white hover:text-[#e3bb78]"
                     >
                       <Minus className="size-3.5" />
@@ -132,15 +139,19 @@ export function CartClient() {
                     <button
                       type="button"
                       aria-label="Increase"
-                      onClick={() =>
+                      onClick={() => {
+                        const quantity = item.quantity + 1;
                         dispatch(
                           itemQuantitySet({
                             productId: item.productId,
                             variantId: item.variantId,
-                            quantity: item.quantity + 1,
+                            quantity,
                           }),
-                        )
-                      }
+                        );
+                        void import('@/features/cart/api').then(({ setServerCartItemQuantity }) =>
+                          setServerCartItemQuantity(item.variantId, quantity).catch(() => undefined),
+                        );
+                      }}
                       className="p-2 text-white hover:text-[#e3bb78]"
                     >
                       <Plus className="size-3.5" />

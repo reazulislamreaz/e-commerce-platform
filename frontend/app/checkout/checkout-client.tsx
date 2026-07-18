@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
 import { formatTaka } from '@/lib/currency';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -17,11 +18,7 @@ import {
   resolveCartLines,
   shippingForSubtotal,
 } from '@/features/cart/pricing';
-import {
-  accountRepository,
-  type CustomerOrder,
-  type SavedAddress,
-} from '@/features/account';
+import { accountRepository } from '@/features/account';
 import { useProductsByIds } from '@/features/products';
 
 const checkoutSchema = z.object({
@@ -33,7 +30,7 @@ const checkoutSchema = z.object({
   city: z.string().min(2).max(80),
   district: z.string().min(2).max(80),
   postalCode: z.string().min(3).max(20),
-  paymentMethod: z.enum(['cod', 'bkash', 'card']),
+  paymentMethod: z.literal('cod'),
   notes: z.string().max(300).optional(),
 });
 
@@ -51,6 +48,7 @@ export function CheckoutClient() {
   );
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [shippingWaived, setShippingWaived] = useState(false);
   const [appliedCode, setAppliedCode] = useState<string | undefined>();
   const [couponError, setCouponError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -62,7 +60,7 @@ export function CheckoutClient() {
   );
 
   const subtotal = cartSubtotal(lines);
-  const shipping = shippingForSubtotal(subtotal, appliedCode === 'FREESHIP');
+  const shipping = shippingForSubtotal(subtotal, shippingWaived);
   const total = Math.max(0, subtotal - discount) + shipping;
 
   const {
@@ -86,17 +84,26 @@ export function CheckoutClient() {
       setCouponError('Sign in to apply coupons from your account.');
       return;
     }
-    const coupons = await accountRepository.getCoupons(user.id);
-    const result = accountRepository.applyCoupon(couponCode, subtotal, coupons);
-    if (result.error) {
-      setCouponError(result.error);
+    try {
+      const result = await accountRepository.validateCoupon?.(couponCode, subtotal);
+      if (!result) {
+        setCouponError('Could not validate coupon.');
+        return;
+      }
+      setCouponError(null);
+      setDiscount(result.discount);
+      setShippingWaived(result.shippingWaived);
+      setAppliedCode(result.code);
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { message?: string } | undefined)?.message ??
+          'Invalid or expired coupon code.')
+        : 'Invalid or expired coupon code.';
+      setCouponError(message);
       setDiscount(0);
+      setShippingWaived(false);
       setAppliedCode(undefined);
-      return;
     }
-    setCouponError(null);
-    setDiscount(result.discount);
-    setAppliedCode(result.coupon?.code);
   };
 
   const onSubmit = handleSubmit(async (values) => {
@@ -105,64 +112,23 @@ export function CheckoutClient() {
     setSubmitError(null);
 
     try {
-      const stamp = crypto.randomUUID();
-      const address: SavedAddress = {
-        id: `addr-${stamp}`,
-        label: 'Checkout',
+      const order = await accountRepository.placeOrderCheckout!({
         fullName: values.fullName,
         phone: values.phone,
+        email: values.email,
         line1: values.line1,
         line2: values.line2,
         city: values.city,
         district: values.district,
         postalCode: values.postalCode,
-        country: 'Bangladesh',
-        isDefault: true,
-        type: 'shipping',
-      };
-
-      const now = new Date().toISOString();
-      const order: CustomerOrder = {
-        id: `ord-${stamp}`,
-        number: accountRepository.createOrderNumber(),
-        createdAt: now,
-        status: 'confirmed',
-        items: lines.map(({ item, product }) => ({
-          productId: product.id,
-          name: product.name,
-          slug: product.slug,
-          image: product.image,
-          size: item.size,
-          color: item.color,
-          quantity: item.quantity,
-          unitPrice: product.price,
-        })),
-        subtotal,
-        shipping,
-        discount,
-        total,
+        paymentMethod: 'cod',
+        notes: values.notes,
         couponCode: appliedCode,
-        shippingAddress: address,
-        paymentMethod: values.paymentMethod,
-        trackingNumber: `TRK${stamp.replace(/-/g, '').slice(0, 10).toUpperCase()}`,
-        timeline: [
-          { label: 'Order placed', at: now, done: true },
-          { label: 'Confirmed', at: now, done: true },
-          { label: 'Processing', at: '', done: false },
-          { label: 'Shipped', at: '', done: false },
-          { label: 'Delivered', at: '', done: false },
-        ],
-      };
-
-      await accountRepository.placeOrder(user?.id ?? null, order);
-
-      if (user && appliedCode) {
-        const coupons = await accountRepository.getCoupons(user.id);
-        await accountRepository.saveCoupons(
-          user.id,
-          coupons.map((c) => (c.code === appliedCode ? { ...c, used: true } : c)),
-        );
-      }
+        items: lines.map(({ item }) => ({
+          variantId: item.variantId,
+          quantity: item.quantity,
+        })),
+      });
 
       dispatch(cartCleared());
 
@@ -177,8 +143,12 @@ export function CheckoutClient() {
         // ignore quota errors
       }
       router.push('/order-confirmation');
-    } catch {
-      setSubmitError('Could not place your order. Please try again.');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { message?: string } | undefined)?.message ??
+          'Could not place your order. Please try again.')
+        : 'Could not place your order. Please try again.';
+      setSubmitError(message);
     } finally {
       setSubmitting(false);
     }
@@ -244,26 +214,18 @@ export function CheckoutClient() {
                 Payment Method
               </h2>
               <div className="mt-3 space-y-2">
-                {(
-                  [
-                    ['cod', 'Cash on Delivery'],
-                    ['bkash', 'bKash'],
-                    ['card', 'Card / Online Banking'],
-                  ] as const
-                ).map(([value, label]) => (
-                  <label
-                    key={value}
-                    className="flex cursor-pointer items-center gap-2.5 rounded-[4px] border border-[#37332c] px-3 py-2.5 text-sm text-[#e9e5de]"
-                  >
-                    <input
-                      type="radio"
-                      value={value}
-                      {...register('paymentMethod')}
-                      className="accent-[#e5bd79]"
-                    />
-                    {label}
-                  </label>
-                ))}
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-[4px] border border-[#37332c] px-3 py-2.5 text-sm text-[#e9e5de]">
+                  <input
+                    type="radio"
+                    value="cod"
+                    {...register('paymentMethod')}
+                    className="accent-[#e5bd79]"
+                  />
+                  Cash on Delivery
+                </label>
+                <p className="rounded-[4px] border border-dashed border-[#37332c] px-3 py-2.5 text-xs text-[#8b867d]">
+                  bKash and card payments are coming soon.
+                </p>
               </div>
             </div>
           </div>

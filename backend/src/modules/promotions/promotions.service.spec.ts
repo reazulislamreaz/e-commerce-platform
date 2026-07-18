@@ -5,6 +5,8 @@ import {
   PromotionStatus,
 } from '@/generated/prisma/client';
 import { takaToPoisha } from '@/common/utils/money';
+import { AuditService } from '@/modules/platform/audit.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import {
   PromotionsRepository,
   type CouponWithPromotion,
@@ -65,6 +67,8 @@ describe('PromotionsService', () => {
       providers: [
         PromotionsService,
         { provide: PromotionsRepository, useValue: repository },
+        { provide: PrismaService, useValue: { $transaction: jest.fn() } },
+        { provide: AuditService, useValue: { write: jest.fn() } },
       ],
     }).compile();
 

@@ -4,6 +4,11 @@ import { Queue, type JobsOptions } from 'bullmq';
 import {
   EMAIL_QUEUE,
   EmailJobName,
+  type ContactAckEmail,
+  type ContactInternalEmail,
+  type NewsletterWelcomeEmail,
+  type OrderConfirmationEmail,
+  type OrderStatusEmail,
   type PasswordResetEmail,
   type VerificationEmail,
 } from './mail.types';
@@ -30,5 +35,25 @@ export class MailService {
 
   async sendPasswordReset(email: PasswordResetEmail): Promise<void> {
     await this.emailQueue.add(EmailJobName.PASSWORD_RESET, email, EMAIL_JOB_OPTIONS);
+  }
+
+  async sendOrderConfirmation(email: OrderConfirmationEmail): Promise<void> {
+    await this.emailQueue.add(EmailJobName.ORDER_CONFIRMATION, email, EMAIL_JOB_OPTIONS);
+  }
+
+  async sendOrderStatus(email: OrderStatusEmail): Promise<void> {
+    await this.emailQueue.add(EmailJobName.ORDER_STATUS, email, EMAIL_JOB_OPTIONS);
+  }
+
+  async sendContactAck(email: ContactAckEmail): Promise<void> {
+    await this.emailQueue.add(EmailJobName.CONTACT_ACK, email, EMAIL_JOB_OPTIONS);
+  }
+
+  async sendContactInternal(email: ContactInternalEmail): Promise<void> {
+    await this.emailQueue.add(EmailJobName.CONTACT_INTERNAL, email, EMAIL_JOB_OPTIONS);
+  }
+
+  async sendNewsletterWelcome(email: NewsletterWelcomeEmail): Promise<void> {
+    await this.emailQueue.add(EmailJobName.NEWSLETTER_WELCOME, email, EMAIL_JOB_OPTIONS);
   }
 }

@@ -1,10 +1,18 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   Prisma,
   PromotionRewardType,
   PromotionStatus,
 } from '@/generated/prisma/client';
 import { poishaToTaka, takaToPoisha } from '@/common/utils/money';
+import type { JwtPayload } from '@/modules/auth/jwt.strategy';
+import { AuditService } from '@/modules/platform/audit.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import type {
+  CreateAdminCouponDto,
+  ListAdminCouponRedemptionsQueryDto,
+  UpdateAdminCouponDto,
+} from './dto/admin-coupon.dto';
 import type { CouponResponseDto } from './dto/coupon-response.dto';
 import type { ValidateCouponDto } from './dto/validate-coupon.dto';
 import type { ValidateCouponResponseDto } from './dto/validate-coupon-response.dto';
@@ -33,7 +41,11 @@ const INVALID_COUPON_MESSAGE = 'Invalid or expired coupon code.';
 
 @Injectable()
 export class PromotionsService {
-  constructor(private readonly promotions: PromotionsRepository) {}
+  constructor(
+    private readonly promotions: PromotionsRepository,
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   normalizeCode(code: string): string {
     return code.trim().toUpperCase();
@@ -107,6 +119,164 @@ export class PromotionsService {
     tx?: Prisma.TransactionClient,
   ): Promise<void> {
     await this.promotions.createRedemption(input, tx);
+  }
+
+  async listAdminCoupons() {
+    const coupons = await this.promotions.listAdminCoupons();
+    return coupons.map((coupon) => this.toAdminCouponResponse(coupon));
+  }
+
+  async getAdminCoupon(id: string) {
+    const coupon = await this.promotions.findAdminCouponById(id);
+    if (!coupon) throw new NotFoundException('Coupon not found');
+    return this.toAdminCouponResponse(coupon);
+  }
+
+  async createAdminCoupon(actor: JwtPayload, dto: CreateAdminCouponDto) {
+    const reward = this.mapRewardInput(dto.rewardType, dto.value);
+    const code = this.normalizeCode(dto.code);
+
+    try {
+      const coupon = await this.prisma.$transaction(async (tx) => {
+        const created = await this.promotions.createAdminCoupon(
+          {
+            code,
+            title: dto.title,
+            description: dto.description,
+            rewardType: reward.rewardType,
+            percentOff: reward.percentOff,
+            fixedOffPoisha: reward.fixedOffPoisha,
+            minOrderPoisha: takaToPoisha(dto.minOrderTaka),
+            startsAt: new Date(dto.startsAt),
+            endsAt: dto.endsAt ? new Date(dto.endsAt) : null,
+            maxRedemptionsPerUser: dto.maxRedemptionsPerUser ?? 1,
+          },
+          tx,
+        );
+        await this.audit.write(
+          {
+            actorUserId: actor.sub,
+            actorRole: actor.role,
+            action: 'coupon.create',
+            resourceType: 'coupon',
+            resourceId: created.id,
+            after: { code: created.code, rewardType: dto.rewardType },
+          },
+          tx,
+        );
+        return created;
+      });
+      return this.toAdminCouponResponse(coupon);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Coupon code already exists');
+      }
+      throw error;
+    }
+  }
+
+  async updateAdminCoupon(actor: JwtPayload, id: string, dto: UpdateAdminCouponDto) {
+    const existing = await this.promotions.findAdminCouponById(id);
+    if (!existing) throw new NotFoundException('Coupon not found');
+
+    const reward = dto.rewardType
+      ? this.mapRewardInput(dto.rewardType, dto.value)
+      : null;
+
+    const coupon = await this.prisma.$transaction(async (tx) => {
+      const updated = await this.promotions.updateAdminCoupon(
+        id,
+        {
+          ...(dto.title != null ? { title: dto.title } : {}),
+          ...(dto.description != null ? { description: dto.description } : {}),
+          ...(dto.maxRedemptionsPerUser != null
+            ? { maxRedemptionsPerUser: dto.maxRedemptionsPerUser }
+            : {}),
+        },
+        {
+          ...(dto.title != null ? { name: dto.title } : {}),
+          ...(dto.minOrderTaka != null
+            ? { minOrderPoisha: takaToPoisha(dto.minOrderTaka) }
+            : {}),
+          ...(dto.startsAt != null ? { startsAt: new Date(dto.startsAt) } : {}),
+          ...(dto.endsAt !== undefined
+            ? { endsAt: dto.endsAt ? new Date(dto.endsAt) : null }
+            : {}),
+          ...(reward
+            ? {
+                rewardType: reward.rewardType,
+                percentOff: reward.percentOff,
+                fixedOffPoisha: reward.fixedOffPoisha,
+              }
+            : {}),
+        },
+        tx,
+      );
+      await this.audit.write(
+        {
+          actorUserId: actor.sub,
+          actorRole: actor.role,
+          action: 'coupon.update',
+          resourceType: 'coupon',
+          resourceId: id,
+          before: { code: existing.code, title: existing.title },
+          after: { code: updated.code, title: updated.title },
+        },
+        tx,
+      );
+      return updated;
+    });
+
+    return this.toAdminCouponResponse(coupon);
+  }
+
+  async deactivateAdminCoupon(actor: JwtPayload, id: string) {
+    const existing = await this.promotions.findAdminCouponById(id);
+    if (!existing) throw new NotFoundException('Coupon not found');
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.promotions.deactivateCouponPromotion(existing.promotionId, tx);
+      await this.audit.write(
+        {
+          actorUserId: actor.sub,
+          actorRole: actor.role,
+          action: 'coupon.deactivate',
+          resourceType: 'coupon',
+          resourceId: id,
+          before: { status: existing.promotion.status },
+          after: { status: PromotionStatus.DISABLED },
+        },
+        tx,
+      );
+    });
+
+    return this.getAdminCoupon(id);
+  }
+
+  async listAdminCouponRedemptions(id: string, query: ListAdminCouponRedemptionsQueryDto) {
+    const existing = await this.promotions.findAdminCouponById(id);
+    if (!existing) throw new NotFoundException('Coupon not found');
+
+    const { items, hasMore } = await this.promotions.listCouponRedemptions(
+      id,
+      query.cursor,
+      query.limit,
+    );
+
+    return {
+      data: items.map((redemption) => ({
+        id: redemption.id,
+        orderId: redemption.orderId,
+        userId: redemption.userId,
+        discountTaka: poishaToTaka(redemption.discountPoisha),
+        shippingWaived: redemption.shippingWaived,
+        createdAt: redemption.createdAt.toISOString(),
+      })),
+      meta: {
+        limit: query.limit,
+        nextCursor: hasMore ? items[items.length - 1].id : null,
+      },
+    };
   }
 
   private async assertCouponEligible(
@@ -245,6 +415,63 @@ export class PromotionsService {
         return 0;
       default:
         return 0;
+    }
+  }
+
+  private toAdminCouponResponse(coupon: CouponWithPromotion) {
+    const { promotion } = coupon;
+    return {
+      id: coupon.id,
+      code: coupon.code,
+      title: coupon.title,
+      description: coupon.description,
+      rewardType: this.mapDiscountType(promotion.rewardType),
+      value: this.mapDiscountValue(promotion),
+      minOrderTaka: poishaToTaka(promotion.minOrderPoisha),
+      status: promotion.status,
+      startsAt: promotion.startsAt.toISOString(),
+      endsAt: promotion.endsAt?.toISOString() ?? null,
+      maxRedemptionsPerUser: coupon.maxRedemptionsPerUser,
+      createdAt: coupon.createdAt.toISOString(),
+      updatedAt: coupon.updatedAt.toISOString(),
+    };
+  }
+
+  private mapRewardInput(
+    rewardType: 'percent' | 'fixed' | 'free_shipping',
+    value?: number,
+  ): {
+    rewardType: PromotionRewardType;
+    percentOff: number | null;
+    fixedOffPoisha: bigint | null;
+  } {
+    switch (rewardType) {
+      case 'percent':
+        if (value == null || value <= 0 || value > 100) {
+          throw new BadRequestException('Percent coupons require value between 1 and 100');
+        }
+        return {
+          rewardType: PromotionRewardType.PERCENT_OFF,
+          percentOff: Math.round(value),
+          fixedOffPoisha: null,
+        };
+      case 'fixed':
+        if (value == null || value <= 0) {
+          throw new BadRequestException('Fixed coupons require a positive value in taka');
+        }
+        return {
+          rewardType: PromotionRewardType.FIXED_OFF,
+          percentOff: null,
+          fixedOffPoisha: takaToPoisha(value),
+        };
+      case 'free_shipping':
+        return {
+          rewardType: PromotionRewardType.FREE_SHIPPING,
+          percentOff: null,
+          fixedOffPoisha: null,
+        };
+      default:
+        throw new BadRequestException('Unsupported reward type');
     }
   }
 }

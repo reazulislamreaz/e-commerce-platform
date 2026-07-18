@@ -41,25 +41,18 @@ export default function AddressesPage() {
     defaultValues: { label: 'Home', city: 'Dhaka', district: 'Dhaka', isDefault: false },
   });
 
-  const persist = async (next: SavedAddress[]) => {
-    setAddresses(next);
-    await accountRepository.saveAddresses(user.id, next);
-  };
-
   const onSubmit = handleSubmit(async (values) => {
-    const next: SavedAddress = {
-      id: `addr-${crypto.randomUUID()}`,
+    const created = await accountRepository.createAddress!({
       ...values,
       line2: values.line2,
-      country: 'Bangladesh',
       isDefault: Boolean(values.isDefault) || addresses.length === 0,
       type: 'shipping',
-    };
-    let list = [...addresses, next];
-    if (next.isDefault) {
-      list = list.map((a) => ({ ...a, isDefault: a.id === next.id }));
-    }
-    await persist(list);
+    });
+    setAddresses(
+      created.isDefault
+        ? [...addresses.map((a) => ({ ...a, isDefault: false })), created]
+        : [...addresses, created],
+    );
     reset({ label: 'Home', city: 'Dhaka', district: 'Dhaka', isDefault: false });
     setOpen(false);
   });
@@ -150,7 +143,10 @@ export default function AddressesPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => persist(addresses.filter((a) => a.id !== address.id))}
+                  onClick={async () => {
+                    await accountRepository.deleteAddress!(address.id);
+                    setAddresses(addresses.filter((a) => a.id !== address.id));
+                  }}
                   className="text-[11px] uppercase text-red-300 hover:text-red-200"
                 >
                   Remove

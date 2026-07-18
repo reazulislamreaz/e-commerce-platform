@@ -50,7 +50,7 @@ export interface CustomerOrder {
   total: number;
   couponCode?: string;
   shippingAddress: SavedAddress;
-  paymentMethod: 'cod' | 'bkash' | 'card';
+  paymentMethod: 'cod' | 'bkash' | 'card'; // bkash/card reserved until gateways ship
   trackingNumber?: string;
   timeline: { label: string; at: string; done: boolean }[];
 }
@@ -69,7 +69,7 @@ export interface AccountCoupon {
   code: string;
   title: string;
   description: string;
-  discountType: 'percent' | 'fixed';
+  discountType: 'percent' | 'fixed' | 'free_shipping';
   value: number;
   minOrder: number;
   expiresAt: string;

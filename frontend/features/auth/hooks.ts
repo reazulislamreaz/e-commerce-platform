@@ -3,6 +3,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { useAppDispatch } from '@/store/hooks';
 import { authenticated, profileUpdated, signedOut } from '@/store/slices/auth-slice';
+import { cartHydrated } from '@/store/slices/cart-slice';
+import { wishlistHydrated } from '@/store/slices/wishlist-slice';
+import { mergeServerCart, toReduxCartItems } from '@/features/cart/api';
+import { mergeWishlist } from '@/features/wishlist/api';
+import { readStorage } from '@/lib/storage';
 import {
   changePassword,
   forgotPassword,
@@ -16,6 +21,25 @@ import {
 } from './api';
 import type { LoginInput } from './schemas';
 
+async function mergeGuestCommerceState(
+  dispatch: ReturnType<typeof useAppDispatch>,
+): Promise<void> {
+  try {
+    const cart = await mergeServerCart();
+    dispatch(cartHydrated(toReduxCartItems(cart)));
+  } catch {
+    // Guest cart may be empty; ignore merge failures so login still succeeds.
+  }
+
+  try {
+    const localIds = readStorage<string[]>('wishlist', []);
+    const productIds = await mergeWishlist(localIds);
+    dispatch(wishlistHydrated(productIds));
+  } catch {
+    // Ignore wishlist merge failures.
+  }
+}
+
 export function useLogin() {
   const dispatch = useAppDispatch();
   return useMutation({
@@ -25,14 +49,16 @@ export function useLogin() {
       const result = await login({ ...input, rememberMe });
       return { ...result, rememberMe };
     },
-    onSuccess: (result) =>
+    onSuccess: async (result) => {
       dispatch(
         authenticated({
           user: result.user,
           accessToken: result.accessToken,
           rememberMe: result.rememberMe,
         }),
-      ),
+      );
+      await mergeGuestCommerceState(dispatch);
+    },
   });
 }
 

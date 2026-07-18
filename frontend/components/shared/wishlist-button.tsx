@@ -3,7 +3,8 @@
 import { Heart } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { wishlistToggled } from '@/store/slices/wishlist-slice';
-import { selectIsWishlisted } from '@/store/selectors';
+import { selectAuthUser, selectIsWishlisted } from '@/store/selectors';
+import { addWishlistProduct, removeWishlistProduct } from '@/features/wishlist/api';
 import { cn } from '@/lib/utils';
 
 export function WishlistButton({
@@ -17,12 +18,23 @@ export function WishlistButton({
 }) {
   const dispatch = useAppDispatch();
   const wishlisted = useAppSelector(selectIsWishlisted(productId));
+  const user = useAppSelector(selectAuthUser);
+
+  const toggle = () => {
+    const nextWishlisted = !wishlisted;
+    dispatch(wishlistToggled(productId));
+    if (!user) return;
+    void (nextWishlisted
+      ? addWishlistProduct(productId)
+      : removeWishlistProduct(productId)
+    ).catch(() => undefined);
+  };
 
   if (variant === 'button') {
     return (
       <button
         type="button"
-        onClick={() => dispatch(wishlistToggled(productId))}
+        onClick={toggle}
         aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         aria-pressed={wishlisted}
         className={cn(
@@ -48,7 +60,7 @@ export function WishlistButton({
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        dispatch(wishlistToggled(productId));
+        toggle();
       }}
       className={cn(
         'absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full border border-[#37332c]/50 bg-[#111110]/85 text-white shadow-[0_4px_14px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:border-[#e3bb78]/60 hover:bg-[#111110] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-11',
