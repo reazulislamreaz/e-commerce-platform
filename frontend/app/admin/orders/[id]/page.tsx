@@ -10,6 +10,7 @@ import {
   AdminError,
   AdminInput,
   AdminPanel,
+  AdminSkeleton,
   AdminTextarea,
   StatusPill,
 } from '@/components/admin/admin-ui';
@@ -83,7 +84,13 @@ export default function AdminOrderDetailPage() {
   }
 
   if (orderQuery.isLoading) {
-    return <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading order…</p>;
+    return (
+      <div className="space-y-5">
+        <AdminSkeleton className="h-6 w-40" />
+        <AdminSkeleton className="h-56 w-full" />
+        <AdminSkeleton className="h-40 w-full" />
+      </div>
+    );
   }
 
   if (orderQuery.isError || !order) {
@@ -138,20 +145,40 @@ export default function AdminOrderDetailPage() {
           </div>
         </dl>
 
-        <ol className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-          {order.timeline.map((step) => (
-            <li
-              key={`${step.label}-${step.at}`}
-              className={`rounded-[4px] border px-3 py-2 text-[11px] ${
-                step.done
-                  ? 'border-[#e5bd79]/40 bg-[#1a1815] text-[#e3bb78]'
-                  : 'border-[#2d2a27] text-[#8b867d]'
-              }`}
-            >
-              <p className="font-semibold">{step.label}</p>
-              <p className="mt-0.5 text-[10px] opacity-80">
-                {step.at ? new Date(step.at).toLocaleString() : '—'}
-              </p>
+        <ol className="mt-6 flex flex-col gap-0 sm:flex-row sm:gap-2">
+          {order.timeline.map((step, index) => (
+            <li key={`${step.label}-${step.at}`} className="flex flex-1 sm:flex-col">
+              {/* Connector + dot */}
+              <div className="flex flex-col items-center sm:w-full sm:flex-row">
+                <span
+                  aria-hidden
+                  className={`flex size-3 shrink-0 items-center justify-center rounded-full border-2 ${
+                    step.done
+                      ? 'border-[#e5bd79] bg-[#e5bd79]'
+                      : 'border-[#37332c] bg-transparent'
+                  }`}
+                />
+                {index < order.timeline.length - 1 ? (
+                  <span
+                    aria-hidden
+                    className={`min-h-6 w-0.5 flex-1 sm:h-0.5 sm:min-h-0 sm:w-full ${
+                      step.done ? 'bg-[#e5bd79]/50' : 'bg-[#2d2a27]'
+                    }`}
+                  />
+                ) : null}
+              </div>
+              <div className="-mt-0.5 pb-5 pl-3 sm:mt-2 sm:pb-0 sm:pl-0">
+                <p
+                  className={`text-[11px] font-semibold ${
+                    step.done ? 'text-[#e3bb78]' : 'text-[#8b867d]'
+                  }`}
+                >
+                  {step.label}
+                </p>
+                <p className="mt-0.5 text-[10px] text-[#6f6a61]">
+                  {step.at ? new Date(step.at).toLocaleString() : '—'}
+                </p>
+              </div>
             </li>
           ))}
         </ol>
@@ -234,6 +261,7 @@ export default function AdminOrderDetailPage() {
               <AdminButton
                 type="button"
                 disabled={busy}
+                loading={statusMutation.isPending}
                 onClick={() => void runStatus('PROCESSING')}
               >
                 Process
@@ -244,6 +272,7 @@ export default function AdminOrderDetailPage() {
               <AdminButton
                 type="button"
                 disabled={busy}
+                loading={statusMutation.isPending}
                 onClick={() => void runStatus('DELIVERED')}
               >
                 Deliver
@@ -268,6 +297,7 @@ export default function AdminOrderDetailPage() {
               <AdminButton
                 type="button"
                 disabled={busy || trackingNumber.trim().length < 4}
+                loading={statusMutation.isPending}
                 onClick={() => void runStatus('SHIPPED', trackingNumber.trim())}
               >
                 Ship
@@ -293,7 +323,12 @@ export default function AdminOrderDetailPage() {
                 type="button"
                 variant="danger"
                 disabled={busy || cancelReason.trim().length < 3}
-                onClick={() => void runCancel()}
+                loading={cancelMutation.isPending}
+                onClick={() => {
+                  if (window.confirm(`Cancel order #${order.number}? This cannot be undone.`)) {
+                    void runCancel();
+                  }
+                }}
               >
                 Cancel order
               </AdminButton>
