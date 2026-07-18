@@ -4,7 +4,7 @@
 >
 > **Scope rule:** Every decision is grounded in the current monorepo (`frontend/`, `backend/`, `PROJECT_OVERVIEW.md`, `CLAUDE.md`). Features not present in code or docs (wallets, subscriptions, affiliate, admin/vendor UIs, Socket.IO dashboards) are **out of scope** for v1 unless listed as explicit future extensions.
 >
-> **Stack decision:** Continue **NestJS 11 + Prisma 6 + PostgreSQL 17 + Redis 7 + BullMQ**. Do not rewrite to Express.
+> **Stack decision:** Continue **NestJS 11 + Prisma 7 + PostgreSQL 17 + Redis 7 + BullMQ**. Do not rewrite to Express.
 
 ---
 

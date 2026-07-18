@@ -32,7 +32,7 @@ The platform foundation is implemented. Product, order, payment, and admin busin
 | Frontend state    | Redux Toolkit for client state; TanStack Query for API/server state      |
 | Frontend requests | Axios with access-token attachment and refresh retry                     |
 | Backend           | NestJS 11, TypeScript, class-validator/class-transformer                 |
-| Database          | PostgreSQL 17 with Prisma 6                                              |
+| Database          | PostgreSQL 17 with Prisma 7                                              |
 | Cache/jobs        | Redis 7 and BullMQ                                                       |
 | Security          | JWT, refresh cookies, RBAC guards, Helmet, CORS, compression, throttling |
 | Observability     | Pino via `nestjs-pino`, Swagger/OpenAPI                                  |
