@@ -164,7 +164,7 @@ function seedNotifications(): AccountNotification[] {
     {
       id: 'n1',
       title: 'Welcome to Elevate Apparel',
-      body: 'Explore new arrivals and enjoy free delivery on orders over ৳1999.',
+      body: 'Explore new arrivals and elevate your everyday wardrobe.',
       createdAt: new Date().toISOString(),
       read: false,
       href: '/new-arrivals',

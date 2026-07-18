@@ -116,11 +116,6 @@ export function SiteHeader() {
 
   return (
     <header className="z-40 bg-black text-white">
-      <div className="flex min-h-[28px] items-center justify-center border-b border-[#282828] px-3 py-1 text-center text-[10px] font-semibold leading-4 text-[#f1eee9]">
-        FREE DELIVERY ON ALL ORDERS OVER ৳1999{' '}
-        <span className="ml-1 text-[#e3bb77]">♣</span>
-      </div>
-
       {/* Desktop header — unchanged */}
       <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#292929] px-4 sm:px-7 lg:flex">
         <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">

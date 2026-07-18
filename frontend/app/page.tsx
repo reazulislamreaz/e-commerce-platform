@@ -160,7 +160,7 @@ function Hero() {
 
 function Benefits() {
   const benefits = [
-    [Truck, 'FREE DELIVERY', 'On all orders over ৳1999'],
+    [Truck, 'FAST DELIVERY', 'Reliable nationwide shipping'],
     [ShieldCheck, 'PREMIUM QUALITY', 'Finest materials'],
     [RefreshCw, 'EASY RETURNS', '7 day return policy'],
     [Headphones, 'CUSTOMER SUPPORT', "We're here to help"],

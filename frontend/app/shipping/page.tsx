@@ -8,7 +8,7 @@ export default function ShippingPage() {
       title="Shipping Policy"
       body={[
         'We ship across Bangladesh with reliable courier partners.',
-        'Orders over ৳1999 qualify for free delivery. Standard shipping is ৳120.',
+        'Standard shipping is ৳120 across Bangladesh.',
         'You will receive tracking details once your order ships.',
         'Delivery timelines may vary during peak seasons and public holidays.',
       ]}

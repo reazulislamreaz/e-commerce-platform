@@ -8,7 +8,6 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { itemQuantitySet, itemRemoved } from '@/store/slices/cart-slice';
 import { selectCartHydrated, selectCartItems } from '@/store/selectors';
 import {
-  amountUntilFreeShipping,
   cartSubtotal,
   resolveCartLines,
   shippingForSubtotal,
@@ -31,7 +30,6 @@ export function CartClient() {
   const subtotal = cartSubtotal(lines);
   const shipping = shippingForSubtotal(subtotal);
   const total = subtotal + shipping;
-  const untilFree = amountUntilFreeShipping(subtotal);
 
   if (lines.length === 0) {
     return (
@@ -166,11 +164,6 @@ export function CartClient() {
                 <dd className="text-[#e5c17d]">{formatTaka(total)}</dd>
               </div>
             </dl>
-            {untilFree > 0 && (
-              <p className="mt-3 text-[11px] text-[#b5b0a8]">
-                Add {formatTaka(untilFree)} more for free delivery.
-              </p>
-            )}
             <Link
               href="/checkout"
               className="mt-5 block rounded-[4px] border border-[#efc677] bg-[#e5bd79] py-3 text-center text-[11px] font-bold uppercase text-[#18120b] hover:bg-[#eec98a]"

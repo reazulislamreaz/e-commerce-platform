@@ -9,8 +9,8 @@ const faqs = [
     a: 'Inside Dhaka, most orders arrive within 1–3 business days. Outside Dhaka, allow 3–5 business days.',
   },
   {
-    q: 'Do you offer free delivery?',
-    a: 'Yes — free delivery on all orders over ৳1999.',
+    q: 'How much is shipping?',
+    a: 'Standard shipping is ৳120 across Bangladesh. You will receive tracking once your order ships.',
   },
   {
     q: 'How do I return an item?',

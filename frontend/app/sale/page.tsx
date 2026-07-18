@@ -32,7 +32,7 @@ export default function SalePage() {
       <section className="bg-[#e5bd79]">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-7">
           <p className="text-xs font-bold uppercase tracking-[.12em] text-[#18120b]">
-            Member tip — free delivery on orders over ৳1999
+            Member tip — unlock exclusive sale drops first
           </p>
           <Link
             href="/register"
