@@ -1,10 +1,11 @@
 # Production stack for a single VPS.
-# Images are built in GitHub Actions and pulled from GHCR; this file is copied
-# to the VPS by the deploy workflow and run with `docker compose ... up -d`.
+# Images are built in GitHub Actions and pulled from Docker Hub; this file is
+# copied to the VPS by the deploy workflow and run with `docker compose ... up -d`.
 #
 #   docker compose --env-file .env -f docker-compose.prod.yml up -d
 #
-# Required env (see .env.production.example): IMAGE_OWNER, IMAGE_TAG, secrets.
+# Required env (see .env.production.example): IMAGE_OWNER (Docker Hub username),
+# IMAGE_TAG, secrets.
 
 name: elevate
 
@@ -41,7 +42,7 @@ services:
   # One-shot: applies pending Prisma migrations, then exits. The backend waits
   # for this to complete successfully before starting.
   migrate:
-    image: ghcr.io/${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
+    image: ${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
     restart: 'no'
     working_dir: /app/backend
     command: ['npx', 'prisma', 'migrate', 'deploy']
@@ -53,7 +54,7 @@ services:
     networks: [internal]
 
   backend:
-    image: ghcr.io/${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
+    image: ${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -86,7 +87,7 @@ services:
     networks: [internal]
 
   frontend:
-    image: ghcr.io/${IMAGE_OWNER}/elevate-frontend:${IMAGE_TAG:-latest}
+    image: ${IMAGE_OWNER}/elevate-frontend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       NODE_ENV: production

@@ -1,15 +1,15 @@
 # Deploying to a VPS (CI/CD)
 
 This directory contains everything needed to run Elevate Apparel in production on a
-single VPS. Images are built and published by GitHub Actions to the GitHub
-Container Registry (GHCR); the VPS pulls those images and runs them with Docker
-Compose behind Nginx with automatic Let's Encrypt TLS.
+single VPS. Images are built and published by GitHub Actions to Docker Hub; the
+VPS pulls those images and runs them with Docker Compose behind Nginx with
+automatic Let's Encrypt TLS.
 
 ## Pipeline overview
 
 ```
 push to main ─► CI (lint · test · build · integration)
-             ─► build-and-push (backend + frontend images ─► GHCR)
+             ─► build-and-push (backend + frontend images ─► Docker Hub)
              ─► deploy (SSH to VPS ─► docker compose pull + up -d)
 ```
 
@@ -71,13 +71,15 @@ by the deploy (only `.env.production.example` is copied).
 
 Secrets (Secrets tab):
 
-| Secret          | Description                                              |
-| --------------- | ------------------------------------------------------- |
-| `VPS_HOST`      | VPS IP or hostname                                      |
-| `VPS_USER`      | SSH user (member of the `docker` group)                 |
-| `VPS_SSH_KEY`   | Private SSH key (PEM) authorized on the VPS             |
-| `VPS_SSH_PORT`  | SSH port (e.g. `22`)                                    |
-| `DEPLOY_PATH`   | Absolute deploy dir on the VPS (e.g. `/opt/elevate`)    |
+| Secret               | Description                                              |
+| -------------------- | ------------------------------------------------------- |
+| `DOCKERHUB_USERNAME` | Docker Hub username/namespace (also set as `IMAGE_OWNER` in `.env`) |
+| `DOCKERHUB_TOKEN`    | Docker Hub access token (Account → Security → New Access Token) |
+| `VPS_HOST`           | VPS IP or hostname                                      |
+| `VPS_USER`           | SSH user (member of the `docker` group)                 |
+| `VPS_SSH_KEY`        | Private SSH key (PEM) authorized on the VPS             |
+| `VPS_SSH_PORT`       | SSH port (e.g. `22`)                                    |
+| `DEPLOY_PATH`        | Absolute deploy dir on the VPS (e.g. `/opt/elevate`)    |
 
 Variables (Variables tab) — baked into the frontend image at build time:
 
@@ -91,8 +93,9 @@ Variables (Variables tab) — baked into the frontend image at build time:
 | `NEXT_PUBLIC_FACEBOOK_PAGE_ID`  | `61579074209186`                 |
 | `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` | (blank or real Pixel ID)         |
 
-> The `GITHUB_TOKEN` used to push/pull images is provided automatically. Make sure
-> **Settings → Actions → General → Workflow permissions** is set to *Read and write*.
+> Images are published to `docker.io/<DOCKERHUB_USERNAME>/elevate-backend` and
+> `.../elevate-frontend`. Create the two repositories on Docker Hub (or push once
+> so they're auto-created); keep them **private** if you don't want the images public.
 
 ### 5. First deploy + certificates
 
@@ -157,6 +160,6 @@ docker compose --env-file .env -f docker-compose.prod.yml exec postgres \
   (`report_exports`) live in named volumes and survive redeploys.
 - Migrations run automatically (the `migrate` service) before the backend starts;
   no manual migration step is needed on deploy.
-- To use a stricter pull credential than the ephemeral `GITHUB_TOKEN` (e.g. so
-  containers can re-pull after a reboot without a pipeline run), create a PAT with
-  `read:packages` and `docker login ghcr.io` on the VPS once.
+- If your Docker Hub image repos are **private**, run `docker login` on the VPS once
+  (with a `DOCKERHUB_TOKEN`) so containers can re-pull after a reboot without a
+  pipeline run. Public repos need no login to pull.
