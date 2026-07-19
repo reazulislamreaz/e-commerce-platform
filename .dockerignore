@@ -2,11 +2,20 @@ node_modules
 **/node_modules
 **/.next
 **/dist
+
+# Never bake real secrets into images
 **/.env
 **/.env.*
 !**/.env.example
+!**/.env.*.example
+
 .git
 .github
 docs
 terminals
 *.md
+*.pem
+*.key
+id_rsa
+id_rsa.*
+credentials.json

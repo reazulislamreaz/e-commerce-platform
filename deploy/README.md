@@ -62,8 +62,19 @@ nano .env   # fill in domains, DB password, JWT secrets, SMTP, IMAGE_OWNER
 ```
 
 Generate strong secrets: `openssl rand -hex 32` for each JWT secret.
-`.env` stays **only** on the server — it is never committed and never overwritten
-by the deploy (only `.env.production.example` is copied).
+
+**Credential safety (important):**
+
+| Where | What | Committed to GitHub? |
+| ----- | ---- | -------------------- |
+| GitHub Actions Secrets | `DOCKERHUB_*`, `VPS_*`, `DEPLOY_PATH` | No — encrypted in GitHub only |
+| VPS `/opt/elevate/.env` | DB password, JWT, SMTP, etc. | No — gitignored; never SCP'd |
+| `deploy/.env.production.example` | Placeholders only | Yes — safe template |
+| Workflow YAML | `${{ secrets.NAME }}` references | Yes — no real values |
+
+Never paste real tokens into `.env.production.example`, the workflow file, or chat/docs.
+The deploy copies only compose/nginx/example files — it does **not** overwrite your
+VPS `.env`.
 
 ### 4. GitHub repository configuration
 

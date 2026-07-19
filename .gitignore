@@ -1,11 +1,37 @@
+# Dependencies & build output
 node_modules
 .next
 dist
+coverage
+*.log
+
+# Environment / secrets — NEVER commit real credentials
 .env
 .env.*
 !.env.example
-coverage
-*.log
+!.env.*.example
+!**/.env.example
+!**/.env.*.example
+
+# Local overrides & private keys
+*.pem
+*.key
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.p12
+*.pfx
+credentials.json
+secrets.json
+service-account*.json
+
+# App runtime data (uploads / reports stay on the server)
 backend/src/generated
 backend/uploads
 backend/storage
+
+# OS / editor
+.DS_Store
+.idea
+.vscode
