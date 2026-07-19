@@ -58,12 +58,15 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      PORT: 4000
+      PORT: 4040
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+      # Must be false when serving over plain HTTP (IP-only). Set to true only
+      # behind HTTPS, or browsers will not send/store the auth cookies.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_SECURE: ${SMTP_SECURE}
@@ -91,52 +94,31 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 3030
       HOSTNAME: 0.0.0.0
     depends_on:
       - backend
     networks: [internal]
 
+  # HTTP-only reverse proxy for an IP deployment. Single origin on port 80:
+  # /api and /uploads go to the backend, everything else to the frontend.
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
       - '80:80'
-      - '443:443'
-    environment:
-      APP_DOMAIN: ${APP_DOMAIN}
-      API_DOMAIN: ${API_DOMAIN}
-      NGINX_ENVSUBST_FILTER: '^(APP_DOMAIN|API_DOMAIN)$$'
     volumes:
-      - ./nginx/templates:/etc/nginx/templates:ro
-      - letsencrypt_certs:/etc/letsencrypt:ro
-      - certbot_www:/var/www/certbot:ro
-    # Reload every 6h so renewed certificates are picked up without a restart.
-    command: /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - frontend
       - backend
     networks: [internal, web]
-
-  # Renews certificates every 12h; the initial issuance is done once via
-  # init-letsencrypt.sh (see deploy/README.md).
-  certbot:
-    image: certbot/certbot:latest
-    restart: unless-stopped
-    volumes:
-      - letsencrypt_certs:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
-    entrypoint: /bin/sh
-    command: -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
-    networks: [web]
 
 volumes:
   postgres_data:
   redis_data:
   product_uploads:
   report_exports:
-  letsencrypt_certs:
-  certbot_www:
 
 networks:
   internal:

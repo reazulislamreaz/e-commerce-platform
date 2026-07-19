@@ -12,6 +12,14 @@ export const envValidationSchema = Joi.object({
   JWT_ACCESS_SECRET: Joi.string().min(32).required(),
   JWT_REFRESH_SECRET: Joi.string().min(32).required(),
   FRONTEND_ORIGIN: Joi.string().uri().required(),
+  // Marks auth/guest-cart cookies as Secure. Defaults to true in production and
+  // false otherwise; set explicitly to false when serving over plain HTTP
+  // (e.g. an IP-only VPS without TLS), or browsers will drop the cookies.
+  COOKIE_SECURE: Joi.boolean().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.boolean().default(true),
+    otherwise: Joi.boolean().default(false),
+  }),
   // SMTP is optional in development (emails are logged); mandatory in production.
   SMTP_HOST: Joi.string().hostname().default('smtp.gmail.com'),
   SMTP_PORT: Joi.number().port().default(465),

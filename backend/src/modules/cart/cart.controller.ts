@@ -203,7 +203,7 @@ export class CartController {
   private setGuestCartCookie(response: Response, token: string): void {
     response.cookie(GUEST_CART_COOKIE, token, {
       httpOnly: true,
-      secure: this.config.get('NODE_ENV') === 'production',
+      secure: this.config.get<boolean>('COOKIE_SECURE'),
       sameSite: 'lax',
       path: '/',
       maxAge: GUEST_CART_TTL_MS,
@@ -211,6 +211,12 @@ export class CartController {
   }
 
   private clearGuestCookie(response: Response): void {
-    response.clearCookie(GUEST_CART_COOKIE, { path: '/' });
+    // Match the attributes used when setting so the browser actually clears it.
+    response.clearCookie(GUEST_CART_COOKIE, {
+      httpOnly: true,
+      secure: this.config.get<boolean>('COOKIE_SECURE'),
+      sameSite: 'lax',
+      path: '/',
+    });
   }
 }

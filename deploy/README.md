@@ -2,8 +2,14 @@
 
 This directory contains everything needed to run Elevate Apparel in production on a
 single VPS. Images are built and published by GitHub Actions to Docker Hub; the
-VPS pulls those images and runs them with Docker Compose behind Nginx with
-automatic Let's Encrypt TLS.
+VPS pulls those images and runs them with Docker Compose behind Nginx.
+
+> **Current setup: IP-only, HTTP.** There is no domain, so the stack is served
+> over plain **HTTP on port 80** at the VPS IP (`http://206.162.244.11`). Nginx
+> uses a single origin: `/api` and `/uploads` go to the backend, everything else
+> to the storefront. This is **not encrypted** — treat it as staging. To go
+> secure, point a domain at the IP, add a TLS (443) server block, and flip
+> `COOKIE_SECURE=true` (see "Adding HTTPS later" below).
 
 ## Pipeline overview
 
@@ -26,12 +32,11 @@ push to main ─► CI (lint · test · build · integration)
 | postgres  | PostgreSQL 17                                        | `postgres_data` volume |
 | redis     | Redis 7 (BullMQ queues + cache)                     | `redis_data` volume    |
 | migrate   | One-shot `prisma migrate deploy`, runs before backend | —                    |
-| backend   | NestJS API on :4000                                 | `product_uploads`, `report_exports` |
-| frontend  | Next.js (standalone) on :3000                       | —                      |
-| nginx     | Reverse proxy + TLS termination on :80/:443         | shares cert volumes    |
-| certbot   | Renews certificates every 12h                       | `letsencrypt_certs`    |
+| backend   | NestJS API on :4040                                 | `product_uploads`, `report_exports` |
+| frontend  | Next.js (standalone) on :3030                       | —                      |
+| nginx     | HTTP reverse proxy on :80 (single origin)           | —                      |
 
-Only Nginx is exposed publicly; everything else talks over the internal Docker network.
+Only Nginx is exposed publicly (port 80); everything else talks over the internal Docker network.
 
 ---
 
@@ -44,12 +49,15 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker "$USER"   # log out/in afterwards
 ```
 
-### 2. DNS
+### 2. Network / firewall
 
-Point both records at the VPS public IP:
+No DNS is needed for the IP-only setup. Just make sure the VPS firewall allows
+inbound **port 80** (and your SSH port). Example with UFW:
 
-- `A  example.com        -> <VPS_IP>`   (storefront, `APP_DOMAIN`)
-- `A  api.example.com    -> <VPS_IP>`   (API, `API_DOMAIN`)
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow <SSH_PORT>/tcp
+```
 
 ### 3. Create the deploy directory + secrets file
 
@@ -58,7 +66,8 @@ sudo mkdir -p /opt/elevate && sudo chown "$USER" /opt/elevate
 cd /opt/elevate
 # After the first pipeline run copies files here, create the env file:
 cp .env.production.example .env
-nano .env   # fill in domains, DB password, JWT secrets, SMTP, IMAGE_OWNER
+nano .env   # fill in IMAGE_OWNER, DB password, JWT secrets, SMTP, FRONTEND_ORIGIN
+            # keep COOKIE_SECURE=false while on HTTP
 ```
 
 Generate strong secrets: `openssl rand -hex 32` for each JWT secret.
@@ -96,8 +105,8 @@ Variables (Variables tab) — baked into the frontend image at build time:
 
 | Variable                        | Example                          |
 | ------------------------------- | -------------------------------- |
-| `NEXT_PUBLIC_API_URL`           | `https://api.example.com/api/v1` |
-| `NEXT_PUBLIC_SITE_URL`          | `https://example.com`            |
+| `NEXT_PUBLIC_API_URL`           | `http://206.162.244.11/api/v1`   |
+| `NEXT_PUBLIC_SITE_URL`          | `http://206.162.244.11`          |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER`   | `8801XXXXXXXXX`                  |
 | `NEXT_PUBLIC_WHATSAPP_MESSAGE`  | `Hi Elevate Apparel ...`         |
 | `NEXT_PUBLIC_CONTACT_PHONE`     | `+8801XXXXXXXXX`                 |
@@ -108,32 +117,63 @@ Variables (Variables tab) — baked into the frontend image at build time:
 > `.../elevate-frontend`. Create the two repositories on Docker Hub (or push once
 > so they're auto-created); keep them **private** if you don't want the images public.
 
-### 5. First deploy + certificates
+### 5. First deploy
 
 1. Push to `main` (or re-run the workflow). This publishes images and copies
-   `docker-compose.prod.yml`, `nginx/`, and the scripts to `DEPLOY_PATH`, then
-   runs `docker compose up -d`. Nginx will restart-loop until certificates exist —
-   that's expected on the very first run.
-2. On the VPS, issue the certificate (covers both domains) once:
+   `docker-compose.prod.yml`, `nginx/conf.d/default.conf`, and the env template
+   to `DEPLOY_PATH`, then runs `docker compose up -d`. Nginx comes up on port 80
+   immediately — no certificate step is required.
+2. Seed the Super Admin + catalog fixtures **once**. The seed script needs dev
+   dependencies (`ts-node`) that the production image omits, so run it from a
+   checkout on your machine against the VPS database over an SSH tunnel.
+   Postgres is internal-only, so expose it to the VPS loopback just for seeding:
 
-```bash
-cd /opt/elevate
-# Optional dry run against staging to avoid rate limits: STAGING=1 ./init-letsencrypt.sh
-./init-letsencrypt.sh
-```
+   **a.** On the VPS, temporarily add a loopback port to the `postgres` service
+   in `docker-compose.prod.yml`, then apply it:
 
-3. Seed the Super Admin + catalog fixtures **once**. The production image is
-   dev-dependency-free, so run the seed from your machine through an SSH tunnel:
+   ```yaml
+   postgres:
+     ports:
+       - '127.0.0.1:5432:5432'   # TEMPORARY — remove after seeding
+   ```
 
-```bash
-ssh -L 5432:localhost:5432 <VPS_USER>@<VPS_HOST>   # in one terminal
-# in another, from the repo backend/ dir, with DATABASE_URL pointing at the tunnel
-# and SEED_SUPER_ADMIN_* set:
-DATABASE_URL='postgresql://ecommerce:<pw>@localhost:5432/ecommerce?schema=public' \
-  npm run prisma:seed --workspace=backend
-```
+   ```bash
+   docker compose --env-file .env -f docker-compose.prod.yml up -d postgres
+   ```
 
-The site is now live at `https://example.com` with the API at `https://api.example.com`.
+   **b.** From your machine, open a tunnel to that port:
+
+   ```bash
+   ssh -L 5432:localhost:5432 <VPS_USER>@<VPS_HOST>   # keep open in one terminal
+   ```
+
+   **c.** In another terminal, from the repo `backend/` dir, with
+   `SEED_SUPER_ADMIN_*` set:
+
+   ```bash
+   DATABASE_URL='postgresql://ecommerce:<pw>@localhost:5432/ecommerce?schema=public' \
+     npm run prisma:seed --workspace=backend
+   ```
+
+   **d.** Remove the temporary `ports:` block on the VPS and re-run
+   `up -d postgres`.
+
+The site is now live at `http://206.162.244.11` with the API under
+`http://206.162.244.11/api/v1`.
+
+---
+
+## Adding HTTPS later
+
+TLS needs a domain (public CAs do not issue certificates for bare IPs). Once you
+have one:
+
+1. Point an `A` record at the VPS IP.
+2. Update the GitHub Variables `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_SITE_URL` and
+   the VPS `.env` `FRONTEND_ORIGIN` to the `https://` domain, and set
+   `COOKIE_SECURE=true`.
+3. Add a TLS (443) server block to `nginx/conf.d/default.conf` (or reintroduce a
+   certbot service) and an HTTP→HTTPS redirect, then redeploy.
 
 ---
 

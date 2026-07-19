@@ -195,13 +195,20 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     await this.auth.logout(request.user.sid);
-    response.clearCookie(REFRESH_COOKIE, { path: REFRESH_COOKIE_PATH });
+    // Clearing must repeat the same secure/sameSite/path used when setting, or
+    // the browser keeps the cookie.
+    response.clearCookie(REFRESH_COOKIE, {
+      httpOnly: true,
+      secure: this.config.get<boolean>('COOKIE_SECURE'),
+      sameSite: 'lax',
+      path: REFRESH_COOKIE_PATH,
+    });
   }
 
   private setRefreshCookie(response: Response, token: string, rememberMe: boolean): void {
     response.cookie(REFRESH_COOKIE, token, {
       httpOnly: true,
-      secure: this.config.get('NODE_ENV') === 'production',
+      secure: this.config.get<boolean>('COOKIE_SECURE'),
       sameSite: 'lax',
       path: REFRESH_COOKIE_PATH,
       maxAge: rememberMe ? REMEMBER_ME_REFRESH_TOKEN_TTL_MS : REFRESH_TOKEN_TTL_MS,
