@@ -5,11 +5,13 @@ single VPS. Images are built and published by GitHub Actions to Docker Hub; the
 VPS pulls those images and runs them with Docker Compose behind Nginx.
 
 > **Current setup: IP-only, HTTP.** There is no domain, so the stack is served
-> over plain **HTTP on port 80** at the VPS IP (`http://206.162.244.11`). Nginx
-> uses a single origin: `/api` and `/uploads` go to the backend, everything else
-> to the storefront. This is **not encrypted** — treat it as staging. To go
-> secure, point a domain at the IP, add a TLS (443) server block, and flip
-> `COOKIE_SECURE=true` (see "Adding HTTPS later" below).
+> over plain **HTTP on port 8080** at the VPS IP (`http://206.162.244.11:8080`).
+> Port 8080 is used because the VPS already runs a host nginx on :80/:443 for
+> other apps. Nginx (containerized) uses a single origin: `/api` and `/uploads`
+> go to the backend, everything else to the storefront. This is **not
+> encrypted** — treat it as staging. To go secure, point a domain at the IP,
+> add a TLS (443) server block, and flip `COOKIE_SECURE=true` (see "Adding
+> HTTPS later" below).
 
 ## Pipeline overview
 
@@ -34,9 +36,9 @@ push to main ─► CI (lint · test · build · integration)
 | migrate   | One-shot `prisma migrate deploy`, runs before backend | —                    |
 | backend   | NestJS API on :4040                                 | `product_uploads`, `report_exports` |
 | frontend  | Next.js (standalone) on :3030                       | —                      |
-| nginx     | HTTP reverse proxy on :80 (single origin)           | —                      |
+| nginx     | HTTP reverse proxy, host :8080 -> container :80     | —                      |
 
-Only Nginx is exposed publicly (port 80); everything else talks over the internal Docker network.
+Only the containerized Nginx is exposed publicly (host port 8080); everything else talks over the internal Docker network.
 
 ---
 
@@ -52,10 +54,10 @@ sudo usermod -aG docker "$USER"   # log out/in afterwards
 ### 2. Network / firewall
 
 No DNS is needed for the IP-only setup. Just make sure the VPS firewall allows
-inbound **port 80** (and your SSH port). Example with UFW:
+inbound **port 8080** (and your SSH port). Example with UFW:
 
 ```bash
-sudo ufw allow 80/tcp
+sudo ufw allow 8080/tcp
 sudo ufw allow <SSH_PORT>/tcp
 ```
 
@@ -105,8 +107,8 @@ Variables (Variables tab) — baked into the frontend image at build time:
 
 | Variable                        | Example                          |
 | ------------------------------- | -------------------------------- |
-| `NEXT_PUBLIC_API_URL`           | `http://206.162.244.11/api/v1`   |
-| `NEXT_PUBLIC_SITE_URL`          | `http://206.162.244.11`          |
+| `NEXT_PUBLIC_API_URL`           | `http://206.162.244.11:8080/api/v1` |
+| `NEXT_PUBLIC_SITE_URL`          | `http://206.162.244.11:8080`     |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER`   | `8801XXXXXXXXX`                  |
 | `NEXT_PUBLIC_WHATSAPP_MESSAGE`  | `Hi Elevate Apparel ...`         |
 | `NEXT_PUBLIC_CONTACT_PHONE`     | `+8801XXXXXXXXX`                 |
@@ -121,8 +123,8 @@ Variables (Variables tab) — baked into the frontend image at build time:
 
 1. Push to `main` (or re-run the workflow). This publishes images and copies
    `docker-compose.prod.yml`, `nginx/conf.d/default.conf`, and the env template
-   to `DEPLOY_PATH`, then runs `docker compose up -d`. Nginx comes up on port 80
-   immediately — no certificate step is required.
+   to `DEPLOY_PATH`, then runs `docker compose up -d`. Nginx comes up on host
+   port 8080 immediately — no certificate step is required.
 2. Seed the Super Admin + catalog fixtures **once**. The seed script needs dev
    dependencies (`ts-node`) that the production image omits, so run it from a
    checkout on your machine against the VPS database over an SSH tunnel.
@@ -158,8 +160,8 @@ Variables (Variables tab) — baked into the frontend image at build time:
    **d.** Remove the temporary `ports:` block on the VPS and re-run
    `up -d postgres`.
 
-The site is now live at `http://206.162.244.11` with the API under
-`http://206.162.244.11/api/v1`.
+The site is now live at `http://206.162.244.11:8080` with the API under
+`http://206.162.244.11:8080/api/v1`.
 
 ---
 

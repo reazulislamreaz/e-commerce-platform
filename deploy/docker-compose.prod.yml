@@ -100,13 +100,14 @@ services:
       - backend
     networks: [internal]
 
-  # HTTP-only reverse proxy for an IP deployment. Single origin on port 80:
+  # HTTP-only reverse proxy for an IP deployment. Single origin:
   # /api and /uploads go to the backend, everything else to the frontend.
+  # Host port 8080 is used because the VPS already runs a host nginx on :80/:443.
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - '80:80'
+      - '8080:80'
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
