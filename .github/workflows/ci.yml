@@ -115,7 +115,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build and push backend image
         uses: docker/build-push-action@v6
         with:
@@ -137,13 +137,13 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/elevate-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/elevate-frontend:${{ github.sha }}
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
-            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
-            NEXT_PUBLIC_WHATSAPP_NUMBER=${{ vars.NEXT_PUBLIC_WHATSAPP_NUMBER }}
-            NEXT_PUBLIC_WHATSAPP_MESSAGE=${{ vars.NEXT_PUBLIC_WHATSAPP_MESSAGE }}
-            NEXT_PUBLIC_CONTACT_PHONE=${{ vars.NEXT_PUBLIC_CONTACT_PHONE }}
-            NEXT_PUBLIC_FACEBOOK_PAGE_ID=${{ vars.NEXT_PUBLIC_FACEBOOK_PAGE_ID }}
-            NEXT_PUBLIC_FACEBOOK_PIXEL_ID=${{ vars.NEXT_PUBLIC_FACEBOOK_PIXEL_ID }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_WHATSAPP_NUMBER=${{ secrets.NEXT_PUBLIC_WHATSAPP_NUMBER }}
+            NEXT_PUBLIC_WHATSAPP_MESSAGE=${{ secrets.NEXT_PUBLIC_WHATSAPP_MESSAGE }}
+            NEXT_PUBLIC_CONTACT_PHONE=${{ secrets.NEXT_PUBLIC_CONTACT_PHONE }}
+            NEXT_PUBLIC_FACEBOOK_PAGE_ID=${{ secrets.NEXT_PUBLIC_FACEBOOK_PAGE_ID }}
+            NEXT_PUBLIC_FACEBOOK_PIXEL_ID=${{ secrets.NEXT_PUBLIC_FACEBOOK_PIXEL_ID }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
 
@@ -170,13 +170,13 @@ jobs:
         env:
           IMAGE_TAG: ${{ github.sha }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          envs: IMAGE_TAG,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
+          envs: IMAGE_TAG,DOCKERHUB_USERNAME,DOCKER_TOKEN
           script: |
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PATH }}"
@@ -184,7 +184,7 @@ jobs:
               echo "ERROR: .env missing on the VPS. Create it from .env.production.example before deploying." >&2
               exit 1
             fi
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            echo "$DOCKER_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             export IMAGE_TAG
             docker compose --env-file .env -f docker-compose.prod.yml pull
             docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans

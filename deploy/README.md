@@ -96,7 +96,7 @@ Secrets (Secrets tab):
 | Secret               | Description                                              |
 | -------------------- | ------------------------------------------------------- |
 | `DOCKERHUB_USERNAME` | Docker Hub username/namespace (also set as `IMAGE_OWNER` in `.env`) |
-| `DOCKERHUB_TOKEN`    | Docker Hub access token (Account → Security → New Access Token) |
+| `DOCKER_TOKEN`       | Docker Hub access token (Account → Security → New Access Token) |
 | `VPS_HOST`           | VPS IP or hostname                                      |
 | `VPS_USER`           | SSH user (member of the `docker` group)                 |
 | `VPS_SSH_KEY`        | Private SSH key (PEM) authorized on the VPS             |
@@ -214,5 +214,5 @@ docker compose --env-file .env -f docker-compose.prod.yml exec postgres \
 - Migrations run automatically (the `migrate` service) before the backend starts;
   no manual migration step is needed on deploy.
 - If your Docker Hub image repos are **private**, run `docker login` on the VPS once
-  (with a `DOCKERHUB_TOKEN`) so containers can re-pull after a reboot without a
+  (with a `DOCKER_TOKEN`) so containers can re-pull after a reboot without a
   pipeline run. Public repos need no login to pull.
