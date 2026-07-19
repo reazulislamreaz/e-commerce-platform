@@ -36,7 +36,22 @@ describe('Catalog + Inventory integration', () => {
   it('exposes aggregate inventory and published reviews on product detail', async () => {
     const product = await catalog.getBySlug('elevate-oversized-tee');
     expect(product.variants).toHaveLength(10);
-    expect(product.variants.find((variant) => variant.sku === 'P1-BLA-XXL')?.stock).toBe(2);
+    const blackXxl = await prisma.productVariant.findUniqueOrThrow({
+      where: { sku: 'P1-BLA-XXL' },
+      select: {
+        inventoryBalances: {
+          where: { location: { isActive: true } },
+          select: { onHand: true, reserved: true },
+        },
+      },
+    });
+    const expectedAvailable = blackXxl.inventoryBalances.reduce(
+      (total, balance) => total + Math.max(0, balance.onHand - balance.reserved),
+      0,
+    );
+    expect(product.variants.find((variant) => variant.sku === 'P1-BLA-XXL')?.stock).toBe(
+      expectedAvailable,
+    );
     // Match on the seeded fixture reviews so reviews created by other
     // integration suites (moderation smoke) cannot break this assertion.
     const seededAuthors = product.reviews.map((review) => review.author);
