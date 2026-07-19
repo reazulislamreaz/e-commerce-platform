@@ -6,6 +6,9 @@ COPY package.json package-lock.json ./
 COPY backend/package.json backend/
 RUN npm ci --workspace=backend
 COPY backend backend
+# prisma.config.ts resolves env('DATABASE_URL') at config load even for
+# `prisma generate` (no DB connection is made) — any placeholder works.
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 RUN npm run prisma:generate --workspace=backend && npm run build --workspace=backend
 
 FROM node:20.19-alpine AS production
