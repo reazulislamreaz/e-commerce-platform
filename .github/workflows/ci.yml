@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -89,3 +93,98 @@ jobs:
         run: npm run prisma:seed --workspace=backend
       - name: Run integration and COD smoke tests
         run: npm run test:integration --workspace=backend
+
+  # Build and publish production images to GHCR. Only on pushes to main, after
+  # all quality gates and integration tests pass.
+  build-and-push:
+    needs: [quality, integration]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      owner: ${{ steps.owner.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lowercase image owner
+        id: owner
+        run: echo "value=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.owner.outputs.value }}/elevate-backend:latest
+            ghcr.io/${{ steps.owner.outputs.value }}/elevate-backend:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.owner.outputs.value }}/elevate-frontend:latest
+            ghcr.io/${{ steps.owner.outputs.value }}/elevate-frontend:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_WHATSAPP_NUMBER=${{ vars.NEXT_PUBLIC_WHATSAPP_NUMBER }}
+            NEXT_PUBLIC_WHATSAPP_MESSAGE=${{ vars.NEXT_PUBLIC_WHATSAPP_MESSAGE }}
+            NEXT_PUBLIC_CONTACT_PHONE=${{ vars.NEXT_PUBLIC_CONTACT_PHONE }}
+            NEXT_PUBLIC_FACEBOOK_PAGE_ID=${{ vars.NEXT_PUBLIC_FACEBOOK_PAGE_ID }}
+            NEXT_PUBLIC_FACEBOOK_PIXEL_ID=${{ vars.NEXT_PUBLIC_FACEBOOK_PIXEL_ID }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  # Ship the new images to the VPS over SSH and roll the stack.
+  deploy:
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy deploy assets to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          source: 'deploy/docker-compose.prod.yml,deploy/init-letsencrypt.sh,deploy/.env.production.example,deploy/nginx/templates/default.conf.template'
+          target: ${{ secrets.DEPLOY_PATH }}
+          strip_components: 1
+      - name: Pull images and roll the stack
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          envs: IMAGE_TAG,GHCR_USER,GHCR_TOKEN
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+            if [ ! -f .env ]; then
+              echo "ERROR: .env missing on the VPS. Create it from .env.production.example before deploying." >&2
+              exit 1
+            fi
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            export IMAGE_TAG
+            docker compose --env-file .env -f docker-compose.prod.yml pull
+            docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -f
+            docker logout ghcr.io

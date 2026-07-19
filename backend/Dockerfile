@@ -20,4 +20,5 @@ COPY backend/prisma.config.ts backend/prisma.config.ts
 COPY --from=build /repo/backend/dist backend/dist
 USER node
 WORKDIR /app/backend
+EXPOSE 4000
 CMD ["node", "dist/main"]

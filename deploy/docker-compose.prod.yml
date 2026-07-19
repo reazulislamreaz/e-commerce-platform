@@ -1,0 +1,142 @@
+# Production stack for a single VPS.
+# Images are built in GitHub Actions and pulled from GHCR; this file is copied
+# to the VPS by the deploy workflow and run with `docker compose ... up -d`.
+#
+#   docker compose --env-file .env -f docker-compose.prod.yml up -d
+#
+# Required env (see .env.production.example): IMAGE_OWNER, IMAGE_TAG, secrets.
+
+name: elevate
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  # One-shot: applies pending Prisma migrations, then exits. The backend waits
+  # for this to complete successfully before starting.
+  migrate:
+    image: ghcr.io/${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
+    restart: 'no'
+    working_dir: /app/backend
+    command: ['npx', 'prisma', 'migrate', 'deploy']
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [internal]
+
+  backend:
+    image: ghcr.io/${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM}
+      CONTACT_INBOX: ${CONTACT_INBOX:-}
+      PRODUCT_UPLOAD_DIR: /app/backend/uploads/products
+      REPORTS_STORAGE_DIR: /app/backend/storage/reports
+      CRM_HIGH_VALUE_THRESHOLD_POISHA: ${CRM_HIGH_VALUE_THRESHOLD_POISHA:-1000000}
+    volumes:
+      - product_uploads:/app/backend/uploads/products
+      - report_exports:/app/backend/storage/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks: [internal]
+
+  frontend:
+    image: ghcr.io/${IMAGE_OWNER}/elevate-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      - backend
+    networks: [internal]
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+      NGINX_ENVSUBST_FILTER: '^(APP_DOMAIN|API_DOMAIN)$$'
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - letsencrypt_certs:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    # Reload every 6h so renewed certificates are picked up without a restart.
+    command: /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+    depends_on:
+      - frontend
+      - backend
+    networks: [internal, web]
+
+  # Renews certificates every 12h; the initial issuance is done once via
+  # init-letsencrypt.sh (see deploy/README.md).
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    volumes:
+      - letsencrypt_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: /bin/sh
+    command: -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
+    networks: [web]
+
+volumes:
+  postgres_data:
+  redis_data:
+  product_uploads:
+  report_exports:
+  letsencrypt_certs:
+  certbot_www:
+
+networks:
+  internal:
+  web:
