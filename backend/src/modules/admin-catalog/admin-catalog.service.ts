@@ -11,6 +11,11 @@ import { InventoryService } from '@/modules/inventory/inventory.service';
 import { AuditService } from '@/modules/platform/audit.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AdminCatalogRepository } from './admin-catalog.repository';
+import type {
+  BrandRecord,
+  CategoryRecord,
+  CollectionRecord,
+} from './admin-catalog.repository';
 import type { CreateBrandDto, UpdateBrandDto } from './dto/brand.dto';
 import type { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 import type { CreateCollectionDto, UpdateCollectionDto } from './dto/collection.dto';
@@ -34,23 +39,27 @@ export class AdminCatalogService {
   ) {}
 
   async listProducts(query: ListAdminProductsQueryDto) {
-    const { items, hasMore } = await this.adminCatalog.listProducts(query);
+    const { items, hasMore, stockByVariant } = await this.adminCatalog.listProducts(query);
     return {
-      data: items.map((product) => ({
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        status: product.status,
-        brandName: product.brand.name,
-        priceTaka: Number(product.currentPriceAmount) / 100,
-        variantCount: product.variants.length,
-        publishedAt: product.publishedAt?.toISOString(),
-        updatedAt: product.updatedAt.toISOString(),
-      })),
+      data: items.map((product) =>
+        this.adminCatalog.toProductListSummary(product, stockByVariant),
+      ),
       meta: {
         limit: query.limit,
         nextCursor: hasMore ? items[items.length - 1].id : null,
       },
+    };
+  }
+
+  async getProductStats() {
+    const stats = await this.adminCatalog.productStats();
+    return {
+      total: stats.active + stats.draft + stats.archived,
+      active: stats.active,
+      draft: stats.draft,
+      archived: stats.archived,
+      outOfStock: stats.outOfStock,
+      lowStock: stats.lowStock,
     };
   }
 
@@ -64,6 +73,12 @@ export class AdminCatalogService {
     await this.assertBrandExists(dto.brandId);
     await this.assertCategoriesExist(dto.categoryIds);
     if (dto.collectionIds?.length) await this.assertCollectionsExist(dto.collectionIds);
+    const openingVariants = dto.variants.filter((variant) => (variant.openingQuantity ?? 0) > 0);
+    if (openingVariants.length > 0 && !dto.inventoryLocationId) {
+      throw new BadRequestException(
+        'An inventory location is required when opening quantity is provided',
+      );
+    }
 
     const slug = dto.slug?.trim() || slugify(dto.name);
     if (!slug) throw new BadRequestException('Product slug cannot be empty');
@@ -71,6 +86,32 @@ export class AdminCatalogService {
     try {
       const product = await this.prisma.$transaction(async (tx) => {
         const created = await this.adminCatalog.createProduct({ ...dto, slug }, tx);
+        if (openingVariants.length > 0 && dto.inventoryLocationId) {
+          const location = await tx.inventoryLocation.findUnique({
+            where: { id: dto.inventoryLocationId },
+            select: { isActive: true },
+          });
+          if (!location) throw new NotFoundException('Inventory location not found');
+          if (!location.isActive) throw new BadRequestException('Inventory location is inactive');
+
+          const variantsBySku = new Map(created.variants.map((variant) => [variant.sku, variant]));
+          for (const input of openingVariants) {
+            const variant = variantsBySku.get(input.sku);
+            if (!variant) {
+              throw new BadRequestException(`Created variant ${input.sku} could not be resolved`);
+            }
+            await this.inventory.adjust(
+              {
+                variantId: variant.id,
+                locationId: dto.inventoryLocationId,
+                quantityDelta: input.openingQuantity!,
+                idempotencyKey: `opening:${created.id}:${variant.id}:${dto.inventoryLocationId}`,
+                note: `Opening stock for ${input.sku}`,
+              },
+              tx,
+            );
+          }
+        }
         await this.audit.write(
           {
             actorUserId: actor.sub,
@@ -78,7 +119,14 @@ export class AdminCatalogService {
             action: 'product.create',
             resourceType: 'product',
             resourceId: created.id,
-            after: { status: ProductStatus.DRAFT, slug },
+            after: {
+              status: ProductStatus.DRAFT,
+              slug,
+              openingStock: openingVariants.reduce(
+                (total, variant) => total + (variant.openingQuantity ?? 0),
+                0,
+              ),
+            },
           },
           tx,
         );
@@ -299,6 +347,7 @@ export class AdminCatalogService {
         ...(dto.slug != null ? { slug: dto.slug } : {}),
         ...(dto.parentId !== undefined ? { parentId: dto.parentId } : {}),
         ...(dto.position != null ? { position: dto.position } : {}),
+        ...(dto.isActive != null ? { isActive: dto.isActive } : {}),
       });
       await this.audit.write({
         actorUserId: actor.sub,
@@ -569,55 +618,40 @@ export class AdminCatalogService {
     }
   }
 
-  private toBrandResponse(brand: {
-    id: string;
-    name: string;
-    slug: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }) {
+  private toBrandResponse(brand: BrandRecord) {
     return {
       id: brand.id,
       name: brand.name,
       slug: brand.slug,
+      isActive: brand.isActive,
+      productCount: brand._count.products,
       createdAt: brand.createdAt.toISOString(),
       updatedAt: brand.updatedAt.toISOString(),
     };
   }
 
-  private toCategoryResponse(category: {
-    id: string;
-    parentId: string | null;
-    name: string;
-    slug: string;
-    position: number;
-    createdAt: Date;
-    updatedAt: Date;
-  }) {
+  private toCategoryResponse(category: CategoryRecord) {
     return {
       id: category.id,
       parentId: category.parentId,
       name: category.name,
       slug: category.slug,
       position: category.position,
+      isActive: category.isActive,
+      productCount: category._count.assignments,
       createdAt: category.createdAt.toISOString(),
       updatedAt: category.updatedAt.toISOString(),
     };
   }
 
-  private toCollectionResponse(collection: {
-    id: string;
-    name: string;
-    slug: string;
-    position: number;
-    createdAt: Date;
-    updatedAt: Date;
-  }) {
+  private toCollectionResponse(collection: CollectionRecord) {
     return {
       id: collection.id,
       name: collection.name,
       slug: collection.slug,
       position: collection.position,
+      isActive: collection.isActive,
+      productCount: collection._count.assignments,
       createdAt: collection.createdAt.toISOString(),
       updatedAt: collection.updatedAt.toISOString(),
     };

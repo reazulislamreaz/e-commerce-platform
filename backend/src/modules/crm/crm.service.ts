@@ -96,12 +96,10 @@ export class CrmService {
   }
 
   async segmentSummary(): Promise<SegmentSummaryResponseDto[]> {
-    const counts = new Map(
-      (await this.crm.segmentSummary()).map((row) => [row.segmentKey, row._count._all]),
-    );
-    return Object.values(CustomerSegmentKey).map((segment) => ({
-      segment,
-      count: counts.get(segment) ?? 0,
+    const rows = await this.crm.segmentSummary();
+    return rows.map((row) => ({
+      segment: row.segmentKey,
+      count: row.count,
     }));
   }
 }

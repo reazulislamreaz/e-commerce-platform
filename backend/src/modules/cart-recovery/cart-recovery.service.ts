@@ -13,6 +13,8 @@ import {
   isCartRecoveryEligible,
 } from './cart-recovery.types';
 
+const SCAN_BATCH = 200;
+
 @Injectable()
 export class CartRecoveryService implements OnModuleInit {
   private readonly logger = new Logger(CartRecoveryService.name);
@@ -39,48 +41,90 @@ export class CartRecoveryService implements OnModuleInit {
 
   async scan(now = new Date()): Promise<number> {
     const idleBefore = new Date(now.getTime() - CART_IDLE_MS);
-    // Oldest idle carts first so a fixed take window cannot starve newer abandonments.
-    const carts = await this.prisma.cart.findMany({
+
+    // Age out exhausted sends so they leave the active scan window.
+    await this.prisma.abandonedCartRecovery.updateMany({
+      where: {
+        status: CartRecoveryStatus.SENT,
+        reminderCount: { gte: MAX_CART_REMINDERS },
+      },
+      data: {
+        status: CartRecoveryStatus.EXPIRED,
+        suppressedAt: now,
+      },
+    });
+
+    const emailFilter: Prisma.CartWhereInput = {
+      OR: [{ recoveryEmail: { not: null } }, { user: { email: { not: '' } } }],
+    };
+
+    // Active / never-started recoveries — exclude terminal rows so stuck carts
+    // cannot starve newer abandonments inside the fixed take window.
+    const activeCarts = await this.prisma.cart.findMany({
       where: {
         updatedAt: { lte: idleBefore },
         items: { some: {} },
-        OR: [{ recoveryEmail: { not: null } }, { user: { email: { not: '' } } }],
+        AND: [
+          emailFilter,
+          {
+            OR: [
+              { recoveries: { none: {} } },
+              {
+                recoveries: {
+                  some: {
+                    status: { in: [CartRecoveryStatus.PENDING, CartRecoveryStatus.SENT] },
+                    reminderCount: { lt: MAX_CART_REMINDERS },
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+      select: cartScanSelect,
+      orderBy: { updatedAt: 'asc' },
+      take: SCAN_BATCH,
+    });
+
+    // Terminal recoveries that became resettable after the cart was mutated again.
+    const terminalRecoveries = await this.prisma.abandonedCartRecovery.findMany({
+      where: {
+        status: {
+          in: [
+            CartRecoveryStatus.SUPPRESSED,
+            CartRecoveryStatus.CONVERTED,
+            CartRecoveryStatus.EXPIRED,
+          ],
+        },
+        cart: {
+          updatedAt: { lte: idleBefore },
+          items: { some: {} },
+          AND: [emailFilter],
+        },
       },
       select: {
         id: true,
-        userId: true,
-        recoveryEmail: true,
-        updatedAt: true,
-        user: { select: { email: true } },
-        recoveries: {
-          select: {
-            id: true,
-            status: true,
-            reminderCount: true,
-            nextSendAt: true,
-            lastSentAt: true,
-            suppressedAt: true,
-            convertedAt: true,
-            createdAt: true,
-          },
-          take: 1,
-        },
-        items: {
-          select: {
-            quantity: true,
-            size: true,
-            color: true,
-            productId: true,
-            variant: {
-              select: {
-                product: { select: { name: true, slug: true, currentPriceAmount: true } },
-              },
-            },
-          },
-        },
+        status: true,
+        reminderCount: true,
+        lastSentAt: true,
+        suppressedAt: true,
+        convertedAt: true,
+        createdAt: true,
+        cart: { select: cartScanSelect },
       },
-      orderBy: { updatedAt: 'asc' },
-      take: 200,
+      orderBy: { cart: { updatedAt: 'asc' } },
+      take: SCAN_BATCH,
+    });
+
+    const resetCarts = terminalRecoveries
+      .filter((recovery) => shouldResetRecovery(recovery, recovery.cart.updatedAt))
+      .map((recovery) => recovery.cart);
+
+    const seen = new Set<string>();
+    const carts = [...activeCarts, ...resetCarts].filter((cart) => {
+      if (seen.has(cart.id)) return false;
+      seen.add(cart.id);
+      return true;
     });
 
     let scheduled = 0;
@@ -194,6 +238,40 @@ export class CartRecoveryService implements OnModuleInit {
     });
   }
 }
+
+const cartScanSelect = {
+  id: true,
+  userId: true,
+  recoveryEmail: true,
+  updatedAt: true,
+  user: { select: { email: true } },
+  recoveries: {
+    select: {
+      id: true,
+      status: true,
+      reminderCount: true,
+      nextSendAt: true,
+      lastSentAt: true,
+      suppressedAt: true,
+      convertedAt: true,
+      createdAt: true,
+    },
+    take: 1,
+  },
+  items: {
+    select: {
+      quantity: true,
+      size: true,
+      color: true,
+      productId: true,
+      variant: {
+        select: {
+          product: { select: { name: true, slug: true, currentPriceAmount: true } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.CartSelect;
 
 type RecoveryTouch = {
   status: CartRecoveryStatus;

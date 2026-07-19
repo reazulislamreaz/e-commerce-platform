@@ -1,4 +1,6 @@
 import {
+  BarChart3,
+  ImageIcon,
   Layers,
   LayoutDashboard,
   Mail,
@@ -27,9 +29,31 @@ export const adminNavGroups: { label: string; items: AdminNavItem[] }[] = [
   {
     label: 'Operations',
     items: [
-      { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true, keywords: ['dashboard', 'analytics', 'home'] },
-      { href: '/admin/orders', label: 'Orders', icon: Package, keywords: ['fulfillment', 'shipping'] },
-      { href: '/admin/returns', label: 'Returns', icon: RotateCcw, keywords: ['exchange', 'refund'] },
+      {
+        href: '/admin',
+        label: 'Overview',
+        icon: LayoutDashboard,
+        exact: true,
+        keywords: ['dashboard', 'home'],
+      },
+      {
+        href: '/admin/analytics',
+        label: 'Analytics',
+        icon: BarChart3,
+        keywords: ['reports', 'revenue', 'exports', 'sales'],
+      },
+      {
+        href: '/admin/orders',
+        label: 'Orders',
+        icon: Package,
+        keywords: ['fulfillment', 'shipping'],
+      },
+      {
+        href: '/admin/returns',
+        label: 'Returns',
+        icon: RotateCcw,
+        keywords: ['exchange', 'refund'],
+      },
       { href: '/admin/reviews', label: 'Reviews', icon: Star, keywords: ['moderation', 'ratings'] },
     ],
   },
@@ -37,18 +61,59 @@ export const adminNavGroups: { label: string; items: AdminNavItem[] }[] = [
     label: 'Catalog',
     items: [
       { href: '/admin/products', label: 'Products', icon: Shirt, keywords: ['catalog', 'drafts'] },
-      { href: '/admin/catalog', label: 'Taxonomy', icon: Layers, keywords: ['brands', 'categories', 'collections'] },
-      { href: '/admin/inventory', label: 'Inventory', icon: Warehouse, keywords: ['stock', 'balances', 'adjustments'] },
-      { href: '/admin/coupons', label: 'Coupons', icon: Tag, keywords: ['promotions', 'discounts'] },
+      {
+        href: '/admin/catalog',
+        label: 'Taxonomy',
+        icon: Layers,
+        keywords: ['brands', 'categories', 'collections'],
+      },
+      {
+        href: '/admin/inventory',
+        label: 'Inventory',
+        icon: Warehouse,
+        keywords: ['stock', 'balances', 'adjustments', 'alerts'],
+      },
+      {
+        href: '/admin/coupons',
+        label: 'Coupons',
+        icon: Tag,
+        keywords: ['promotions', 'discounts'],
+      },
+      {
+        href: '/admin/banners',
+        label: 'Banners',
+        icon: ImageIcon,
+        keywords: ['marketing', 'hero', 'promo', 'cms'],
+      },
     ],
   },
   {
     label: 'Customers',
     items: [
-      { href: '/admin/customers', label: 'CRM', icon: UserRoundSearch, keywords: ['segments', 'ltv', 'lifecycle'] },
-      { href: '/admin/users', label: 'Users', icon: Users, keywords: ['customers', 'accounts', 'admins'] },
-      { href: '/admin/contact', label: 'Contact', icon: Mail, keywords: ['messages', 'inbox', 'support'] },
-      { href: '/admin/newsletter', label: 'Newsletter', icon: Newspaper, keywords: ['subscribers', 'email'] },
+      {
+        href: '/admin/customers',
+        label: 'CRM',
+        icon: UserRoundSearch,
+        keywords: ['segments', 'ltv', 'lifecycle'],
+      },
+      {
+        href: '/admin/users',
+        label: 'Users',
+        icon: Users,
+        keywords: ['customers', 'accounts', 'admins'],
+      },
+      {
+        href: '/admin/contact',
+        label: 'Contact',
+        icon: Mail,
+        keywords: ['messages', 'inbox', 'support'],
+      },
+      {
+        href: '/admin/newsletter',
+        label: 'Newsletter',
+        icon: Newspaper,
+        keywords: ['subscribers', 'email'],
+      },
     ],
   },
 ];

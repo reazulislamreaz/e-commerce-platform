@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
@@ -48,36 +48,37 @@ export function OrderRequestForm({
 }) {
   const user = useAppSelector(selectAuthUser)!;
   const { data: orders, loading: ordersLoading, error: ordersError } = useAccountOrders(user.id);
-  const { data: requests, loading: returnsLoading, error: returnsError } = useAccountReturns(user.id);
+  const {
+    data: requests,
+    loading: returnsLoading,
+    error: returnsError,
+  } = useAccountReturns(user.id);
   const createReturn = useCreateReturnRequest(user.id);
   const filtered = requests.filter((r) => r.type === type);
   const [selectedOrder, setSelectedOrder] = useState<CustomerOrder | null>(null);
   const [exchangeVariants, setExchangeVariants] = useState<Record<string, string>>({});
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<Input>({
     resolver: zodResolver(schema),
     defaultValues: { conditionAttested: false },
   });
 
-  const orderId = watch('orderId');
+  const orderId = useWatch({ control, name: 'orderId' });
+  const activeSelectedOrder = selectedOrder?.id === orderId ? selectedOrder : null;
   const productIds = useMemo(
-    () => [...new Set((selectedOrder?.items ?? []).map((item) => item.productId))],
-    [selectedOrder],
+    () => [...new Set((activeSelectedOrder?.items ?? []).map((item) => item.productId))],
+    [activeSelectedOrder],
   );
   const productsQuery = useProductsByIds(productIds, type === 'exchange' && productIds.length > 0);
 
   useEffect(() => {
-    if (!orderId) {
-      setSelectedOrder(null);
-      setExchangeVariants({});
-      return;
-    }
+    if (!orderId) return;
 
     let cancelled = false;
     void accountRepository
@@ -98,7 +99,7 @@ export function OrderRequestForm({
   }, [orderId]);
 
   const onSubmit = handleSubmit(async (values) => {
-    const order = selectedOrder ?? orders.find((entry) => entry.id === values.orderId);
+    const order = activeSelectedOrder ?? orders.find((entry) => entry.id === values.orderId);
     if (!order) {
       flashMessage('Select a valid order.');
       return;
@@ -175,12 +176,12 @@ export function OrderRequestForm({
             ) : null}
           </div>
 
-          {type === 'exchange' && selectedOrder ? (
+          {type === 'exchange' && activeSelectedOrder ? (
             <div className="space-y-3 rounded-[4px] border border-[#2d2a27] bg-[#1a1815] p-3">
               <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#e3bb78]">
                 Replacement variants
               </p>
-              {selectedOrder.items.map((item) => {
+              {activeSelectedOrder.items.map((item) => {
                 const lineId = item.orderItemId;
                 if (!lineId) return null;
                 const product = productsQuery.data?.find((entry) => entry.id === item.productId);
@@ -244,9 +245,7 @@ export function OrderRequestForm({
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
-          {listTitle}
-        </h3>
+        <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">{listTitle}</h3>
         {returnsLoading ? (
           <p className="text-sm text-[#b5b0a8]">Loading requests…</p>
         ) : returnsError ? (

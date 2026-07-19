@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateCollectionDto {
   @ApiProperty({ example: 'Men' })
@@ -20,6 +20,11 @@ export class CreateCollectionDto {
   @IsInt()
   @Min(0)
   position?: number;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class UpdateCollectionDto {
@@ -41,6 +46,11 @@ export class UpdateCollectionDto {
   @IsInt()
   @Min(0)
   position?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class CollectionResponseDto {
@@ -55,6 +65,12 @@ export class CollectionResponseDto {
 
   @ApiProperty()
   position!: number;
+
+  @ApiProperty()
+  isActive!: boolean;
+
+  @ApiProperty({ description: 'Number of non-deleted products assigned to the collection' })
+  productCount!: number;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;

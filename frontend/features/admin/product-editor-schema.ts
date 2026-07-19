@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import type { AdminProductDetail, UpdateAdminProductInput } from './types';
+import { colorNameToHex } from '@/lib/color-hex';
+import type {
+  AdminProductDetail,
+  CreateAdminProductInput,
+  UpdateAdminProductInput,
+} from './types';
 
 const idField = z.object({ id: z.string().uuid('Select an item') });
 const mediaUrl = z.string().trim().max(2048).refine((value) => {
@@ -95,6 +100,146 @@ export const productEditorSchema = z
   });
 
 export type ProductEditorValues = z.infer<typeof productEditorSchema>;
+
+const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const productCreateSchema = z
+  .object({
+    name: z.string().trim().min(2).max(160),
+    slug: z
+      .string()
+      .trim()
+      .max(160)
+      .refine(
+        (value) => value === '' || slugPattern.test(value),
+        'Use lowercase letters, numbers, and hyphens',
+      ),
+    brandId: z.string().uuid('Select a brand'),
+    categoryId: z.string().uuid('Select a category'),
+    collectionId: z.union([z.literal(''), z.string().uuid()]),
+    inventoryLocationId: z.union([z.literal(''), z.string().uuid()]),
+    description: z.string().trim().min(10).max(5000),
+    primaryColor: z.string().trim().min(1).max(80),
+    amountTaka: z.number({ message: 'Enter a price' }).min(0),
+    compareAtTaka: z.union([z.literal(''), z.number().min(0)]),
+    colors: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1, 'Enter a color name').max(80),
+        }),
+      )
+      .min(1, 'Add at least one color'),
+    variants: z
+      .array(
+        z.object({
+          sku: z.string().trim().min(1).max(64),
+          size: z.string().trim().min(1).max(32),
+          color: z.string().trim().min(1).max(80),
+          openingQuantity: z.number().int().min(0).max(1_000_000),
+        }),
+      )
+      .min(1, 'Add at least one variant'),
+    media: z
+      .array(
+        z.object({
+          url: mediaUrl,
+          alt: z.string().trim().min(1).max(240),
+          isPrimary: z.boolean(),
+        }),
+      )
+      .min(1, 'Upload at least one image'),
+  })
+  .superRefine((values, context) => {
+    if (values.media.filter((item) => item.isPrimary).length !== 1) {
+      context.addIssue({
+        code: 'custom',
+        path: ['media'],
+        message: 'Choose exactly one primary image',
+      });
+    }
+    if (values.compareAtTaka !== '' && values.compareAtTaka <= values.amountTaka) {
+      context.addIssue({
+        code: 'custom',
+        path: ['compareAtTaka'],
+        message: 'Compare-at price must be greater than the sale price',
+      });
+    }
+    if (
+      values.variants.some((variant) => variant.openingQuantity > 0) &&
+      !values.inventoryLocationId
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['inventoryLocationId'],
+        message: 'Select a location for opening stock',
+      });
+    }
+
+    addDuplicateIssues(
+      values.colors.map((item) => item.name.toLowerCase()),
+      'colors',
+      'color name',
+      context,
+    );
+    addDuplicateIssues(
+      values.variants.map((item) => item.sku.toLowerCase()),
+      'variants',
+      'SKU',
+      context,
+    );
+    addDuplicateIssues(
+      values.variants.map((item) => `${item.size.toLowerCase()}:${item.color.toLowerCase()}`),
+      'variants',
+      'size and color combination',
+      context,
+    );
+  });
+
+export type ProductCreateValues = z.infer<typeof productCreateSchema>;
+
+export const emptyCreateValues: ProductCreateValues = {
+  name: '',
+  slug: '',
+  brandId: '',
+  categoryId: '',
+  collectionId: '',
+  inventoryLocationId: '',
+  description: '',
+  primaryColor: '',
+  amountTaka: 0,
+  compareAtTaka: '',
+  colors: [{ name: '' }],
+  variants: [{ sku: '', size: '', color: '', openingQuantity: 0 }],
+  media: [],
+};
+
+export function createValuesToInput(values: ProductCreateValues): CreateAdminProductInput {
+  return {
+    name: values.name,
+    ...(values.slug ? { slug: values.slug } : {}),
+    brandId: values.brandId,
+    description: values.description,
+    primaryColor: values.primaryColor,
+    categoryIds: [values.categoryId],
+    ...(values.collectionId ? { collectionIds: [values.collectionId] } : {}),
+    // Swatch hex is derived from the color name; admins only type the name.
+    colors: values.colors.map(({ name }) => ({ name, hex: colorNameToHex(name) })),
+    variants: values.variants,
+    ...(values.inventoryLocationId
+      ? { inventoryLocationId: values.inventoryLocationId }
+      : {}),
+    media: values.media.map(({ url, alt, isPrimary }, position) => ({
+      url,
+      alt,
+      isPrimary,
+      position,
+    })),
+    price: {
+      amountTaka: values.amountTaka,
+      ...(values.compareAtTaka === '' ? {} : { compareAtTaka: values.compareAtTaka }),
+    },
+  };
+}
 
 function addDuplicateIssues(
   values: string[],

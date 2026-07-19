@@ -8,12 +8,64 @@ type PageHeroProps = {
   titleAccent?: string;
   description: string;
   image: string;
+  /** Optional mobile crop; desktop always uses `image`. */
+  mobileImage?: string;
   imageAlt?: string;
   /** Unique layout variant per page */
   variant?: 'split' | 'full' | 'centered' | 'asymmetric';
   cta?: { href: string; label: string };
   secondaryCta?: { href: string; label: string };
 };
+
+function ResponsiveHeroImage({
+  image,
+  mobileImage,
+  imageAlt,
+  sizes,
+  className,
+  priority = false,
+}: {
+  image: string;
+  mobileImage?: string;
+  imageAlt: string;
+  sizes: string;
+  className: string;
+  priority?: boolean;
+}) {
+  if (!mobileImage) {
+    return (
+      <Image
+        src={image}
+        alt={imageAlt}
+        fill
+        priority={priority}
+        sizes={sizes}
+        className={className}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Image
+        src={mobileImage}
+        alt={imageAlt}
+        fill
+        priority={priority}
+        sizes={sizes}
+        className={`${className} md:hidden`}
+      />
+      <Image
+        src={image}
+        alt={imageAlt}
+        fill
+        priority={priority}
+        sizes={sizes}
+        className={`${className} hidden md:block`}
+      />
+    </>
+  );
+}
 
 function HeroTitle({ title, titleAccent }: { title: ReactNode; titleAccent?: string }) {
   if (!titleAccent) return <>{title}</>;
@@ -30,6 +82,7 @@ export function PageHero({
   titleAccent,
   description,
   image,
+  mobileImage,
   imageAlt = '',
   variant = 'split',
   cta,
@@ -38,10 +91,10 @@ export function PageHero({
   if (variant === 'full') {
     return (
       <section className="relative min-h-[42vh] overflow-hidden border-b border-[#2d2a27] bg-[#090909] sm:min-h-[48vh]">
-        <Image
-          src={image}
-          alt={imageAlt}
-          fill
+        <ResponsiveHeroImage
+          image={image}
+          mobileImage={mobileImage}
+          imageAlt={imageAlt}
           priority
           sizes="100vw"
           className="object-cover object-center opacity-55"
@@ -93,10 +146,10 @@ export function PageHero({
             <HeroActions cta={cta} secondaryCta={secondaryCta} />
           </div>
           <div className="relative min-h-[280px] overflow-hidden sm:min-h-[360px] lg:min-h-[480px]">
-            <Image
-              src={image}
-              alt={imageAlt}
-              fill
+            <ResponsiveHeroImage
+              image={image}
+              mobileImage={mobileImage}
+              imageAlt={imageAlt}
               priority
               sizes="(max-width: 1024px) 100vw, 45vw"
               className="object-cover object-top"
@@ -122,10 +175,10 @@ export function PageHero({
           <HeroActions cta={cta} secondaryCta={secondaryCta} />
         </div>
         <div className="relative min-h-[280px] overflow-hidden sm:min-h-[360px]">
-          <Image
-            src={image}
-            alt={imageAlt}
-            fill
+          <ResponsiveHeroImage
+            image={image}
+            mobileImage={mobileImage}
+            imageAlt={imageAlt}
             priority
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover"

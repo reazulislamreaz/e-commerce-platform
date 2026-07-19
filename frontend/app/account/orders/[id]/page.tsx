@@ -1,13 +1,13 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ReviewForm } from '@/components/account/review-form';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
-import { accountRepository, useAccountReviews, type CustomerOrder } from '@/features/account';
+import { useAccountOrder, useAccountReviews } from '@/features/account';
 import { formatTaka } from '@/lib/currency';
 import { AccountPanelSkeleton } from '@/components/common/skeleton';
 
@@ -17,23 +17,15 @@ function OrderDetailInner() {
   const confirmed = searchParams.get('confirmed') === '1';
   const user = useAppSelector(selectAuthUser)!;
   const { data: reviews } = useAccountReviews(user.id);
-  const [order, setOrder] = useState<CustomerOrder | null>(null);
-  const [loading, setLoading] = useState(true);
+  const orderQuery = useAccountOrder(user.id, id);
+  const order = orderQuery.data;
   const [reviewProductId, setReviewProductId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void accountRepository
-      .getOrder(id)
-      .then(setOrder)
-      .catch(() => setOrder(null))
-      .finally(() => setLoading(false));
-  }, [id, user.id]);
-
-  if (loading) {
+  if (orderQuery.isLoading) {
     return <AccountPanelSkeleton />;
   }
 
-  if (!order) {
+  if (orderQuery.isError || !order) {
     return (
       <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#b5b0a8]">
         Order not found.{' '}

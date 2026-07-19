@@ -5,6 +5,7 @@ import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { InventoryService } from '@/modules/inventory/inventory.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
+import { OutboxService } from '@/modules/platform/outbox.service';
 import { ReturnsRepository } from './returns.repository';
 import { ReturnsService } from './returns.service';
 
@@ -22,6 +23,7 @@ describe('ReturnsService', () => {
     findActiveVariantsByIds: jest.fn(),
     create: jest.fn(),
   };
+  const outbox = { enqueue: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -44,6 +46,7 @@ describe('ReturnsService', () => {
           },
         },
         { provide: AuditService, useValue: { write: jest.fn() } },
+        { provide: OutboxService, useValue: outbox },
         { provide: NotificationsService, useValue: { createForUser: jest.fn() } },
         {
           provide: CustomerMetricsService,
@@ -77,6 +80,9 @@ describe('ReturnsService', () => {
   it('requires condition attestation', async () => {
     repository.findOrderForReturn.mockResolvedValue({
       id: orderId,
+      number: 'EA123456',
+      email: 'customer@example.com',
+      user: { firstName: 'Amina' },
       status: OrderStatus.DELIVERED,
       deliveredAt: new Date(),
       items: [{ id: 'item-1', variantId: 'var-1', productId: 'prod-1', quantity: 1 }],
@@ -139,6 +145,9 @@ describe('ReturnsService', () => {
     const deliveredAt = new Date();
     repository.findOrderForReturn.mockResolvedValue({
       id: orderId,
+      number: 'EA123456',
+      email: 'customer@example.com',
+      user: { firstName: 'Amina' },
       status: OrderStatus.DELIVERED,
       deliveredAt,
       items: [{ id: 'item-1', variantId: 'var-1', productId: 'prod-1', quantity: 1 }],
@@ -173,5 +182,16 @@ describe('ReturnsService', () => {
       status: 'pending',
       orderNumber: 'EA123456',
     });
+    expect(outbox.enqueue).toHaveBeenCalledWith(
+      'return.status.email',
+      'ret-1',
+      expect.objectContaining({
+        to: 'customer@example.com',
+        requestType: 'exchange',
+        status: 'pending',
+        requestUrl: '/account/exchanges',
+      }),
+      expect.anything(),
+    );
   });
 });

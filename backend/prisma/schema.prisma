@@ -319,12 +319,14 @@ model Brand {
   id        String    @id @default(uuid()) @db.Uuid
   name      String
   slug      String    @unique
+  isActive  Boolean   @default(true)
   deletedAt DateTime? @db.Timestamptz(3)
   createdAt DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @db.Timestamptz(3)
 
   products Product[]
 
+  @@index([isActive, name])
   @@index([name])
   @@map("brand")
 }
@@ -337,6 +339,7 @@ model Category {
   name      String
   slug      String    @unique
   position  Int       @default(0)
+  isActive  Boolean   @default(true)
   deletedAt DateTime? @db.Timestamptz(3)
   createdAt DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @db.Timestamptz(3)
@@ -345,6 +348,7 @@ model Category {
   children    Category[]        @relation("CategoryTree")
   assignments ProductCategory[]
 
+  @@index([isActive, position, name])
   @@index([parentId, position])
   @@map("category")
 }
@@ -354,12 +358,14 @@ model CatalogCollection {
   name      String
   slug      String    @unique
   position  Int       @default(0)
+  isActive  Boolean   @default(true)
   deletedAt DateTime? @db.Timestamptz(3)
   createdAt DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @db.Timestamptz(3)
 
   assignments ProductCollection[]
 
+  @@index([isActive, position, name])
   @@index([position])
   @@map("catalog_collection")
 }

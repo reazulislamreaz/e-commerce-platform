@@ -1,7 +1,7 @@
 'use client';
 
 import axios from 'axios';
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
@@ -17,7 +17,13 @@ import {
   AdminTh,
   StatusPill,
 } from '@/components/admin/admin-ui';
-import { adminApi, adminKeys, useAdminCoupons, useAdminMutation } from '@/features/admin';
+import {
+  adminApi,
+  adminKeys,
+  useAdminCoupons,
+  useAdminMutation,
+  useCouponRedemptions,
+} from '@/features/admin';
 import type { AdminCoupon } from '@/features/admin/types';
 import { formatTaka } from '@/lib/currency';
 
@@ -37,12 +43,122 @@ function toDatetimeLocalValue(iso?: string): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function CouponRedemptionsPanel({
+  couponId,
+  couponCode,
+}: {
+  couponId: string;
+  couponCode: string;
+}) {
+  const [cursor, setCursor] = useState<string | undefined>();
+  const [priorRows, setPriorRows] = useState<
+    Array<{
+      id: string;
+      orderId: string;
+      userId?: string | null;
+      discountTaka: number;
+      shippingWaived: boolean;
+      createdAt: string;
+    }>
+  >([]);
+
+  const queryParams = useMemo(
+    () => ({
+      limit: 20,
+      ...(cursor ? { cursor } : {}),
+    }),
+    [cursor],
+  );
+
+  const redemptionsQuery = useCouponRedemptions(couponId, queryParams);
+  const pageRows = redemptionsQuery.data?.data ?? [];
+  const rows = cursor ? [...priorRows, ...pageRows] : pageRows;
+  const nextCursor = redemptionsQuery.data?.meta.nextCursor ?? null;
+  const showInitialLoading = redemptionsQuery.isLoading && !cursor && rows.length === 0;
+
+  function loadMore() {
+    if (!redemptionsQuery.data?.meta.nextCursor) return;
+    setPriorRows(cursor ? [...priorRows, ...pageRows] : pageRows);
+    setCursor(redemptionsQuery.data.meta.nextCursor);
+  }
+
+  return (
+    <AdminPanel
+      title={`Redemptions — ${couponCode}`}
+      description="Orders that redeemed this coupon. Newest first."
+    >
+      {redemptionsQuery.isError ? <AdminError>Could not load redemptions.</AdminError> : null}
+      {showInitialLoading ? <AdminTableSkeleton /> : null}
+      {!showInitialLoading && !redemptionsQuery.isError && rows.length === 0 ? (
+        <AdminEmpty>No redemptions yet for this coupon.</AdminEmpty>
+      ) : null}
+      {rows.length > 0 ? (
+        <>
+          <AdminTable>
+            <thead>
+              <tr>
+                <AdminTh>When</AdminTh>
+                <AdminTh>Order</AdminTh>
+                <AdminTh>Customer</AdminTh>
+                <AdminTh>Discount</AdminTh>
+                <AdminTh>Shipping</AdminTh>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <AdminTd>
+                    <span className="text-[#b5b0a8]">
+                      {new Date(row.createdAt).toLocaleString()}
+                    </span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="font-mono text-xs text-[#e9e5de]">
+                      {row.orderId.slice(0, 8)}…
+                    </span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="font-mono text-xs text-[#b5b0a8]">
+                      {row.userId ? `${row.userId.slice(0, 8)}…` : 'Guest'}
+                    </span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="text-[#e3bb78]">{formatTaka(row.discountTaka)}</span>
+                  </AdminTd>
+                  <AdminTd>
+                    {row.shippingWaived ? (
+                      <span className="text-emerald-300">Waived</span>
+                    ) : (
+                      <span className="text-[#8b867d]">—</span>
+                    )}
+                  </AdminTd>
+                </tr>
+              ))}
+            </tbody>
+          </AdminTable>
+          <div className="mt-4 flex justify-center">
+            {redemptionsQuery.isFetching && cursor ? (
+              <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+            ) : nextCursor ? (
+              <AdminButton type="button" variant="secondary" onClick={loadMore}>
+                Load more
+              </AdminButton>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+    </AdminPanel>
+  );
+}
+
 export default function AdminCouponsPage() {
   const couponsQuery = useAdminCoupons();
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingCode, setEditingCode] = useState('');
+  const [redemptionsCouponId, setRedemptionsCouponId] = useState<string | null>(null);
+  const [redemptionsCode, setRedemptionsCode] = useState('');
 
   const [code, setCode] = useState('');
   const [title, setTitle] = useState('');
@@ -56,7 +172,8 @@ export default function AdminCouponsPage() {
 
   const createMutation = useAdminMutation(adminApi.createCoupon, [adminKeys.coupons()]);
   const updateMutation = useAdminMutation(
-    ({ id, body }: { id: string; body: Record<string, unknown> }) => adminApi.updateCoupon(id, body),
+    ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+      adminApi.updateCoupon(id, body),
     [adminKeys.coupons()],
   );
   const deactivateMutation = useAdminMutation(
@@ -64,8 +181,7 @@ export default function AdminCouponsPage() {
     [adminKeys.coupons()],
   );
 
-  const busy =
-    createMutation.isPending || updateMutation.isPending || deactivateMutation.isPending;
+  const busy = createMutation.isPending || updateMutation.isPending || deactivateMutation.isPending;
   const coupons = couponsQuery.data ?? [];
   const isEditing = editingId !== null;
 
@@ -86,6 +202,8 @@ export default function AdminCouponsPage() {
   function startEdit(coupon: AdminCoupon) {
     setEditingId(coupon.id);
     setEditingCode(coupon.code);
+    setRedemptionsCouponId(coupon.id);
+    setRedemptionsCode(coupon.code);
     setCode(coupon.code);
     setTitle(coupon.title);
     setDescription(coupon.description);
@@ -97,6 +215,11 @@ export default function AdminCouponsPage() {
     setMaxRedemptionsPerUser(String(coupon.maxRedemptionsPerUser));
     setActionError(null);
     setSuccess(null);
+  }
+
+  function showRedemptions(coupon: AdminCoupon) {
+    setRedemptionsCouponId(coupon.id);
+    setRedemptionsCode(coupon.code);
   }
 
   function buildBody(isUpdate: boolean): Record<string, unknown> | null {
@@ -188,10 +311,7 @@ export default function AdminCouponsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Coupons"
-        description="Create and manage storefront promotions."
-      />
+      <AdminPageHeader title="Coupons" description="Create and manage storefront promotions." />
       <AdminPanel title="All coupons" description="Active and disabled promotions.">
         {couponsQuery.isError ? <AdminError>Could not load coupons.</AdminError> : null}
         {actionError ? <AdminError>{actionError}</AdminError> : null}
@@ -201,9 +321,7 @@ export default function AdminCouponsPage() {
           </p>
         ) : null}
 
-        {couponsQuery.isLoading ? (
-          <AdminTableSkeleton />
-        ) : null}
+        {couponsQuery.isLoading ? <AdminTableSkeleton /> : null}
 
         {!couponsQuery.isLoading && !couponsQuery.isError && coupons.length === 0 ? (
           <AdminEmpty>No coupons yet.</AdminEmpty>
@@ -253,7 +371,15 @@ export default function AdminCouponsPage() {
                     <StatusPill>{coupon.status}</StatusPill>
                   </AdminTd>
                   <AdminTd className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <AdminButton
+                        type="button"
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() => showRedemptions(coupon)}
+                      >
+                        Redemptions
+                      </AdminButton>
                       <AdminButton
                         type="button"
                         variant="secondary"
@@ -418,6 +544,14 @@ export default function AdminCouponsPage() {
           </div>
         </form>
       </AdminPanel>
+
+      {redemptionsCouponId ? (
+        <CouponRedemptionsPanel
+          key={redemptionsCouponId}
+          couponId={redemptionsCouponId}
+          couponCode={redemptionsCode}
+        />
+      ) : null}
     </div>
   );
 }

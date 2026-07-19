@@ -22,10 +22,12 @@ export type OrderStatus =
   | 'pending'
   | 'confirmed'
   | 'processing'
+  | 'packed'
   | 'shipped'
   | 'delivered'
   | 'cancelled'
-  | 'returned';
+  | 'returned'
+  | 'exchanged';
 
 export interface OrderLineItem {
   orderItemId?: string;

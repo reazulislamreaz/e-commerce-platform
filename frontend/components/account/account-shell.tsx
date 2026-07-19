@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useLogout } from '@/features/auth/hooks';
-import { displayName } from '@/features/account';
+import { displayName, useUnreadNotificationCount } from '@/features/account';
 import { AccountPanelSkeleton } from '@/components/common/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +52,8 @@ export function AccountShell({ children }: PropsWithChildren) {
   const user = useAppSelector((s) => s.auth.user);
   const hydrated = useAppSelector((s) => s.auth.hydrated);
   const logout = useLogout();
+  const unreadQuery = useUnreadNotificationCount(user?.id);
+  const unreadCount = unreadQuery.data ?? 0;
 
   useEffect(() => {
     if (hydrated && !user) {
@@ -98,7 +100,12 @@ export function AccountShell({ children }: PropsWithChildren) {
                     tabIndex={ready ? undefined : -1}
                   >
                     <Icon className="size-3.5 shrink-0" strokeWidth={1.6} />
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {item.href === '/account/notifications' && unreadCount > 0 ? (
+                      <span className="rounded-[4px] bg-[#e5bd79] px-1.5 py-0.5 text-[9px] font-bold text-[#18120b]">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    ) : null}
                   </Link>
                 );
               })}

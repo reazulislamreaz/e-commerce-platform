@@ -4,35 +4,38 @@ import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
-import { accountRepository, type CustomerOrder } from '@/features/account';
+import { useTrackedOrder } from '@/features/account';
 
 function TrackOrderInner() {
   const params = useSearchParams();
   const [number, setNumber] = useState(params.get('number') ?? '');
   const [email, setEmail] = useState(params.get('email') ?? '');
-  const [order, setOrder] = useState<CustomerOrder | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [lookup, setLookup] = useState<{
+    number: string;
+    email: string;
+  }>();
+  const trackQuery = useTrackedOrder(lookup?.number ?? '', lookup?.email ?? '', Boolean(lookup));
+  const submitted = Boolean(lookup);
+  const loading = trackQuery.isFetching && !trackQuery.data;
+  const order = trackQuery.data;
+  const error = trackQuery.isError
+    ? axios.isAxiosError(trackQuery.error)
+      ? ((trackQuery.error.response?.data as { message?: string } | undefined)?.message ??
+        'Order not found. Check the number and email used at checkout.')
+      : 'Order not found. Check the number and email used at checkout.'
+    : null;
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setLoading(true);
-    setError(null);
-    setOrder(null);
-    try {
-      const result = await accountRepository.trackOrder(number.trim(), email.trim());
-      setOrder(result);
-    } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? ((err.response?.data as { message?: string } | undefined)?.message ??
-          'Order not found. Check the number and email used at checkout.')
-        : 'Order not found. Check the number and email used at checkout.';
-      setError(message);
-    } finally {
-      setLoading(false);
+    const next = {
+      number: number.trim(),
+      email: email.trim().toLowerCase(),
+    };
+    if (lookup?.number === next.number && lookup.email === next.email) {
+      void trackQuery.refetch();
+      return;
     }
+    setLookup(next);
   };
 
   return (
@@ -46,7 +49,7 @@ function TrackOrderInner() {
           Enter your order number and the email used at checkout.
         </p>
 
-        <form className="mt-6 space-y-4" onSubmit={(e) => void onSubmit(e)}>
+        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <FormField
             label="Order number"
             value={number}
@@ -78,6 +81,13 @@ function TrackOrderInner() {
               <div>
                 <p className="font-semibold text-white">Order #{order.number}</p>
                 <p className="mt-1 capitalize text-[#e3bb78]">{order.status}</p>
+                {trackQuery.isFetching ? (
+                  <p className="mt-1 text-[11px] text-[#8b867d]">Refreshing status…</p>
+                ) : (
+                  <p className="mt-1 text-[11px] text-[#8b867d]">
+                    Active orders refresh automatically.
+                  </p>
+                )}
                 {order.trackingNumber && (
                   <p className="mt-1 text-sm text-[#b5b0a8]">Courier: {order.trackingNumber}</p>
                 )}

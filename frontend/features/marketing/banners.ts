@@ -13,6 +13,7 @@ export type PageHeroBannerProps = {
   titleAccent?: string;
   description: string;
   image: string;
+  mobileImage?: string;
   imageAlt: string;
   cta?: { href: string; label: string };
   secondaryCta?: { href: string; label: string };
@@ -25,6 +26,10 @@ export function bannerToPageHero(
   const titleParts = banner.title.trim().split(/\s+/);
   const lead = titleParts.slice(0, -1).join(' ') || banner.title;
   const accent = titleParts.length > 1 ? titleParts[titleParts.length - 1] : undefined;
+  const mobileImage =
+    banner.mobileImageUrl && banner.mobileImageUrl !== banner.imageUrl
+      ? banner.mobileImageUrl
+      : undefined;
 
   return {
     eyebrow: banner.subtitle?.trim() ? 'Featured' : 'Elevate Apparel',
@@ -33,7 +38,8 @@ export function bannerToPageHero(
     description:
       banner.subtitle?.trim() ||
       'Premium quality apparel designed to elevate your style.',
-    image: banner.mobileImageUrl || banner.imageUrl,
+    image: banner.imageUrl,
+    ...(mobileImage ? { mobileImage } : {}),
     imageAlt: banner.title,
     cta: banner.ctaHref
       ? { href: banner.ctaHref, label: banner.ctaLabel?.trim() || 'Shop Now' }

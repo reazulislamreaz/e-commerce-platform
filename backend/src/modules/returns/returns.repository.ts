@@ -2,8 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { OrderStatus, Prisma, ReturnStatus, ReturnType } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
+export const returnOrderSelect = {
+  id: true,
+  number: true,
+  userId: true,
+  email: true,
+  status: true,
+  deliveredAt: true,
+  user: { select: { firstName: true } },
+} satisfies Prisma.CustomerOrderSelect;
+
 const returnInclude = {
-  order: { select: { id: true, number: true, userId: true, status: true, deliveredAt: true } },
+  order: { select: returnOrderSelect },
   items: {
     select: {
       id: true,
@@ -79,14 +89,11 @@ export class ReturnsRepository {
     });
   }
 
-  findOrderForReturn(
-    orderId: string,
-    userId: string,
-    tx: Prisma.TransactionClient = this.prisma,
-  ) {
+  findOrderForReturn(orderId: string, userId: string, tx: Prisma.TransactionClient = this.prisma) {
     return tx.customerOrder.findFirst({
       where: { id: orderId, userId },
       include: {
+        user: { select: { firstName: true } },
         items: { orderBy: { createdAt: 'asc' } },
       },
     });
@@ -168,7 +175,10 @@ export class ReturnsRepository {
     return tx.returnStatusHistory.create({ data });
   }
 
-  async applyOrderOutcomeAfterCompletion(orderId: string, tx: Prisma.TransactionClient = this.prisma) {
+  async applyOrderOutcomeAfterCompletion(
+    orderId: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ) {
     const order = await tx.customerOrder.findUnique({
       where: { id: orderId },
       include: { items: true },
@@ -198,9 +208,7 @@ export class ReturnsRepository {
       where: { id: orderId },
       data: {
         status: nextStatus,
-        ...(nextStatus === OrderStatus.EXCHANGED
-          ? { exchangedAt: now }
-          : { returnedAt: now }),
+        ...(nextStatus === OrderStatus.EXCHANGED ? { exchangedAt: now } : { returnedAt: now }),
         version: { increment: 1 },
       },
     });
@@ -209,10 +217,7 @@ export class ReturnsRepository {
       data: {
         orderId,
         status: nextStatus,
-        note:
-          nextStatus === OrderStatus.EXCHANGED
-            ? 'All items exchanged'
-            : 'All items returned',
+        note: nextStatus === OrderStatus.EXCHANGED ? 'All items exchanged' : 'All items returned',
       },
     });
   }

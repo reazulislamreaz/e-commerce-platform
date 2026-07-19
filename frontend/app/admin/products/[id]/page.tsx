@@ -1,6 +1,6 @@
 'use client';
 
-import axios from 'axios';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState, type PropsWithChildren } from 'react';
@@ -9,6 +9,7 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { ProductEditor } from '@/features/admin/components/product-editor';
 import { ProductInventory } from '@/features/admin/components/product-inventory';
+import { mutationErrorMessage } from '@/features/admin/mutation-error';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
@@ -30,7 +31,11 @@ import {
 } from '@/features/admin';
 import { formatTaka } from '@/lib/currency';
 
-const PRODUCT_INVALIDATE = [adminKeys.productsRoot(), adminKeys.productRoot()] as const;
+const PRODUCT_INVALIDATE = [
+  adminKeys.productsRoot(),
+  adminKeys.productRoot(),
+  adminKeys.productStats(),
+] as const;
 
 const priceSchema = z
   .object({
@@ -211,13 +216,64 @@ export default function AdminProductDetailPage() {
           </>
         }
       >
-        <dl className="grid gap-3 text-sm sm:grid-cols-3">
-          <Summary label="Current price" value={formatTaka(item.priceTaka)} accent />
+        {item.media.length > 0 ? (
+          <ul className="mb-5 flex flex-wrap gap-2">
+            {item.media.map((media) => (
+              <li
+                key={media.id}
+                className="relative size-20 overflow-hidden rounded-lg border border-[#26231f] bg-[#e4e3e1]"
+              >
+                <Image src={media.url} alt={media.alt} fill sizes="80px" className="object-cover" />
+                {media.isPrimary ? (
+                  <span className="absolute bottom-1 left-1 rounded-[3px] bg-[#e5bd79] px-1 text-[9px] font-bold uppercase tracking-[.08em] text-[#18120b]">
+                    Primary
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <p className="mb-5 max-w-3xl text-sm leading-relaxed text-[#b5b0a8]">{item.description}</p>
+
+        <dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-4">
+          <Summary
+            label="Current price"
+            value={
+              item.activePrice?.compareAtTaka
+                ? `${formatTaka(item.priceTaka)} · was ${formatTaka(item.activePrice.compareAtTaka)}`
+                : formatTaka(item.priceTaka)
+            }
+            accent
+          />
           <Summary label="Variants" value={String(item.variantCount)} />
+          <Summary label="Colors" value={item.colors.map((color) => color.name).join(', ') || '—'} />
+          <Summary
+            label="Categories"
+            value={
+              item.categoryIds
+                .map((id) => categories.data?.find((category) => category.id === id)?.name)
+                .filter(Boolean)
+                .join(', ') || '—'
+            }
+          />
+          <Summary
+            label="Collections"
+            value={
+              item.collectionIds
+                .map((id) => collections.data?.find((collection) => collection.id === id)?.name)
+                .filter(Boolean)
+                .join(', ') || 'None'
+            }
+          />
+          <Summary label="Storefront URL" value={`/product/${item.slug}`} />
+          <Summary label="Created" value={new Date(item.createdAt).toLocaleDateString()} />
           <Summary
             label="Published"
             value={item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : 'Not yet'}
           />
+          <Summary label="Last updated" value={new Date(item.updatedAt).toLocaleString()} />
+          {item.onSale ? <Summary label="Discount" value={`${item.discountPercent}% off`} accent /> : null}
         </dl>
       </AdminPanel>
 
@@ -307,11 +363,4 @@ function Field({
       {error ? <span className="mt-1 block text-xs text-red-400">{error}</span> : null}
     </label>
   );
-}
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  return error instanceof Error && error.message ? error.message : fallback;
 }

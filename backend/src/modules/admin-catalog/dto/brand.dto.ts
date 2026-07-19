@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateBrandDto {
   @ApiProperty({ example: 'Elevate Apparel' })
@@ -12,6 +12,11 @@ export class CreateBrandDto {
   @IsString()
   @MaxLength(120)
   slug?: string;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class UpdateBrandDto {
@@ -26,6 +31,11 @@ export class UpdateBrandDto {
   @IsString()
   @MaxLength(120)
   slug?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class BrandResponseDto {
@@ -37,6 +47,12 @@ export class BrandResponseDto {
 
   @ApiProperty()
   slug!: string;
+
+  @ApiProperty()
+  isActive!: boolean;
+
+  @ApiProperty({ description: 'Number of non-deleted products assigned to the brand' })
+  productCount!: number;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;

@@ -36,6 +36,7 @@ import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { AdminCatalogService } from './admin-catalog.service';
 import {
   AdminProductDetailResponseDto,
+  AdminProductStatsResponseDto,
   AdminProductSummaryResponseDto,
 } from './dto/admin-product-response.dto';
 import { CreateBrandDto, BrandResponseDto, UpdateBrandDto } from './dto/brand.dto';
@@ -73,6 +74,13 @@ export class AdminCatalogController {
   @ApiOkResponse({ type: [AdminProductSummaryResponseDto] })
   listProducts(@Query() query: ListAdminProductsQueryDto) {
     return this.adminCatalog.listProducts(query);
+  }
+
+  @Get('products/stats')
+  @ApiOperation({ summary: 'Catalog counts by status and stock bucket for the products header' })
+  @ApiOkResponse({ type: AdminProductStatsResponseDto })
+  getProductStats() {
+    return this.adminCatalog.getProductStats();
   }
 
   @Post('products')

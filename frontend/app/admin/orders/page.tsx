@@ -25,10 +25,12 @@ const STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Pending' },
   { value: 'CONFIRMED', label: 'Confirmed' },
   { value: 'PROCESSING', label: 'Processing' },
+  { value: 'PACKED', label: 'Packed' },
   { value: 'SHIPPED', label: 'Shipped' },
   { value: 'DELIVERED', label: 'Delivered' },
   { value: 'CANCELLED', label: 'Cancelled' },
   { value: 'RETURNED', label: 'Returned' },
+  { value: 'EXCHANGED', label: 'Exchanged' },
 ] as const;
 
 type OrdersListBodyProps = {

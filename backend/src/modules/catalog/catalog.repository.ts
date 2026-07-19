@@ -6,12 +6,12 @@ import type { ListProductsQueryDto, ProductSort } from './dto/list-products.quer
 const productInclude = {
   brand: true,
   categories: {
-    where: { isPrimary: true },
+    where: { isPrimary: true, category: { isActive: true, deletedAt: null } },
     include: { category: { include: { parent: true } } },
     take: 1,
   },
   collections: {
-    where: { isPrimary: true },
+    where: { isPrimary: true, collection: { isActive: true, deletedAt: null } },
     include: { collection: true },
     take: 1,
   },
@@ -68,23 +68,51 @@ export class CatalogRepository {
     const and: Prisma.ProductWhereInput[] = [activeProductWhere];
     if (query.collections?.length) {
       and.push({
-        collections: { some: { collection: { slug: { in: query.collections } } } },
+        collections: {
+          some: {
+            collection: {
+              slug: { in: query.collections },
+              isActive: true,
+              deletedAt: null,
+            },
+          },
+        },
       });
     }
     if (query.categories?.length) {
       and.push({
         categories: {
-          some: { category: { parent: { name: { in: query.categories } } } },
+          some: {
+            category: {
+              isActive: true,
+              deletedAt: null,
+              parent: {
+                name: { in: query.categories },
+                isActive: true,
+                deletedAt: null,
+              },
+            },
+          },
         },
       });
     }
     if (query.subcategories?.length) {
       and.push({
-        categories: { some: { category: { name: { in: query.subcategories } } } },
+        categories: {
+          some: {
+            category: {
+              name: { in: query.subcategories },
+              isActive: true,
+              deletedAt: null,
+            },
+          },
+        },
       });
     }
     if (query.brands?.length) {
-      and.push({ brand: { name: { in: query.brands } } });
+      and.push({
+        brand: { name: { in: query.brands }, isActive: true, deletedAt: null },
+      });
     }
     if (query.sizes?.length) {
       and.push({
@@ -222,9 +250,12 @@ export class CatalogRepository {
       this.prisma.category.findMany({
         where: {
           parentId: null,
+          isActive: true,
           deletedAt: null,
           children: {
             some: {
+              isActive: true,
+              deletedAt: null,
               assignments: { some: { product: activeProductWhere } },
             },
           },
@@ -235,14 +266,16 @@ export class CatalogRepository {
       this.prisma.category.findMany({
         where: {
           parentId: { not: null },
+          isActive: true,
           deletedAt: null,
+          parent: { isActive: true, deletedAt: null },
           assignments: { some: { product: activeProductWhere } },
         },
         select: { name: true },
         orderBy: { name: 'asc' },
       }),
       this.prisma.brand.findMany({
-        where: { deletedAt: null, products: { some: activeProductWhere } },
+        where: { isActive: true, deletedAt: null, products: { some: activeProductWhere } },
         select: { name: true },
         orderBy: { name: 'asc' },
       }),

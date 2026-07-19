@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type PropsWithChildren, type ReactNode } from 'react';
+import { useState, type ComponentType, type PropsWithChildren, type ReactNode } from 'react';
 import { AlertCircle, ChevronDown, Inbox, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,7 +58,10 @@ export function AdminPanel({
                 className="rounded-md p-0.5 text-[#b5b0a8] transition-colors hover:text-[#e3bb78] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
               >
                 <ChevronDown
-                  className={cn('size-4 transition-transform duration-200', collapsed && '-rotate-90')}
+                  className={cn(
+                    'size-4 transition-transform duration-200',
+                    collapsed && '-rotate-90',
+                  )}
                   strokeWidth={1.7}
                 />
                 <span className="sr-only">{collapsed ? 'Expand section' : 'Collapse section'}</span>
@@ -115,6 +118,34 @@ export function AdminButton({
   );
 }
 
+const iconActionTones = {
+  neutral: 'hover:text-white',
+  gold: 'hover:text-[#e3bb78]',
+  danger: 'hover:border-red-900/60 hover:bg-red-950/40 hover:text-red-300',
+} as const;
+
+/** Class builder for compact table row actions — usable on buttons and links. */
+export function adminIconActionClass(
+  tone: keyof typeof iconActionTones = 'neutral',
+  className?: string,
+) {
+  return cn(
+    'rounded-lg border border-transparent p-1.5 text-[#b5b0a8] transition-colors hover:border-[#37332c] hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78] disabled:cursor-not-allowed disabled:opacity-50',
+    iconActionTones[tone],
+    className,
+  );
+}
+
+export function AdminIconButton({
+  tone = 'neutral',
+  className,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  tone?: keyof typeof iconActionTones;
+}) {
+  return <button type="button" className={adminIconActionClass(tone, className)} {...props} />;
+}
+
 export function AdminTable({ children }: PropsWithChildren) {
   return (
     <div className="max-h-[70vh] overflow-auto rounded-lg border border-[#26231f]">
@@ -131,9 +162,14 @@ export function AdminTable({ children }: PropsWithChildren) {
   );
 }
 
-export function AdminTh({ children, className }: PropsWithChildren<{ className?: string }>) {
+export function AdminTh({
+  children,
+  className,
+  ...props
+}: React.ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
+      {...props}
       className={cn(
         'border-b border-[#2d2a27] px-4 py-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]',
         className,
@@ -207,11 +243,17 @@ const toneByStatus: Record<string, StatusTone> = {
   PENDING: 'warning',
   PENDING_VERIFICATION: 'warning',
   DRAFT: 'warning',
+  INACTIVE: 'warning',
   CANCELLED: 'error',
   REJECTED: 'error',
   SUSPENDED: 'error',
   SPAM: 'error',
   RETURNED: 'error',
+  LOW: 'warning',
+  OUT: 'error',
+  BRAND: 'info',
+  CATEGORY: 'success',
+  COLLECTION: 'warning',
 };
 
 const toneStyles: Record<StatusTone, string> = {
@@ -232,7 +274,10 @@ const dotStyles: Record<StatusTone, string> = {
 
 function resolveTone(children: ReactNode): StatusTone {
   if (typeof children !== 'string') return 'neutral';
-  const key = children.trim().toUpperCase().replace(/[\s-]+/g, '_');
+  const key = children
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
   return toneByStatus[key] ?? 'neutral';
 }
 
@@ -253,4 +298,84 @@ export function StatusPill({ children }: PropsWithChildren) {
 
 export function AdminSkeleton({ className }: { className?: string }) {
   return <div aria-hidden className={cn('animate-pulse rounded-lg bg-white/[0.06]', className)} />;
+}
+
+export function AdminField({
+  label,
+  error,
+  hint,
+  className,
+  children,
+}: PropsWithChildren<{ label: string; error?: string; hint?: string; className?: string }>) {
+  return (
+    <label className={cn('block', className)}>
+      <span className="mb-1.5 block text-sm font-medium text-[#d8d4cd]">{label}</span>
+      {children}
+      {error ? (
+        <span className="mt-1 block text-xs text-red-400">{error}</span>
+      ) : hint ? (
+        <span className="mt-1 block text-xs text-[#8b867d]">{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
+const statTones = {
+  gold: 'border-[#e3bb78]/25 bg-[#e3bb78]/10 text-[#e3bb78]',
+  emerald: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
+  amber: 'border-amber-500/25 bg-amber-500/10 text-amber-300',
+  rose: 'border-rose-500/25 bg-rose-500/10 text-rose-300',
+  orange: 'border-orange-500/25 bg-orange-500/10 text-orange-300',
+  sky: 'border-sky-500/25 bg-sky-500/10 text-sky-300',
+} as const;
+
+export function AdminStatCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone = 'gold',
+  loading = false,
+  active = false,
+  onClick,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  tone?: keyof typeof statTones;
+  loading?: boolean;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  const Wrapper = onClick ? 'button' : 'div';
+  return (
+    <Wrapper
+      {...(onClick ? { type: 'button' as const, onClick, 'aria-pressed': active } : {})}
+      className={cn(
+        'rounded-xl border bg-[#111110] p-4 text-left shadow-[0_1px_2px_rgba(0,0,0,.35)] transition-all duration-150',
+        active ? 'border-[#e3bb78]/60 ring-1 ring-[#e3bb78]/20' : 'border-[#26231f]',
+        onClick &&
+          'hover:-translate-y-0.5 hover:border-[#e3bb78]/40 hover:shadow-[0_10px_28px_-14px_rgba(0,0,0,.7)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]',
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#8b867d]">{label}</p>
+        <span
+          className={cn(
+            'flex size-8 shrink-0 items-center justify-center rounded-lg border',
+            statTones[tone],
+          )}
+        >
+          <Icon className="size-4" strokeWidth={1.7} />
+        </span>
+      </div>
+      {loading ? (
+        <AdminSkeleton className="mt-2 h-7 w-16" />
+      ) : (
+        <p className="mt-1.5 text-2xl font-extrabold tracking-[-.02em] text-white">{value}</p>
+      )}
+      {hint ? <p className="mt-1 text-xs text-[#8b867d]">{hint}</p> : null}
+    </Wrapper>
+  );
 }

@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import {
+  AdminButton,
   AdminEmpty,
   AdminError,
   AdminPanel,
@@ -16,14 +18,27 @@ import {
   useAdminCustomer,
   useAdminCustomerActivity,
   useAdminCustomerOrders,
+  type CustomerActivity,
+  type CustomerOrderHistory,
 } from '@/features/admin';
 import { formatTaka } from '@/lib/currency';
 
 export default function AdminCustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [ordersCursor, setOrdersCursor] = useState<string | undefined>();
+  const [priorOrders, setPriorOrders] = useState<CustomerOrderHistory[]>([]);
+  const [activityCursor, setActivityCursor] = useState<string | undefined>();
+  const [priorActivity, setPriorActivity] = useState<CustomerActivity[]>([]);
+
   const customerQuery = useAdminCustomer(id);
-  const ordersQuery = useAdminCustomerOrders(id);
-  const activityQuery = useAdminCustomerActivity(id);
+  const ordersQuery = useAdminCustomerOrders(id, {
+    limit: 20,
+    ...(ordersCursor ? { cursor: ordersCursor } : {}),
+  });
+  const activityQuery = useAdminCustomerActivity(id, {
+    limit: 20,
+    ...(activityCursor ? { cursor: activityCursor } : {}),
+  });
   const customer = customerQuery.data;
 
   if (customerQuery.isLoading) {
@@ -50,6 +65,14 @@ export default function AdminCustomerDetailPage() {
   const name =
     [customer.firstName, customer.lastName].filter(Boolean).join(' ') || 'Unnamed customer';
   const metrics = customer.metrics;
+  const orderRows = ordersCursor
+    ? [...priorOrders, ...(ordersQuery.data?.data ?? [])]
+    : (ordersQuery.data?.data ?? []);
+  const activityRows = activityCursor
+    ? [...priorActivity, ...(activityQuery.data?.data ?? [])]
+    : (activityQuery.data?.data ?? []);
+  const ordersNext = ordersQuery.data?.meta.nextCursor ?? null;
+  const activityNext = activityQuery.data?.meta.nextCursor ?? null;
 
   return (
     <div className="space-y-6">
@@ -90,62 +113,123 @@ export default function AdminCustomerDetailPage() {
 
       <AdminPanel title="Purchase history" description="Most recent customer orders.">
         {ordersQuery.isError ? <AdminError>Could not load purchase history.</AdminError> : null}
-        {ordersQuery.isLoading ? <AdminSkeleton className="h-44 w-full" /> : null}
-        {ordersQuery.data?.data.length === 0 ? <AdminEmpty>No orders yet.</AdminEmpty> : null}
-        {(ordersQuery.data?.data.length ?? 0) > 0 ? (
-          <AdminTable>
-            <thead>
-              <tr>
-                <AdminTh>Order</AdminTh>
-                <AdminTh>Date</AdminTh>
-                <AdminTh>Items</AdminTh>
-                <AdminTh>Total</AdminTh>
-                <AdminTh>Status</AdminTh>
-              </tr>
-            </thead>
-            <tbody>
-              {ordersQuery.data?.data.map((order) => (
-                <tr key={order.id}>
-                  <AdminTd>
-                    <Link href={`/admin/orders/${order.id}`} className="font-semibold text-[#e3bb78]">
-                      #{order.number}
-                    </Link>
-                  </AdminTd>
-                  <AdminTd>{new Date(order.createdAt).toLocaleDateString()}</AdminTd>
-                  <AdminTd>{order.itemCount}</AdminTd>
-                  <AdminTd>{formatTaka(order.total)}</AdminTd>
-                  <AdminTd><StatusPill>{order.status}</StatusPill></AdminTd>
+        {ordersQuery.isLoading && orderRows.length === 0 ? (
+          <AdminSkeleton className="h-44 w-full" />
+        ) : null}
+        {orderRows.length === 0 && !ordersQuery.isLoading ? (
+          <AdminEmpty>No orders yet.</AdminEmpty>
+        ) : null}
+        {orderRows.length > 0 ? (
+          <>
+            <AdminTable>
+              <thead>
+                <tr>
+                  <AdminTh>Order</AdminTh>
+                  <AdminTh>Date</AdminTh>
+                  <AdminTh>Items</AdminTh>
+                  <AdminTh>Total</AdminTh>
+                  <AdminTh>Status</AdminTh>
                 </tr>
-              ))}
-            </tbody>
-          </AdminTable>
+              </thead>
+              <tbody>
+                {orderRows.map((order) => (
+                  <tr key={order.id}>
+                    <AdminTd>
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="font-semibold text-[#e3bb78]"
+                      >
+                        #{order.number}
+                      </Link>
+                    </AdminTd>
+                    <AdminTd>{new Date(order.createdAt).toLocaleDateString()}</AdminTd>
+                    <AdminTd>{order.itemCount}</AdminTd>
+                    <AdminTd>{formatTaka(order.total)}</AdminTd>
+                    <AdminTd>
+                      <StatusPill>{order.status}</StatusPill>
+                    </AdminTd>
+                  </tr>
+                ))}
+              </tbody>
+            </AdminTable>
+            {ordersNext ? (
+              <div className="mt-4">
+                <AdminButton
+                  type="button"
+                  variant="ghost"
+                  disabled={ordersQuery.isFetching}
+                  onClick={() => {
+                    setPriorOrders(orderRows);
+                    setOrdersCursor(ordersNext);
+                  }}
+                >
+                  {ordersQuery.isFetching ? 'Loading…' : 'Load more orders'}
+                </AdminButton>
+              </div>
+            ) : null}
+          </>
         ) : null}
       </AdminPanel>
 
       <AdminPanel title="Activity timeline" description="Commerce events recorded for this customer.">
         {activityQuery.isError ? <AdminError>Could not load customer activity.</AdminError> : null}
-        {activityQuery.isLoading ? <AdminSkeleton className="h-40 w-full" /> : null}
-        {activityQuery.data?.data.length === 0 ? <AdminEmpty>No activity recorded yet.</AdminEmpty> : null}
+        {activityQuery.isLoading && activityRows.length === 0 ? (
+          <AdminSkeleton className="h-40 w-full" />
+        ) : null}
+        {activityRows.length === 0 && !activityQuery.isLoading ? (
+          <AdminEmpty>No activity recorded yet.</AdminEmpty>
+        ) : null}
         <ol className="space-y-0">
-          {activityQuery.data?.data.map((event) => (
-            <li key={event.id} className="relative border-l border-[#37332c] pb-6 pl-6 last:pb-0">
-              <span className="absolute -left-1.5 top-1 size-3 rounded-full border-2 border-[#0a0a0b] bg-[#e5bd79]" />
-              {event.href ? (
-                <Link href={event.href} className="text-sm font-semibold text-white hover:text-[#e3bb78]">
-                  {event.title}
-                </Link>
-              ) : (
-                <p className="text-sm font-semibold text-white">{event.title}</p>
-              )}
-              <p className="mt-1 text-xs text-[#8b867d]">
-                {event.eventType.replaceAll('_', ' ')} · {new Date(event.createdAt).toLocaleString()}
-              </p>
-            </li>
-          ))}
+          {activityRows.map((event) => {
+            const href = toAdminActivityHref(event.href);
+            return (
+              <li key={event.id} className="relative border-l border-[#37332c] pb-6 pl-6 last:pb-0">
+                <span className="absolute -left-1.5 top-1 size-3 rounded-full border-2 border-[#0a0a0b] bg-[#e5bd79]" />
+                {href ? (
+                  <Link href={href} className="text-sm font-semibold text-white hover:text-[#e3bb78]">
+                    {event.title}
+                  </Link>
+                ) : (
+                  <p className="text-sm font-semibold text-white">{event.title}</p>
+                )}
+                <p className="mt-1 text-xs text-[#8b867d]">
+                  {event.eventType.replaceAll('_', ' ')} ·{' '}
+                  {new Date(event.createdAt).toLocaleString()}
+                </p>
+              </li>
+            );
+          })}
         </ol>
+        {activityNext ? (
+          <div className="mt-4">
+            <AdminButton
+              type="button"
+              variant="ghost"
+              disabled={activityQuery.isFetching}
+              onClick={() => {
+                setPriorActivity(activityRows);
+                setActivityCursor(activityNext);
+              }}
+            >
+              {activityQuery.isFetching ? 'Loading…' : 'Load more activity'}
+            </AdminButton>
+          </div>
+        ) : null}
       </AdminPanel>
     </div>
   );
+}
+
+/** Map storefront activity deep links to the matching admin surface. */
+function toAdminActivityHref(href: string | undefined): string | undefined {
+  if (!href) return undefined;
+  const orderMatch = href.match(/^\/account\/orders\/([^/?#]+)/);
+  if (orderMatch) return `/admin/orders/${orderMatch[1]}`;
+  if (href.startsWith('/account/returns') || href.startsWith('/account/exchanges')) {
+    return '/admin/returns';
+  }
+  if (href.startsWith('/admin/')) return href;
+  return undefined;
 }
 
 function ProfileItem({ label, value }: { label: string; value: string }) {

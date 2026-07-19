@@ -67,7 +67,11 @@ export class AdminReturnsController {
 
   @Post(':id/reject')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Reject a pending return request' })
+  @ApiOperation({
+    summary: 'Reject a pending return, or void an approved exchange',
+    description:
+      'Pending returns/exchanges can be rejected. Approved exchanges can also be voided to release replacement inventory holds.',
+  })
   @ApiOkResponse({ type: ReturnDetailResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid status transition' })
   @ApiNotFoundResponse({ description: 'Return request not found' })

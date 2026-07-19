@@ -78,8 +78,8 @@ export class CartRecoveryProcessor extends WorkerHost {
       return;
     }
 
-    // Guests opt in via recovery email capture; members require marketing preference.
-    if (recovery.userId && recovery.user?.preference?.emailMarketing === false) {
+    // Guests opt in via recovery email capture; members require explicit marketing opt-in.
+    if (recovery.userId && recovery.user?.preference?.emailMarketing !== true) {
       await this.prisma.abandonedCartRecovery.update({
         where: { id: recovery.id },
         data: { status: CartRecoveryStatus.SUPPRESSED, suppressedAt: now },

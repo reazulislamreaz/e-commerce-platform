@@ -8,6 +8,8 @@ import type {
   AdminOrder,
   AdminOrderStatus,
   AdminProductDetail,
+  AdminProductListParams,
+  AdminProductStats,
   AdminProductSummary,
   AdminReturn,
   AdminReview,
@@ -26,7 +28,6 @@ import type {
   InventoryAnalytics,
   NewsletterStatus,
   NewsletterSubscription,
-  ProductStatus,
   ReportExportFormat,
   ReportExportJob,
   ReportExportType,
@@ -227,13 +228,11 @@ export const adminApi = {
     }>(`/admin/coupons/${id}/redemptions`, params);
   },
 
-  listProducts(params?: {
-    cursor?: string;
-    limit?: number;
-    status?: ProductStatus | string;
-    q?: string;
-  }) {
+  listProducts(params?: AdminProductListParams) {
     return getPage<AdminProductSummary>('/admin/products', params);
+  },
+  getProductStats() {
+    return getData<AdminProductStats>('/admin/products/stats');
   },
   getProduct(id: string) {
     return getData<AdminProductDetail>(`/admin/products/${id}`);
@@ -247,9 +246,12 @@ export const adminApi = {
   async uploadProductImage(file: File) {
     const body = new FormData();
     body.append('file', file);
+    // Override the client's JSON default so axios sends real multipart form data
+    // (with a JSON content type, axios 1.x serializes FormData to JSON instead).
     const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
-      '/admin/product-images',
+      '/admin/products/images',
       body,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
     );
     return unwrapData(data);
   },
@@ -269,10 +271,10 @@ export const adminApi = {
   listBrands() {
     return getData<AdminBrand[]>('/admin/brands');
   },
-  createBrand(body: { name: string; slug?: string }) {
+  createBrand(body: { name: string; slug?: string; isActive?: boolean }) {
     return postData<AdminBrand>('/admin/brands', body);
   },
-  updateBrand(id: string, body: { name?: string; slug?: string }) {
+  updateBrand(id: string, body: { name?: string; slug?: string; isActive?: boolean }) {
     return patchData<AdminBrand>(`/admin/brands/${id}`, body);
   },
   deleteBrand(id: string) {
@@ -282,10 +284,25 @@ export const adminApi = {
   listCategories() {
     return getData<AdminCategory[]>('/admin/categories');
   },
-  createCategory(body: { name: string; slug?: string; parentId?: string }) {
+  createCategory(body: {
+    name: string;
+    slug?: string;
+    parentId?: string;
+    position?: number;
+    isActive?: boolean;
+  }) {
     return postData<AdminCategory>('/admin/categories', body);
   },
-  updateCategory(id: string, body: { name?: string; slug?: string; parentId?: string | null }) {
+  updateCategory(
+    id: string,
+    body: {
+      name?: string;
+      slug?: string;
+      parentId?: string | null;
+      position?: number;
+      isActive?: boolean;
+    },
+  ) {
     return patchData<AdminCategory>(`/admin/categories/${id}`, body);
   },
   deleteCategory(id: string) {
@@ -295,10 +312,13 @@ export const adminApi = {
   listCollections() {
     return getData<AdminCollection[]>('/admin/collections');
   },
-  createCollection(body: { name: string; slug?: string }) {
+  createCollection(body: { name: string; slug?: string; position?: number; isActive?: boolean }) {
     return postData<AdminCollection>('/admin/collections', body);
   },
-  updateCollection(id: string, body: { name?: string; slug?: string }) {
+  updateCollection(
+    id: string,
+    body: { name?: string; slug?: string; position?: number; isActive?: boolean },
+  ) {
     return patchData<AdminCollection>(`/admin/collections/${id}`, body);
   },
   deleteCollection(id: string) {

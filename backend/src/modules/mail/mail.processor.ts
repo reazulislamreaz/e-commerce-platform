@@ -13,6 +13,7 @@ import {
   type DeliveredEmail,
   type PaymentConfirmationEmail,
   type PasswordResetEmail,
+  type ReturnStatusEmail,
   type ShippingUpdateEmail,
   type VerificationEmail,
   type WelcomeEmail,
@@ -27,6 +28,7 @@ import { renderWelcomeEmail } from './templates/welcome-email.template';
 import { renderShippingUpdateEmail } from './templates/shipping-update-email.template';
 import { renderDeliveredEmail } from './templates/delivered-email.template';
 import { renderPaymentConfirmationEmail } from './templates/payment-confirmation-email.template';
+import { renderReturnStatusEmail } from './templates/return-status-email.template';
 import { renderAbandonedCartEmail } from './templates/abandoned-cart-email.template';
 import {
   renderVerificationEmail,
@@ -99,12 +101,9 @@ export class MailProcessor extends WorkerHost {
                 unitPriceTaka: number;
               }>)
             : undefined,
-          subtotalTaka:
-            typeof payload.subtotalTaka === 'number' ? payload.subtotalTaka : undefined,
-          shippingTaka:
-            typeof payload.shippingTaka === 'number' ? payload.shippingTaka : undefined,
-          discountTaka:
-            typeof payload.discountTaka === 'number' ? payload.discountTaka : undefined,
+          subtotalTaka: typeof payload.subtotalTaka === 'number' ? payload.subtotalTaka : undefined,
+          shippingTaka: typeof payload.shippingTaka === 'number' ? payload.shippingTaka : undefined,
+          discountTaka: typeof payload.discountTaka === 'number' ? payload.discountTaka : undefined,
         });
         await this.deliver(customerEmail, rendered, rendered.text);
         return;
@@ -162,6 +161,17 @@ export class MailProcessor extends WorkerHost {
         );
         return;
       }
+      case EmailJobName.RETURN_STATUS: {
+        const email = job.data as ReturnStatusEmail;
+        await this.deliver(
+          email.to,
+          renderReturnStatusEmail({
+            ...email,
+            requestUrl: this.absoluteUrl(email.requestUrl),
+          }),
+        );
+        return;
+      }
       case EmailJobName.ABANDONED_CART: {
         const email = job.data as AbandonedCartEmail;
         await this.deliver(email.to, renderAbandonedCartEmail(email));
@@ -196,11 +206,7 @@ export class MailProcessor extends WorkerHost {
     return `${this.frontendOrigin}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`;
   }
 
-  private async deliver(
-    to: string,
-    rendered: RenderedEmail,
-    logHint?: string,
-  ): Promise<void> {
+  private async deliver(to: string, rendered: RenderedEmail, logHint?: string): Promise<void> {
     if (!this.transporter) {
       this.logger.log(
         `[SMTP not configured] "${rendered.subject}" for ${to}${logHint ? `: ${logHint}` : ''}`,

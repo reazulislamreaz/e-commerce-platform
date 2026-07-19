@@ -76,7 +76,13 @@ export interface AccountRepository {
   placeOrderCheckout(input: PlaceOrderInput, idempotencyKey?: string): Promise<CustomerOrder>;
   trackOrder(number: string, email: string): Promise<CustomerOrder>;
 
-  getNotifications(): Promise<AccountNotification[]>;
+  getNotifications(params?: {
+    cursor?: string;
+    limit?: number;
+    unreadOnly?: boolean;
+  }): Promise<CursorPage<AccountNotification>>;
+  getUnreadNotificationCount(): Promise<number>;
+  markNotificationRead(id: string): Promise<AccountNotification>;
   markAllNotificationsRead(): Promise<void>;
 
   getCoupons(): Promise<AccountCoupon[]>;
@@ -165,8 +171,16 @@ export const localAccountRepository: LocalAccountRepository = {
   async trackOrder() {
     return notSupported('trackOrder');
   },
-  async getNotifications(userId = '') {
-    return getNotifications(userId);
+  async getNotifications(params?: { cursor?: string; limit?: number; unreadOnly?: boolean }) {
+    const items = getNotifications('');
+    const filtered = params?.unreadOnly ? items.filter((item) => !item.read) : items;
+    return { data: filtered, meta: { limit: params?.limit ?? 20, nextCursor: null } };
+  },
+  async getUnreadNotificationCount() {
+    return getNotifications('').filter((item) => !item.read).length;
+  },
+  async markNotificationRead() {
+    return notSupported('markNotificationRead');
   },
   async saveNotifications(userId, items) {
     saveNotifications(userId, items);

@@ -374,34 +374,40 @@ export class InventoryService {
 
   /**
    * Consumes exchange replacement stock reserved at approval time.
+   * Only touches locations that recorded an `exchange-reserve` movement for this return.
    */
   async consumeExchangeReplacements(
     returnRequestId: string,
     lines: ReserveLine[],
     tx: Prisma.TransactionClient,
   ): Promise<void> {
+    const holds = await this.findExchangeHolds(returnRequestId, tx);
     const sorted = [...lines].sort((a, b) => a.variantId.localeCompare(b.variantId));
     const alertKeys: Array<{ variantId: string; locationId: string }> = [];
 
     for (const line of sorted) {
       let remaining = line.quantity;
-      const balances = await tx.$queryRaw<
-        Array<{ id: string; locationId: string; onHand: number; reserved: number }>
-      >`
-        SELECT id, "locationId", "onHand", reserved
-        FROM inventory_balance
-        WHERE "variantId" = ${line.variantId}::uuid
-          AND "locationId" IN (
-            SELECT id FROM inventory_location WHERE "isActive" = true
-          )
-        ORDER BY "locationId"
-        FOR UPDATE
-      `;
+      const locations = [...(holds.get(line.variantId) ?? [])].sort((a, b) =>
+        a.locationId.localeCompare(b.locationId),
+      );
 
-      for (const balance of balances) {
+      for (const hold of locations) {
         if (remaining <= 0) break;
-        if (balance.reserved <= 0) continue;
-        const take = Math.min(balance.reserved, remaining);
+        const balances = await tx.$queryRaw<
+          Array<{ id: string; locationId: string; onHand: number; reserved: number }>
+        >`
+          SELECT id, "locationId", "onHand", reserved
+          FROM inventory_balance
+          WHERE "variantId" = ${line.variantId}::uuid
+            AND "locationId" = ${hold.locationId}::uuid
+          FOR UPDATE
+        `;
+        const balance = balances[0];
+        if (!balance) {
+          throw new BadRequestException('Cannot complete exchange: inventory balance missing');
+        }
+        const take = Math.min(hold.quantity, balance.reserved, remaining);
+        if (take <= 0) continue;
         const nextOnHand = balance.onHand - take;
         const nextReserved = balance.reserved - take;
         if (nextOnHand < 0 || nextReserved < 0) {
@@ -438,6 +444,95 @@ export class InventoryService {
     if (alertKeys.length > 0) {
       await this.refreshStockAlerts(alertKeys, tx);
     }
+  }
+
+  /**
+   * Releases exchange replacement holds when an approved exchange is rejected/voided.
+   */
+  async releaseExchangeReplacements(
+    returnRequestId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    const holds = await this.findExchangeHolds(returnRequestId, tx);
+    if (holds.size === 0) return;
+
+    const alertKeys: Array<{ variantId: string; locationId: string }> = [];
+    const variants = [...holds.keys()].sort((a, b) => a.localeCompare(b));
+
+    for (const variantId of variants) {
+      const locations = [...(holds.get(variantId) ?? [])].sort((a, b) =>
+        a.locationId.localeCompare(b.locationId),
+      );
+      for (const hold of locations) {
+        const alreadyReleased = await tx.inventoryMovement.findUnique({
+          where: {
+            idempotencyKey: `exchange-release:${returnRequestId}:${variantId}:${hold.locationId}`,
+          },
+          select: { id: true },
+        });
+        if (alreadyReleased) continue;
+
+        const balances = await tx.$queryRaw<
+          Array<{ id: string; onHand: number; reserved: number }>
+        >`
+          SELECT id, "onHand", reserved
+          FROM inventory_balance
+          WHERE "variantId" = ${variantId}::uuid
+            AND "locationId" = ${hold.locationId}::uuid
+          FOR UPDATE
+        `;
+        const balance = balances[0];
+        if (!balance) continue;
+        const nextReserved = Math.max(0, balance.reserved - hold.quantity);
+        await tx.inventoryBalance.update({
+          where: { id: balance.id },
+          data: { reserved: nextReserved, version: { increment: 1 } },
+        });
+        await tx.inventoryMovement.create({
+          data: {
+            variantId,
+            locationId: hold.locationId,
+            type: InventoryMovementType.RELEASE,
+            quantity: -hold.quantity,
+            balanceAfter: balance.onHand - nextReserved,
+            idempotencyKey: `exchange-release:${returnRequestId}:${variantId}:${hold.locationId}`,
+            note: `Void exchange return ${returnRequestId}`,
+          },
+        });
+        alertKeys.push({ variantId, locationId: hold.locationId });
+      }
+    }
+
+    if (alertKeys.length > 0) {
+      await this.refreshStockAlerts(alertKeys, tx);
+    }
+  }
+
+  private async findExchangeHolds(
+    returnRequestId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<Map<string, Array<{ locationId: string; quantity: number }>>> {
+    const prefix = `exchange-reserve:${returnRequestId}:`;
+    const movements = await tx.inventoryMovement.findMany({
+      where: {
+        type: InventoryMovementType.RESERVE,
+        idempotencyKey: { startsWith: prefix },
+      },
+      select: {
+        variantId: true,
+        locationId: true,
+        quantity: true,
+      },
+      orderBy: [{ variantId: 'asc' }, { locationId: 'asc' }],
+    });
+
+    const holds = new Map<string, Array<{ locationId: string; quantity: number }>>();
+    for (const movement of movements) {
+      const rows = holds.get(movement.variantId) ?? [];
+      rows.push({ locationId: movement.locationId, quantity: movement.quantity });
+      holds.set(movement.variantId, rows);
+    }
+    return holds;
   }
 
   async listStockAlerts(params?: { resolved?: boolean; limit?: number }) {

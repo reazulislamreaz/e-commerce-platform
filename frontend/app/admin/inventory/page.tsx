@@ -15,6 +15,7 @@ import {
   AdminTd,
   AdminTextarea,
   AdminTh,
+  StatusPill,
 } from '@/components/admin/admin-ui';
 import {
   adminApi,
@@ -22,7 +23,10 @@ import {
   useAdminMutation,
   useInventoryBalances,
   useInventoryLocations,
+  useInventoryMovements,
+  useStockAlerts,
   type InventoryBalance,
+  type InventoryMovement,
 } from '@/features/admin';
 
 function mutationErrorMessage(error: unknown, fallback: string): string {
@@ -31,6 +35,206 @@ function mutationErrorMessage(error: unknown, fallback: string): string {
   }
   if (error instanceof Error && error.message) return error.message;
   return fallback;
+}
+
+function StockAlertsPanel({
+  onFillAlert,
+}: {
+  onFillAlert: (alert: { variantId: string; locationId: string; onHand: number }) => void;
+}) {
+  const alertsQuery = useStockAlerts({ limit: 50 });
+  const rows = alertsQuery.data ?? [];
+
+  return (
+    <AdminPanel
+      title="Stock alerts"
+      description="Open LOW and OUT alerts across locations. Click a row to prefill the adjust form."
+    >
+      {alertsQuery.isError ? <AdminError>Could not load stock alerts.</AdminError> : null}
+      {alertsQuery.isLoading ? <AdminTableSkeleton /> : null}
+      {!alertsQuery.isLoading && !alertsQuery.isError && rows.length === 0 ? (
+        <AdminEmpty>No open stock alerts.</AdminEmpty>
+      ) : null}
+      {rows.length > 0 ? (
+        <AdminTable>
+          <thead>
+            <tr>
+              <AdminTh>Level</AdminTh>
+              <AdminTh>SKU</AdminTh>
+              <AdminTh>Variant</AdminTh>
+              <AdminTh>Location</AdminTh>
+              <AdminTh>Available</AdminTh>
+              <AdminTh>Threshold</AdminTh>
+              <AdminTh>Opened</AdminTh>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((alert) => (
+              <tr
+                key={alert.id}
+                className="cursor-pointer hover:bg-[#1a1815]"
+                onClick={() =>
+                  onFillAlert({
+                    variantId: alert.variantId,
+                    locationId: alert.locationId,
+                    onHand: alert.onHand,
+                  })
+                }
+              >
+                <AdminTd>
+                  <StatusPill>{alert.level}</StatusPill>
+                </AdminTd>
+                <AdminTd>
+                  <span className="font-semibold text-white">{alert.sku}</span>
+                </AdminTd>
+                <AdminTd>
+                  <span className="text-[#e9e5de]">
+                    {alert.size} / {alert.color}
+                  </span>
+                </AdminTd>
+                <AdminTd>
+                  <span className="text-[#e9e5de]">{alert.locationCode}</span>
+                </AdminTd>
+                <AdminTd>
+                  <span className="text-[#e3bb78]">{alert.available}</span>
+                </AdminTd>
+                <AdminTd>{alert.threshold}</AdminTd>
+                <AdminTd>
+                  <span className="text-[#b5b0a8]">
+                    {new Date(alert.createdAt).toLocaleString()}
+                  </span>
+                </AdminTd>
+              </tr>
+            ))}
+          </tbody>
+        </AdminTable>
+      ) : null}
+    </AdminPanel>
+  );
+}
+
+function InventoryMovementsPanel({ seedVariantId = '' }: { seedVariantId?: string }) {
+  const [variantFilter, setVariantFilter] = useState(seedVariantId);
+  const [cursor, setCursor] = useState<string | undefined>();
+  const [priorRows, setPriorRows] = useState<InventoryMovement[]>([]);
+  const [appliedVariantId, setAppliedVariantId] = useState(seedVariantId.trim());
+
+  const queryParams = useMemo(
+    () => ({
+      limit: 20,
+      ...(appliedVariantId ? { variantId: appliedVariantId } : {}),
+      ...(cursor ? { cursor } : {}),
+    }),
+    [appliedVariantId, cursor],
+  );
+
+  const movementsQuery = useInventoryMovements(queryParams);
+  const pageRows = movementsQuery.data?.data ?? [];
+  const rows = cursor ? [...priorRows, ...pageRows] : pageRows;
+  const nextCursor = movementsQuery.data?.meta.nextCursor ?? null;
+  const showInitialLoading = movementsQuery.isLoading && !cursor && rows.length === 0;
+
+  function applyFilter() {
+    setPriorRows([]);
+    setCursor(undefined);
+    setAppliedVariantId(variantFilter.trim());
+  }
+
+  function loadMore() {
+    if (!movementsQuery.data?.meta.nextCursor) return;
+    setPriorRows(cursor ? [...priorRows, ...pageRows] : pageRows);
+    setCursor(movementsQuery.data.meta.nextCursor);
+  }
+
+  return (
+    <AdminPanel
+      title="Inventory movements"
+      description="Append-only stock ledger. Filter by variant UUID when investigating a SKU."
+    >
+      <div className="mb-5 flex flex-wrap items-end gap-3">
+        <label className="block min-w-[220px] flex-1 space-y-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            Variant ID
+          </span>
+          <AdminInput
+            value={variantFilter}
+            onChange={(event) => setVariantFilter(event.target.value)}
+            placeholder="Optional UUID filter"
+            autoComplete="off"
+          />
+        </label>
+        <AdminButton type="button" variant="secondary" onClick={applyFilter}>
+          Apply filter
+        </AdminButton>
+      </div>
+
+      {movementsQuery.isError ? <AdminError>Could not load movements.</AdminError> : null}
+      {showInitialLoading ? <AdminTableSkeleton /> : null}
+      {!showInitialLoading && !movementsQuery.isError && rows.length === 0 ? (
+        <AdminEmpty>No inventory movements found.</AdminEmpty>
+      ) : null}
+
+      {rows.length > 0 ? (
+        <>
+          <AdminTable>
+            <thead>
+              <tr>
+                <AdminTh>When</AdminTh>
+                <AdminTh>Type</AdminTh>
+                <AdminTh>Variant</AdminTh>
+                <AdminTh>Location</AdminTh>
+                <AdminTh>Qty</AdminTh>
+                <AdminTh>Balance after</AdminTh>
+                <AdminTh>Note</AdminTh>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <AdminTd>
+                    <span className="text-[#b5b0a8]">
+                      {new Date(row.createdAt).toLocaleString()}
+                    </span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="font-mono text-xs uppercase text-[#e3bb78]">{row.type}</span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="font-mono text-xs text-[#e9e5de]">
+                      {row.variantId.slice(0, 8)}…
+                    </span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="font-mono text-xs text-[#b5b0a8]">
+                      {row.locationId.slice(0, 8)}…
+                    </span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className={row.quantity < 0 ? 'text-red-300' : 'text-emerald-300'}>
+                      {row.quantity > 0 ? `+${row.quantity}` : row.quantity}
+                    </span>
+                  </AdminTd>
+                  <AdminTd>{row.balanceAfter}</AdminTd>
+                  <AdminTd>
+                    <span className="text-[#b5b0a8]">{row.note?.trim() || '—'}</span>
+                  </AdminTd>
+                </tr>
+              ))}
+            </tbody>
+          </AdminTable>
+          <div className="mt-4 flex justify-center">
+            {movementsQuery.isFetching && cursor ? (
+              <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+            ) : nextCursor ? (
+              <AdminButton type="button" variant="secondary" onClick={loadMore}>
+                Load more
+              </AdminButton>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+    </AdminPanel>
+  );
 }
 
 function InventoryBalancesPanel({
@@ -95,9 +299,7 @@ function InventoryBalancesPanel({
         <AdminError>Could not load inventory.</AdminError>
       ) : null}
 
-      {showInitialLoading ? (
-        <AdminTableSkeleton />
-      ) : null}
+      {showInitialLoading ? <AdminTableSkeleton /> : null}
 
       {!showInitialLoading && !balancesQuery.isError && rows.length === 0 ? (
         <AdminEmpty>No inventory balances found.</AdminEmpty>
@@ -167,6 +369,7 @@ function InventoryBalancesPanel({
 export default function AdminInventoryPage() {
   const locationsQuery = useInventoryLocations();
   const [locationId, setLocationId] = useState('');
+  const [movementSeedVariantId, setMovementSeedVariantId] = useState('');
 
   const [variantId, setVariantId] = useState('');
   const [adjustLocationId, setAdjustLocationId] = useState('');
@@ -176,7 +379,11 @@ export default function AdminInventoryPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const adjustMutation = useAdminMutation(adminApi.adjustInventory, [adminKeys.inventoryRoot()]);
+  const adjustMutation = useAdminMutation(adminApi.adjustInventory, [
+    adminKeys.inventoryRoot(),
+    adminKeys.inventoryMovementsRoot(),
+    adminKeys.stockAlertsRoot(),
+  ]);
   const locations = locationsQuery.data ?? [];
 
   async function onAdjust(event: FormEvent) {
@@ -223,7 +430,15 @@ export default function AdminInventoryPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Inventory"
-        description="Track stock balances and record adjustments."
+        description="Track stock balances, alerts, movements, and record adjustments."
+      />
+      <StockAlertsPanel
+        onFillAlert={(alert) => {
+          setVariantId(alert.variantId);
+          setAdjustLocationId(alert.locationId);
+          setMovementSeedVariantId(alert.variantId);
+          setExpectedVersion('');
+        }}
       />
       <InventoryBalancesPanel
         key={locationId || 'all'}
@@ -235,6 +450,7 @@ export default function AdminInventoryPage() {
           setVariantId(balance.variantId);
           setAdjustLocationId(balance.locationId);
           setExpectedVersion(String(balance.version));
+          setMovementSeedVariantId(balance.variantId);
         }}
       />
 
@@ -322,6 +538,11 @@ export default function AdminInventoryPage() {
           </div>
         </form>
       </AdminPanel>
+
+      <InventoryMovementsPanel
+        key={movementSeedVariantId || 'all-movements'}
+        seedVariantId={movementSeedVariantId}
+      />
     </div>
   );
 }

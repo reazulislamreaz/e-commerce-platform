@@ -5,6 +5,8 @@ import { useMemo } from 'react';
 import {
   ArrowUpRight,
   Banknote,
+  BarChart3,
+  ImageIcon,
   Mail,
   Package,
   PackageCheck,
@@ -16,12 +18,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
-import {
-  useAdminCoupons,
-  useAdminOrders,
-  useAdminQueues,
-  type AdminOrder,
-} from '@/features/admin';
+import { useAdminCoupons, useAdminOrders, useAdminQueues, type AdminOrder } from '@/features/admin';
 import {
   AdminButton,
   AdminEmpty,
@@ -42,11 +39,20 @@ const DAY_MS = 86_400_000;
 
 const TONES = {
   gold: { tile: 'border-[#e3bb78]/25 bg-[#e3bb78]/10 text-[#e3bb78]', spark: 'text-[#e3bb78]' },
-  violet: { tile: 'border-violet-500/25 bg-violet-500/10 text-violet-300', spark: 'text-violet-400' },
+  violet: {
+    tile: 'border-violet-500/25 bg-violet-500/10 text-violet-300',
+    spark: 'text-violet-400',
+  },
   sky: { tile: 'border-sky-500/25 bg-sky-500/10 text-sky-300', spark: 'text-sky-400' },
-  emerald: { tile: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300', spark: 'text-emerald-400' },
+  emerald: {
+    tile: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
+    spark: 'text-emerald-400',
+  },
   rose: { tile: 'border-rose-500/25 bg-rose-500/10 text-rose-300', spark: 'text-rose-400' },
-  orange: { tile: 'border-orange-500/25 bg-orange-500/10 text-orange-300', spark: 'text-orange-400' },
+  orange: {
+    tile: 'border-orange-500/25 bg-orange-500/10 text-orange-300',
+    spark: 'text-orange-400',
+  },
 } as const;
 
 const STATUS_COLORS: Record<string, string> = {
@@ -127,8 +133,7 @@ function useOrderAnalytics(orders: AdminOrder[]) {
       .sort((a, b) => b.units - a.units)
       .slice(0, 4);
 
-    const revenueDelta =
-      revenuePrev7 > 0 ? ((revenue7 - revenuePrev7) / revenuePrev7) * 100 : null;
+    const revenueDelta = revenuePrev7 > 0 ? ((revenue7 - revenuePrev7) / revenuePrev7) * 100 : null;
 
     const salesPoints = days.map((day, index) => ({
       label: new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -248,6 +253,18 @@ export default function AdminDashboardPage() {
               <AdminButton>
                 <Plus className="size-3.5" strokeWidth={2} />
                 New product
+              </AdminButton>
+            </Link>
+            <Link href="/admin/analytics">
+              <AdminButton variant="secondary">
+                <BarChart3 className="size-3.5" strokeWidth={1.7} />
+                Analytics
+              </AdminButton>
+            </Link>
+            <Link href="/admin/banners">
+              <AdminButton variant="secondary">
+                <ImageIcon className="size-3.5" strokeWidth={1.7} />
+                Banners
               </AdminButton>
             </Link>
             <Link href="/admin/coupons">
@@ -536,7 +553,10 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         {/* Order status overview */}
-        <AdminPanel title="Order status overview" description="Distribution of recent orders by status.">
+        <AdminPanel
+          title="Order status overview"
+          description="Distribution of recent orders by status."
+        >
           {recentOrders.isLoading ? (
             <AdminSkeleton className="h-44 w-full" />
           ) : totalStatusCount === 0 ? (

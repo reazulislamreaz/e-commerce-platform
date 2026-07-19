@@ -46,14 +46,14 @@ export default function AdminReturnDetailPage() {
     [...RETURN_INVALIDATE],
   );
 
-  const busy =
-    approveMutation.isPending || rejectMutation.isPending || completeMutation.isPending;
+  const busy = approveMutation.isPending || rejectMutation.isPending || completeMutation.isPending;
 
   async function runAction(action: 'approve' | 'reject' | 'complete') {
     if (!item) return;
     setActionError(null);
     setSuccess(null);
     const payload = { id: item.id, ...(note.trim() ? { note: note.trim() } : {}) };
+    const requestLabel = item.type === 'exchange' ? 'Exchange' : 'Return';
     try {
       if (action === 'approve') await approveMutation.mutateAsync(payload);
       else if (action === 'reject') await rejectMutation.mutateAsync(payload);
@@ -61,13 +61,15 @@ export default function AdminReturnDetailPage() {
       setNote('');
       setSuccess(
         action === 'approve'
-          ? 'Return approved.'
+          ? `${requestLabel} approved.`
           : action === 'reject'
-            ? 'Return rejected.'
-            : 'Return completed.',
+            ? `${requestLabel} rejected.`
+            : `${requestLabel} completed.`,
       );
     } catch (error) {
-      setActionError(mutationErrorMessage(error, 'Could not update return.'));
+      setActionError(
+        mutationErrorMessage(error, `Could not update ${requestLabel.toLowerCase()}.`),
+      );
     }
   }
 
@@ -105,7 +107,7 @@ export default function AdminReturnDetailPage() {
       </div>
 
       <AdminPanel
-        title={`Return · Order #${item.orderNumber}`}
+        title={`${item.type === 'exchange' ? 'Exchange' : 'Return'} · Order #${item.orderNumber}`}
         description={`Requested ${new Date(item.createdAt).toLocaleString()}`}
       >
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -197,11 +199,7 @@ export default function AdminReturnDetailPage() {
               </>
             ) : null}
             {canComplete ? (
-              <AdminButton
-                type="button"
-                disabled={busy}
-                onClick={() => void runAction('complete')}
-              >
+              <AdminButton type="button" disabled={busy} onClick={() => void runAction('complete')}>
                 Complete
               </AdminButton>
             ) : null}

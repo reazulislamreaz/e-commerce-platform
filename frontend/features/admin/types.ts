@@ -144,6 +144,37 @@ export type AdminCoupon = {
   redemptionCount?: number;
 };
 
+export type AdminProductSort =
+  | 'UPDATED_DESC'
+  | 'CREATED_DESC'
+  | 'CREATED_ASC'
+  | 'NAME_ASC'
+  | 'NAME_DESC'
+  | 'PRICE_ASC'
+  | 'PRICE_DESC';
+
+export type AdminStockFilter = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+
+export type AdminProductListParams = {
+  cursor?: string;
+  limit?: number;
+  status?: ProductStatus | string;
+  q?: string;
+  brandId?: string;
+  categoryId?: string;
+  stock?: AdminStockFilter | string;
+  sort?: AdminProductSort | string;
+};
+
+export type AdminProductStats = {
+  total: number;
+  active: number;
+  draft: number;
+  archived: number;
+  outOfStock: number;
+  lowStock: number;
+};
+
 export type AdminProductSummary = {
   id: string;
   name: string;
@@ -152,7 +183,13 @@ export type AdminProductSummary = {
   brandName: string;
   priceTaka: number;
   variantCount: number;
+  imageUrl?: string;
+  sku?: string;
+  categoryName?: string;
+  /** Aggregate available stock across variants — present on list responses. */
+  totalStock?: number;
   publishedAt?: string;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -199,7 +236,8 @@ export type CreateAdminProductInput = {
   primaryColor: string;
   categoryIds: string[];
   colors: Array<{ name: string; hex: string }>;
-  variants: Array<{ sku: string; size: string; color: string }>;
+  variants: Array<{ sku: string; size: string; color: string; openingQuantity?: number }>;
+  inventoryLocationId?: string;
   collectionIds?: string[];
   media: Array<{ url: string; alt: string; position?: number; isPrimary: boolean }>;
   price: { amountTaka: number; compareAtTaka?: number };
@@ -228,6 +266,10 @@ export type AdminBrand = {
   id: string;
   name: string;
   slug: string;
+  isActive: boolean;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type AdminCategory = {
@@ -235,12 +277,22 @@ export type AdminCategory = {
   name: string;
   slug: string;
   parentId?: string | null;
+  position: number;
+  isActive: boolean;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type AdminCollection = {
   id: string;
   name: string;
   slug: string;
+  position: number;
+  isActive: boolean;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ContactMessage = {

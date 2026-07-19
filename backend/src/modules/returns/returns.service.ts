@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   NotificationType,
   OrderStatus,
@@ -14,6 +10,7 @@ import { InventoryService } from '@/modules/inventory/inventory.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
+import { OUTBOX_EVENT, OutboxService } from '@/modules/platform/outbox.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import type { AdminReturnActionDto } from './dto/admin-return-action.dto';
 import type { CreateReturnDto } from './dto/create-return.dto';
@@ -22,6 +19,7 @@ import type { ReturnDetailResponseDto, ReturnRequestResponseDto } from './dto/re
 import {
   ACTIVE_RETURN_STATUSES,
   ReturnsRepository,
+  returnOrderSelect,
   type ReturnDetailRecord,
 } from './returns.repository';
 
@@ -42,6 +40,7 @@ export class ReturnsService {
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly customerMetrics: CustomerMetricsService,
+    private readonly outbox: OutboxService,
   ) {}
 
   async create(userId: string, dto: CreateReturnDto): Promise<ReturnRequestResponseDto> {
@@ -75,9 +74,7 @@ export class ReturnsService {
               orderItemId: line.orderItemId,
               variantId: line.variantId,
               quantity: line.quantity,
-              ...(line.exchangeVariantId
-                ? { exchangeVariantId: line.exchangeVariantId }
-                : {}),
+              ...(line.exchangeVariantId ? { exchangeVariantId: line.exchangeVariantId } : {}),
             })),
           },
           statusHistory: {
@@ -93,15 +90,19 @@ export class ReturnsService {
       await this.notifications.createForUser(
         {
           userId,
-          type: NotificationType.RETURN_STATUS,
-          title: 'Return requested',
+          type:
+            returnType === ReturnType.EXCHANGE
+              ? NotificationType.EXCHANGE_STATUS
+              : NotificationType.RETURN_STATUS,
+          title: returnType === ReturnType.EXCHANGE ? 'Exchange requested' : 'Return requested',
           body: `Your ${dto.type} request for order ${order.number} was submitted.`,
-          href: '/account/returns',
+          href: returnType === ReturnType.EXCHANGE ? '/account/exchanges' : '/account/returns',
           dedupeKey: `return:${created.id}:pending`,
           payload: { returnId: created.id, status: ReturnStatus.PENDING },
         },
         tx,
       );
+      await this.enqueueStatusEmail(created.id, order, returnType, ReturnStatus.PENDING, tx);
 
       return toSummaryResponse(created);
     });
@@ -133,7 +134,7 @@ export class ReturnsService {
       const current = await tx.returnRequest.findUnique({
         where: { id },
         include: {
-          order: { select: { id: true, number: true, userId: true, status: true, deliveredAt: true } },
+          order: { select: returnOrderSelect },
           items: {
             select: {
               id: true,
@@ -154,7 +155,9 @@ export class ReturnsService {
       if (current.type === ReturnType.EXCHANGE) {
         const exchangeLines = current.items.filter((item) => item.exchangeVariantId);
         if (exchangeLines.length !== current.items.length) {
-          throw new BadRequestException('Exchange approval requires replacement variants on every line');
+          throw new BadRequestException(
+            'Exchange approval requires replacement variants on every line',
+          );
         }
         await this.inventory.reserveExchangeReplacements(
           current.id,
@@ -195,17 +198,27 @@ export class ReturnsService {
         tx,
       );
 
+      const isExchange = current.type === ReturnType.EXCHANGE;
+      const requestLabel = isExchange ? 'exchange' : 'return';
       await this.notifications.createForUser(
         {
           userId: current.userId,
-          type: NotificationType.RETURN_STATUS,
-          title: 'Return approved',
-          body: `Your return for order ${current.order.number} was approved.`,
-          href: '/account/returns',
+          type: isExchange ? NotificationType.EXCHANGE_STATUS : NotificationType.RETURN_STATUS,
+          title: isExchange ? 'Exchange approved' : 'Return approved',
+          body: `Your ${requestLabel} for order ${current.order.number} was approved.`,
+          href: isExchange ? '/account/exchanges' : '/account/returns',
           dedupeKey: `return:${id}:${ReturnStatus.APPROVED}`,
           payload: { returnId: id, status: ReturnStatus.APPROVED },
         },
         tx,
+      );
+      await this.enqueueStatusEmail(
+        id,
+        current.order,
+        current.type,
+        ReturnStatus.APPROVED,
+        tx,
+        dto.note,
       );
 
       return toDetailResponse(updated);
@@ -213,12 +226,98 @@ export class ReturnsService {
   }
 
   async reject(actor: JwtPayload, id: string, dto: AdminReturnActionDto) {
-    return this.transition(actor, id, ReturnStatus.REJECTED, dto.note, { decidedAt: new Date() });
+    return this.returns.runTransaction(async (tx) => {
+      const current = await tx.returnRequest.findUnique({
+        where: { id },
+        include: {
+          order: { select: returnOrderSelect },
+          items: {
+            select: {
+              id: true,
+              orderItemId: true,
+              variantId: true,
+              quantity: true,
+              exchangeVariantId: true,
+            },
+          },
+        },
+      });
+      if (!current) throw new NotFoundException('Return request not found');
+
+      const canRejectPending = current.status === ReturnStatus.PENDING;
+      const canVoidApprovedExchange =
+        current.status === ReturnStatus.APPROVED && current.type === ReturnType.EXCHANGE;
+      if (!canRejectPending && !canVoidApprovedExchange) {
+        throw new BadRequestException(
+          `Cannot reject a ${current.status.toLowerCase()} ${current.type.toLowerCase()}`,
+        );
+      }
+
+      if (canVoidApprovedExchange) {
+        await this.inventory.releaseExchangeReplacements(current.id, tx);
+      }
+
+      const updated = await this.returns.updateStatus(
+        id,
+        { status: ReturnStatus.REJECTED, decidedAt: new Date() },
+        tx,
+      );
+
+      await this.returns.appendStatusHistory(
+        {
+          returnRequestId: id,
+          status: ReturnStatus.REJECTED,
+          note: dto.note?.trim() || null,
+          actorId: actor.sub,
+        },
+        tx,
+      );
+
+      await this.audit.write(
+        {
+          actorUserId: actor.sub,
+          actorRole: actor.role,
+          action: 'return.reject',
+          resourceType: 'return_request',
+          resourceId: id,
+          before: { status: current.status },
+          after: { status: ReturnStatus.REJECTED, note: dto.note ?? null },
+        },
+        tx,
+      );
+
+      const isExchange = current.type === ReturnType.EXCHANGE;
+      const requestLabel = isExchange ? 'exchange' : 'return';
+      await this.notifications.createForUser(
+        {
+          userId: current.userId,
+          type: isExchange ? NotificationType.EXCHANGE_STATUS : NotificationType.RETURN_STATUS,
+          title: isExchange ? 'Exchange rejected' : 'Return rejected',
+          body: `Your ${requestLabel} for order ${current.order.number} was rejected.`,
+          href: isExchange ? '/account/exchanges' : '/account/returns',
+          dedupeKey: `return:${id}:${ReturnStatus.REJECTED}`,
+          payload: { returnId: id, status: ReturnStatus.REJECTED, type: current.type },
+        },
+        tx,
+      );
+      await this.enqueueStatusEmail(
+        id,
+        current.order,
+        current.type,
+        ReturnStatus.REJECTED,
+        tx,
+        dto.note,
+      );
+
+      return toDetailResponse(updated);
+    });
   }
 
   async complete(actor: JwtPayload, id: string, dto: AdminReturnActionDto) {
     return this.returns.runTransaction(async (tx) => {
-      const locked = await tx.$queryRaw<Array<{ id: string; status: ReturnStatus; version: number }>>`
+      const locked = await tx.$queryRaw<
+        Array<{ id: string; status: ReturnStatus; version: number }>
+      >`
         SELECT id, status, version
         FROM return_request
         WHERE id = ${id}::uuid
@@ -229,7 +328,7 @@ export class ReturnsService {
       const current = await tx.returnRequest.findUnique({
         where: { id },
         include: {
-          order: { select: { id: true, number: true, userId: true, status: true, deliveredAt: true } },
+          order: { select: returnOrderSelect },
           items: {
             select: {
               id: true,
@@ -268,7 +367,9 @@ export class ReturnsService {
       if (current.type === ReturnType.EXCHANGE) {
         const exchangeLines = current.items.filter((item) => item.exchangeVariantId);
         if (exchangeLines.length !== current.items.length) {
-          throw new BadRequestException('Exchange completion requires replacement variants on every line');
+          throw new BadRequestException(
+            'Exchange completion requires replacement variants on every line',
+          );
         }
         await this.inventory.consumeExchangeReplacements(
           current.id,
@@ -330,6 +431,14 @@ export class ReturnsService {
         },
         tx,
       );
+      await this.enqueueStatusEmail(
+        id,
+        current.order,
+        current.type,
+        ReturnStatus.COMPLETED,
+        tx,
+        dto.note,
+      );
       await this.customerMetrics.recordActivity(
         current.userId,
         'RETURN_COMPLETED',
@@ -344,80 +453,33 @@ export class ReturnsService {
     });
   }
 
-  private async transition(
-    actor: JwtPayload,
-    id: string,
+  private async enqueueStatusEmail(
+    returnId: string,
+    order: {
+      number: string;
+      email: string;
+      user: { firstName: string | null } | null;
+    },
+    type: ReturnType,
     status: ReturnStatus,
-    note: string | undefined,
-    extra: { decidedAt: Date },
-  ): Promise<ReturnDetailResponseDto> {
-    return this.returns.runTransaction(async (tx) => {
-      const current = await tx.returnRequest.findUnique({
-        where: { id },
-        include: {
-          order: { select: { id: true, number: true, userId: true, status: true, deliveredAt: true } },
-          items: {
-            select: {
-              id: true,
-              orderItemId: true,
-              variantId: true,
-              quantity: true,
-              exchangeVariantId: true,
-            },
-          },
-        },
-      });
-      if (!current) throw new NotFoundException('Return request not found');
-
-      if (current.status !== ReturnStatus.PENDING) {
-        throw new BadRequestException(`Cannot ${status.toLowerCase()} a ${current.status.toLowerCase()} return`);
-      }
-
-      const updated = await this.returns.updateStatus(
-        id,
-        { status, ...extra },
-        tx,
-      );
-
-      await this.returns.appendStatusHistory(
-        {
-          returnRequestId: id,
-          status,
-          note: note?.trim() || null,
-          actorId: actor.sub,
-        },
-        tx,
-      );
-
-      await this.audit.write(
-        {
-          actorUserId: actor.sub,
-          actorRole: actor.role,
-          action: status === ReturnStatus.APPROVED ? 'return.approve' : 'return.reject',
-          resourceType: 'return_request',
-          resourceId: id,
-          before: { status: current.status },
-          after: { status, note: note ?? null },
-        },
-        tx,
-      );
-
-      const statusLabel = status === ReturnStatus.APPROVED ? 'approved' : 'rejected';
-      await this.notifications.createForUser(
-        {
-          userId: current.userId,
-          type: NotificationType.RETURN_STATUS,
-          title: `Return ${statusLabel}`,
-          body: `Your return for order ${current.order.number} was ${statusLabel}.`,
-          href: '/account/returns',
-          dedupeKey: `return:${id}:${status}`,
-          payload: { returnId: id, status },
-        },
-        tx,
-      );
-
-      return toDetailResponse(updated);
-    });
+    tx: Prisma.TransactionClient,
+    note?: string,
+  ): Promise<void> {
+    const requestType = type === ReturnType.EXCHANGE ? 'exchange' : 'return';
+    await this.outbox.enqueue(
+      OUTBOX_EVENT.RETURN_STATUS_EMAIL,
+      returnId,
+      {
+        to: order.email,
+        firstName: order.user?.firstName ?? '',
+        orderNumber: order.number,
+        requestType,
+        status: status.toLowerCase(),
+        requestUrl: requestType === 'exchange' ? '/account/exchanges' : '/account/returns',
+        ...(note?.trim() ? { note: note.trim() } : {}),
+      },
+      tx,
+    );
   }
 
   private assertReturnEligibility(status: OrderStatus, deliveredAt: Date | null): void {
@@ -482,7 +544,9 @@ export class ReturnsService {
 
       if (returnType === ReturnType.EXCHANGE) {
         if (!line.exchangeVariantId) {
-          throw new BadRequestException('Exchange requests require a replacement variant for each line');
+          throw new BadRequestException(
+            'Exchange requests require a replacement variant for each line',
+          );
         }
         const replacement = exchangeVariantById.get(line.exchangeVariantId);
         if (!replacement) {
@@ -565,7 +629,7 @@ export class ReturnsService {
       data: page.map(mapper),
       meta: {
         limit,
-        nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+        nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
       },
     };
   }

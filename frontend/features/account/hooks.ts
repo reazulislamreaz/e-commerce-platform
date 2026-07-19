@@ -18,13 +18,22 @@ const EMPTY_NOTIFICATIONS: AccountNotification[] = [];
 const EMPTY_COUPONS: AccountCoupon[] = [];
 const EMPTY_REVIEWS: AccountReview[] = [];
 const EMPTY_RETURNS: ReturnRequest[] = [];
+const TERMINAL_ORDER_STATUSES = new Set(['delivered', 'cancelled', 'returned', 'exchanged']);
 
 export const accountKeys = {
   all: ['account'] as const,
   orders: (userId: string, cursor?: string | null) =>
     [...accountKeys.all, 'orders', userId, cursor ?? 'initial'] as const,
+  order: (userId: string, orderId: string) =>
+    [...accountKeys.all, 'order', userId, orderId] as const,
+  trackedOrder: (number: string, email: string) =>
+    [...accountKeys.all, 'tracked-order', number, email] as const,
   addresses: (userId: string) => [...accountKeys.all, 'addresses', userId] as const,
-  notifications: (userId: string) => [...accountKeys.all, 'notifications', userId] as const,
+  notificationsRoot: (userId: string) => [...accountKeys.all, 'notifications', userId] as const,
+  notifications: (userId: string, cursor?: string | null) =>
+    [...accountKeys.notificationsRoot(userId), cursor ?? 'initial'] as const,
+  unreadNotifications: (userId: string) =>
+    [...accountKeys.all, 'notifications-unread', userId] as const,
   coupons: (userId: string) => [...accountKeys.all, 'coupons', userId] as const,
   reviews: (userId: string) => [...accountKeys.all, 'reviews', userId] as const,
   returns: (userId: string) => [...accountKeys.all, 'returns', userId] as const,
@@ -77,6 +86,31 @@ export function useAccountOrders(
   };
 }
 
+export function useAccountOrder(userId: string | undefined, orderId: string | undefined) {
+  return useQuery({
+    queryKey: userId && orderId ? accountKeys.order(userId, orderId) : accountKeys.all,
+    queryFn: () => accountRepository.getOrder(orderId!),
+    enabled: Boolean(userId && orderId),
+    refetchInterval: (query) => {
+      const order = query.state.data;
+      return order && !TERMINAL_ORDER_STATUSES.has(order.status.toLowerCase()) ? 30_000 : false;
+    },
+  });
+}
+
+export function useTrackedOrder(number: string, email: string, enabled: boolean) {
+  return useQuery({
+    queryKey: accountKeys.trackedOrder(number, email),
+    queryFn: () => accountRepository.trackOrder(number, email),
+    enabled: enabled && Boolean(number && email),
+    retry: false,
+    refetchInterval: (query) => {
+      const order = query.state.data;
+      return order && !TERMINAL_ORDER_STATUSES.has(order.status.toLowerCase()) ? 30_000 : false;
+    },
+  });
+}
+
 export function useAccountAddresses(userId: string | undefined) {
   return useAccountResource(
     userId,
@@ -86,13 +120,61 @@ export function useAccountAddresses(userId: string | undefined) {
   );
 }
 
-export function useAccountNotifications(userId: string | undefined) {
-  return useAccountResource(
-    userId,
-    userId ? accountKeys.notifications(userId) : accountKeys.all,
-    () => accountRepository.getNotifications(),
-    EMPTY_NOTIFICATIONS,
-  );
+export function useAccountNotifications(
+  userId: string | undefined,
+  params?: { cursor?: string; limit?: number; unreadOnly?: boolean },
+) {
+  const query = useQuery({
+    queryKey: userId ? accountKeys.notifications(userId, params?.cursor) : accountKeys.all,
+    queryFn: () => accountRepository.getNotifications(params),
+    enabled: Boolean(userId),
+  });
+
+  return {
+    data: query.data?.data ?? EMPTY_NOTIFICATIONS,
+    meta: query.data?.meta ?? { limit: params?.limit ?? 20, nextCursor: null },
+    loading: query.isLoading,
+    error: query.isError,
+    refetch: () => query.refetch(),
+    isFetching: query.isFetching,
+  };
+}
+
+export function useUnreadNotificationCount(userId: string | undefined) {
+  return useQuery({
+    queryKey: userId ? accountKeys.unreadNotifications(userId) : accountKeys.all,
+    queryFn: () => accountRepository.getUnreadNotificationCount(),
+    enabled: Boolean(userId),
+    staleTime: 30_000,
+  });
+}
+
+export function useMarkNotificationRead(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => accountRepository.markNotificationRead(id),
+    onSuccess: async () => {
+      if (!userId) return;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: accountKeys.notificationsRoot(userId) }),
+        queryClient.invalidateQueries({ queryKey: accountKeys.unreadNotifications(userId) }),
+      ]);
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => accountRepository.markAllNotificationsRead(),
+    onSuccess: async () => {
+      if (!userId) return;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: accountKeys.notificationsRoot(userId) }),
+        queryClient.invalidateQueries({ queryKey: accountKeys.unreadNotifications(userId) }),
+      ]);
+    },
+  });
 }
 
 export function useAccountCoupons(userId: string | undefined) {

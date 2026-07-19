@@ -102,8 +102,21 @@ export const httpAccountRepository: AccountRepository = {
     return getData<CustomerOrder>('/orders/track', { params: { number, email } });
   },
 
-  async getNotifications() {
-    return getData<AccountNotification[]>('/notifications');
+  async getNotifications(params?: { cursor?: string; limit?: number; unreadOnly?: boolean }) {
+    return getPage<AccountNotification>('/notifications', {
+      ...(params?.cursor ? { cursor: params.cursor } : {}),
+      ...(params?.limit != null ? { limit: params.limit } : {}),
+      ...(params?.unreadOnly ? { unreadOnly: 'true' } : {}),
+    });
+  },
+
+  async getUnreadNotificationCount() {
+    const result = await getData<{ count: number }>('/notifications/unread-count');
+    return result.count;
+  },
+
+  async markNotificationRead(id: string) {
+    return patchData<AccountNotification>(`/notifications/${id}/read`);
   },
 
   async markAllNotificationsRead() {
@@ -124,7 +137,8 @@ export const httpAccountRepository: AccountRepository = {
   },
 
   async getReturnRequests() {
-    return getData<ReturnRequest[]>('/returns');
+    const page = await getPage<ReturnRequest>('/returns', { limit: 50 });
+    return page.data;
   },
 
   async createReturnRequest(input: CreateReturnInput) {
@@ -135,19 +149,11 @@ export const httpAccountRepository: AccountRepository = {
     return getData<AccountReview[]>('/reviews');
   },
 
-  async createReview(input: {
-    productId: string;
-    rating: number;
-    title: string;
-    body: string;
-  }) {
+  async createReview(input: { productId: string; rating: number; title: string; body: string }) {
     return postData<AccountReview>('/reviews', input);
   },
 
-  async updateReview(
-    id: string,
-    input: { rating?: number; title?: string; body?: string },
-  ) {
+  async updateReview(id: string, input: { rating?: number; title?: string; body?: string }) {
     return patchData<AccountReview>(`/reviews/${id}`, input);
   },
 

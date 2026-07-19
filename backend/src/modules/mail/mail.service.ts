@@ -13,6 +13,7 @@ import {
   type OrderStatusEmail,
   type PaymentConfirmationEmail,
   type PasswordResetEmail,
+  type ReturnStatusEmail,
   type ShippingUpdateEmail,
   type DeliveredEmail,
   type VerificationEmail,
@@ -59,10 +60,11 @@ export class MailService {
     await this.emailQueue.add(EmailJobName.PAYMENT_CONFIRMATION, email, EMAIL_JOB_OPTIONS);
   }
 
-  async sendAbandonedCart(
-    email: AbandonedCartEmail,
-    options?: { jobId?: string },
-  ): Promise<void> {
+  async sendReturnStatus(email: ReturnStatusEmail): Promise<void> {
+    await this.emailQueue.add(EmailJobName.RETURN_STATUS, email, EMAIL_JOB_OPTIONS);
+  }
+
+  async sendAbandonedCart(email: AbandonedCartEmail, options?: { jobId?: string }): Promise<void> {
     try {
       await this.emailQueue.add(EmailJobName.ABANDONED_CART, email, {
         ...EMAIL_JOB_OPTIONS,

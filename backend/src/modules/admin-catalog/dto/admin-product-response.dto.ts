@@ -91,11 +91,48 @@ export class AdminProductSummaryResponseDto {
   @ApiProperty()
   variantCount!: number;
 
+  @ApiPropertyOptional({ description: 'Primary media URL' })
+  imageUrl?: string;
+
+  @ApiPropertyOptional({ description: 'First variant SKU' })
+  sku?: string;
+
+  @ApiPropertyOptional({ description: 'Primary category name' })
+  categoryName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Aggregate available stock across variants (list responses only)',
+  })
+  totalStock?: number;
+
   @ApiPropertyOptional({ type: String, format: 'date-time' })
   publishedAt?: string;
 
   @ApiProperty({ type: String, format: 'date-time' })
+  createdAt!: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
   updatedAt!: string;
+}
+
+export class AdminProductStatsResponseDto {
+  @ApiProperty({ description: 'All non-deleted products' })
+  total!: number;
+
+  @ApiProperty()
+  active!: number;
+
+  @ApiProperty()
+  draft!: number;
+
+  @ApiProperty()
+  archived!: number;
+
+  @ApiProperty({ description: 'Non-archived products with no available stock' })
+  outOfStock!: number;
+
+  @ApiProperty({ description: 'Non-archived products at or below their low-stock threshold' })
+  lowStock!: number;
 }
 
 export class AdminProductDetailResponseDto extends AdminProductSummaryResponseDto {

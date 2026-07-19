@@ -1,18 +1,121 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { ProductCard } from '@/components/shared/product-card';
-import { useProductsByIds } from '@/features/products';
+import { productCatalog, useProductsByIds, type CatalogProduct } from '@/features/products';
+import { toReduxCartItems, upsertServerCartItem } from '@/features/cart/api';
 import { removeWishlistProduct } from '@/features/wishlist/api';
 import { flashMessage } from '@/components/common/flash-message';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { wishlistCleared } from '@/store/slices/wishlist-slice';
+import { cartHydrated } from '@/store/slices/cart-slice';
+import { wishlistCleared, wishlistRemoved } from '@/store/slices/wishlist-slice';
 import {
   selectAuthUser,
   selectWishlistCount,
   selectWishlistHydrated,
   selectWishlistIds,
 } from '@/store/selectors';
+
+function MoveToCartControl({
+  product,
+  savedProductId,
+}: {
+  product: CatalogProduct;
+  savedProductId: string;
+}) {
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectAuthUser);
+  const [detail, setDetail] = useState<CatalogProduct>();
+  const [variantId, setVariantId] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const availableVariants = (detail?.variants ?? []).filter((variant) => variant.stock > 0);
+
+  function removeSavedItem() {
+    dispatch(wishlistRemoved(savedProductId));
+    if (user) {
+      void removeWishlistProduct(savedProductId).catch(() => {
+        flashMessage('Item moved, but wishlist sync will retry on your next session.');
+      });
+    }
+  }
+
+  async function moveVariant(selectedVariantId: string) {
+    setLoading(true);
+    try {
+      const cart = await upsertServerCartItem(selectedVariantId, 1);
+      dispatch(cartHydrated(toReduxCartItems(cart)));
+      removeSavedItem();
+      flashMessage(`${product.name} moved to your bag.`);
+    } catch {
+      flashMessage('Could not move this item to your bag. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function prepareMove() {
+    if (detail) {
+      if (!variantId) {
+        flashMessage('Choose an available size and color.');
+        return;
+      }
+      await moveVariant(variantId);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resolved = await productCatalog.getBySlug(product.slug);
+      const variants = (resolved?.variants ?? []).filter((variant) => variant.stock > 0);
+      if (!resolved || variants.length === 0) {
+        flashMessage('This item is currently out of stock.');
+        return;
+      }
+      if (variants.length === 1) {
+        await moveVariant(variants[0].id);
+        return;
+      }
+      setDetail(resolved);
+      setVariantId(variants[0].id);
+    } catch {
+      flashMessage('Could not load available options. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="mt-2 space-y-2">
+      {detail && availableVariants.length > 1 ? (
+        <label className="block">
+          <span className="sr-only">Choose size and color for {product.name}</span>
+          <select
+            value={variantId}
+            onChange={(event) => setVariantId(event.target.value)}
+            disabled={loading}
+            className="w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-2.5 py-2 text-[11px] text-white outline-none focus:border-[#e3bb78]"
+          >
+            {availableVariants.map((variant) => (
+              <option key={variant.id} value={variant.id}>
+                {variant.size} / {variant.color} — {variant.stock} available
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      <button
+        type="button"
+        disabled={loading || product.inStock === false}
+        onClick={() => void prepareMove()}
+        className="w-full rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-3 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {loading ? 'Moving…' : detail ? 'Move selected to bag' : 'Move to bag'}
+      </button>
+    </div>
+  );
+}
 
 export function WishlistGrid({
   title = 'Wishlist',
@@ -84,7 +187,10 @@ export function WishlistGrid({
       ) : (
         <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 min-[480px]:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <div key={product.id} className="min-w-0">
+              <ProductCard product={product} />
+              <MoveToCartControl product={product} savedProductId={product.id} />
+            </div>
           ))}
         </div>
       )}

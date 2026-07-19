@@ -14,6 +14,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const [marketing, setMarketing] = useState(false);
   const [orderUpdates, setOrderUpdates] = useState(true);
+  const [inAppEnabled, setInAppEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,12 +25,17 @@ export default function SettingsPage() {
         writeStorage(MARKETING_CONSENT_STORAGE_KEY, prefs.emailMarketing);
         setMarketing(prefs.emailMarketing);
         setOrderUpdates(prefs.emailOrderUpdates);
+        setInAppEnabled(prefs.inAppEnabled);
       })
       .catch(() => setError('Could not load preferences.'))
       .finally(() => setLoading(false));
   }, []);
 
-  const persist = async (next: { emailMarketing?: boolean; emailOrderUpdates?: boolean }) => {
+  const persist = async (next: {
+    emailMarketing?: boolean;
+    emailOrderUpdates?: boolean;
+    inAppEnabled?: boolean;
+  }) => {
     setSaving(true);
     setError(null);
     try {
@@ -37,6 +43,7 @@ export default function SettingsPage() {
       writeStorage(MARKETING_CONSENT_STORAGE_KEY, prefs.emailMarketing);
       setMarketing(prefs.emailMarketing);
       setOrderUpdates(prefs.emailOrderUpdates);
+      setInAppEnabled(prefs.inAppEnabled);
     } catch {
       setError('Could not save preferences.');
     } finally {
@@ -80,7 +87,24 @@ export default function SettingsPage() {
                 className="size-4 accent-[#e5bd79]"
               />
             </label>
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            <label className="flex items-center justify-between gap-3 text-sm text-[#e9e5de]">
+              In-app notifications
+              <input
+                type="checkbox"
+                checked={inAppEnabled}
+                disabled={saving}
+                onChange={(e) => {
+                  setInAppEnabled(e.target.checked);
+                  void persist({ inAppEnabled: e.target.checked });
+                }}
+                className="size-4 accent-[#e5bd79]"
+              />
+            </label>
+            {error && (
+              <p role="alert" className="text-xs text-red-400">
+                {error}
+              </p>
+            )}
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ import { renderOrderConfirmationEmail } from './templates/order-confirmation-ema
 import { renderPasswordResetEmail } from './templates/password-reset-email.template';
 import { renderPaymentConfirmationEmail } from './templates/payment-confirmation-email.template';
 import { renderShippingUpdateEmail } from './templates/shipping-update-email.template';
+import { renderReturnStatusEmail } from './templates/return-status-email.template';
 import { renderWelcomeEmail } from './templates/welcome-email.template';
 import { escapeHtml, renderEmailShell } from './templates/email-shell';
 
@@ -25,7 +26,10 @@ describe('transactional email templates', () => {
   });
 
   it.each([
-    ['WELCOME', () => renderWelcomeEmail({ to: 'a@b.com', firstName: '<x>', shopUrl: 'https://shop.test' })],
+    [
+      'WELCOME',
+      () => renderWelcomeEmail({ to: 'a@b.com', firstName: '<x>', shopUrl: 'https://shop.test' }),
+    ],
     [
       'ORDER_CONFIRMATION',
       () =>
@@ -73,6 +77,19 @@ describe('transactional email templates', () => {
         }),
     ],
     [
+      'RETURN_STATUS',
+      () =>
+        renderReturnStatusEmail({
+          to: 'a@b.com',
+          firstName: '<x>',
+          orderNumber: 'ORD-5',
+          requestType: 'exchange',
+          status: 'approved',
+          requestUrl: '/account/exchanges',
+          note: '<script>unsafe</script>',
+        }),
+    ],
+    [
       'PASSWORD_RESET',
       () =>
         renderPasswordResetEmail({
@@ -105,6 +122,7 @@ describe('transactional email templates', () => {
       EmailJobName.SHIPPING_UPDATE,
       EmailJobName.DELIVERED,
       EmailJobName.PAYMENT_CONFIRMATION,
+      EmailJobName.RETURN_STATUS,
       EmailJobName.PASSWORD_RESET,
       EmailJobName.ABANDONED_CART,
     ];

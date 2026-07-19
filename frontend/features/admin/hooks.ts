@@ -2,10 +2,17 @@
 
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from './api';
-import type { AdminReviewStatus, ContactStatus, NewsletterStatus, ProductStatus, UserStatus } from './types';
+import type {
+  AdminProductListParams,
+  AdminReviewStatus,
+  ContactStatus,
+  NewsletterStatus,
+  UserStatus,
+} from './types';
 
 const TAXONOMY_STALE_MS = 5 * 60 * 1000;
 const LIST_STALE_MS = 30_000;
+const INVENTORY_REFRESH_MS = 30_000;
 
 export const adminKeys = {
   all: ['admin'] as const,
@@ -17,6 +24,8 @@ export const adminKeys = {
   reviewsRoot: () => [...adminKeys.all, 'reviews'] as const,
   reviewRoot: () => [...adminKeys.all, 'review'] as const,
   inventoryRoot: () => [...adminKeys.all, 'inventory-balances'] as const,
+  inventoryMovementsRoot: () => [...adminKeys.all, 'inventory-movements'] as const,
+  stockAlertsRoot: () => [...adminKeys.all, 'stock-alerts'] as const,
   productsRoot: () => [...adminKeys.all, 'products'] as const,
   productRoot: () => [...adminKeys.all, 'product'] as const,
   contactRoot: () => [...adminKeys.all, 'contact'] as const,
@@ -26,21 +35,32 @@ export const adminKeys = {
   customerRoot: () => [...adminKeys.all, 'customer'] as const,
   orders: (params?: Record<string, unknown>) => [...adminKeys.all, 'orders', params ?? {}] as const,
   order: (id: string) => [...adminKeys.all, 'order', id] as const,
-  returns: (params?: Record<string, unknown>) => [...adminKeys.all, 'returns', params ?? {}] as const,
+  returns: (params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'returns', params ?? {}] as const,
   return: (id: string) => [...adminKeys.all, 'return', id] as const,
-  reviews: (params?: Record<string, unknown>) => [...adminKeys.all, 'reviews', params ?? {}] as const,
+  reviews: (params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'reviews', params ?? {}] as const,
   review: (id: string) => [...adminKeys.all, 'review', id] as const,
   inventoryBalances: (params?: Record<string, unknown>) =>
     [...adminKeys.all, 'inventory-balances', params ?? {}] as const,
+  inventoryMovements: (params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'inventory-movements', params ?? {}] as const,
   inventoryLocations: () => [...adminKeys.all, 'inventory-locations'] as const,
+  stockAlerts: (params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'stock-alerts', params ?? {}] as const,
   coupons: () => [...adminKeys.all, 'coupons'] as const,
   coupon: (id: string) => [...adminKeys.all, 'coupon', id] as const,
-  products: (params?: Record<string, unknown>) => [...adminKeys.all, 'products', params ?? {}] as const,
+  couponRedemptions: (id: string, params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'coupon', id, 'redemptions', params ?? {}] as const,
+  products: (params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'products', params ?? {}] as const,
   product: (id: string) => [...adminKeys.all, 'product', id] as const,
+  productStats: () => [...adminKeys.all, 'product-stats'] as const,
   brands: () => [...adminKeys.all, 'brands'] as const,
   categories: () => [...adminKeys.all, 'categories'] as const,
   collections: () => [...adminKeys.all, 'collections'] as const,
-  contact: (params?: Record<string, unknown>) => [...adminKeys.all, 'contact', params ?? {}] as const,
+  contact: (params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'contact', params ?? {}] as const,
   newsletter: (params?: Record<string, unknown>) =>
     [...adminKeys.all, 'newsletter', params ?? {}] as const,
   users: (params?: Record<string, unknown>) => [...adminKeys.all, 'users', params ?? {}] as const,
@@ -63,7 +83,7 @@ export const adminKeys = {
   customerSegments: () => [...adminKeys.all, 'customer-segments'] as const,
 };
 
-const keepPrevious = <T,>(previous: T | undefined) => previous;
+const keepPrevious = <T>(previous: T | undefined) => previous;
 
 export function useAdminOrders(params?: {
   cursor?: string;
@@ -142,6 +162,7 @@ export function useInventoryBalances(params?: {
     queryKey: adminKeys.inventoryBalances(params),
     queryFn: () => adminApi.listInventoryBalances(params),
     staleTime: LIST_STALE_MS,
+    refetchInterval: INVENTORY_REFRESH_MS,
     placeholderData: keepPrevious,
   });
 }
@@ -151,6 +172,43 @@ export function useInventoryLocations() {
     queryKey: adminKeys.inventoryLocations(),
     queryFn: () => adminApi.listInventoryLocations(),
     staleTime: TAXONOMY_STALE_MS,
+  });
+}
+
+export function useStockAlerts(params?: { limit?: number }) {
+  return useQuery({
+    queryKey: adminKeys.stockAlerts(params),
+    queryFn: () => adminApi.listStockAlerts(params),
+    staleTime: LIST_STALE_MS,
+    refetchInterval: INVENTORY_REFRESH_MS,
+    placeholderData: keepPrevious,
+  });
+}
+
+export function useInventoryMovements(params?: {
+  cursor?: string;
+  limit?: number;
+  variantId?: string;
+}) {
+  return useQuery({
+    queryKey: adminKeys.inventoryMovements(params),
+    queryFn: () => adminApi.listInventoryMovements(params),
+    staleTime: LIST_STALE_MS,
+    refetchInterval: INVENTORY_REFRESH_MS,
+    placeholderData: keepPrevious,
+  });
+}
+
+export function useCouponRedemptions(
+  id: string | undefined,
+  params?: { cursor?: string; limit?: number },
+) {
+  return useQuery({
+    queryKey: adminKeys.couponRedemptions(id ?? '', params),
+    queryFn: () => adminApi.listCouponRedemptions(id!, params),
+    enabled: Boolean(id),
+    staleTime: LIST_STALE_MS,
+    placeholderData: keepPrevious,
   });
 }
 
@@ -179,15 +237,19 @@ export function useAdminCoupons() {
   });
 }
 
-export function useAdminProducts(params?: {
-  cursor?: string;
-  limit?: number;
-  status?: ProductStatus | string;
-  q?: string;
-}) {
+export function useAdminProducts(params?: AdminProductListParams) {
   return useQuery({
     queryKey: adminKeys.products(params),
     queryFn: () => adminApi.listProducts(params),
+    staleTime: LIST_STALE_MS,
+    placeholderData: keepPrevious,
+  });
+}
+
+export function useAdminProductStats() {
+  return useQuery({
+    queryKey: adminKeys.productStats(),
+    queryFn: () => adminApi.getProductStats(),
     staleTime: LIST_STALE_MS,
     placeholderData: keepPrevious,
   });
@@ -343,8 +405,7 @@ export function useAdminQueues() {
 
 export function useInvalidateAdmin(scopes: Array<readonly unknown[]> = [adminKeys.all]) {
   const queryClient = useQueryClient();
-  return () =>
-    Promise.all(scopes.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+  return () => Promise.all(scopes.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
 }
 
 export function useAdminMutation<TArgs, TResult>(

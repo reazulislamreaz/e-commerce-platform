@@ -49,6 +49,7 @@ export default async function ShopPage() {
         titleAccent={hero.titleAccent}
         description={hero.description}
         image={hero.image}
+        mobileImage={hero.mobileImage}
         imageAlt={hero.imageAlt}
         cta={hero.cta}
       />

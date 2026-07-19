@@ -164,7 +164,7 @@ Prisma schema: `backend/prisma/schema.prisma`.
 
 Implemented identity models: `User`, `AuthSession`, `RefreshToken`, and `VerificationToken`.
 
-Implemented catalog/inventory models: `Brand`, hierarchical `Category`, `CatalogCollection`, `Product`, product/category and product/collection joins, `ProductColor`, `ProductMedia`, `ProductVariant`, immutable-window `ProductPrice`, `InventoryLocation`, `InventoryBalance`, append-only `InventoryMovement`, and `ProductReview` (moderated writes with one active review per user/product). Money is `BIGINT` poisha. PostgreSQL raw migration constraints enforce nonnegative money/stock, `reserved <= on_hand`, rating ranges, one active price, and one primary category/collection/media. `pg_trgm` indexes public product search. All timestamps are `timestamptz`.
+Implemented catalog/inventory models: `Brand`, hierarchical `Category`, `CatalogCollection`, `Product`, product/category and product/collection joins, `ProductColor`, `ProductMedia`, `ProductVariant`, immutable-window `ProductPrice`, `InventoryLocation`, `InventoryBalance`, append-only `InventoryMovement`, and `ProductReview` (moderated writes with one active review per user/product). Brands, categories, and collections have admin-managed active/inactive storefront visibility. Money is `BIGINT` poisha. PostgreSQL raw migration constraints enforce nonnegative money/stock, `reserved <= on_hand`, rating ranges, one active price, and one primary category/collection/media. `pg_trgm` indexes public product search. All timestamps are `timestamptz`.
 
 Use `PrismaService` through dependency injection. Always use `select`, cursor pagination, database indexes, and transactions where appropriate.
 

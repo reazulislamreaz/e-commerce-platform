@@ -21,6 +21,7 @@ import { ProductCard } from '@/components/shared/product-card';
 export const revalidate = 60;
 
 const FALLBACK_HERO = FALLBACK_BANNERS.HOME_HERO;
+const FALLBACK_PROMO = FALLBACK_BANNERS.HOME_PROMO;
 
 const collections = [
   { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.webp' },
@@ -49,7 +50,10 @@ function SectionHeader({
   return (
     <div className="flex items-center justify-between gap-3">
       <SectionTitle>{title}</SectionTitle>
-      <Link href={href} className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-white">
+      <Link
+        href={href}
+        className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-white"
+      >
         {linkLabel} <ArrowRight className="size-4 text-[#dcb878]" />
       </Link>
     </div>
@@ -70,22 +74,49 @@ function Hero({ banner }: { banner: MarketingBanner }) {
   const titleParts = banner.title.trim().split(/\s+/);
   const lead = titleParts.slice(0, -1).join(' ') || banner.title;
   const accent = titleParts.length > 1 ? titleParts[titleParts.length - 1] : '';
-  const imageSrc = banner.mobileImageUrl || banner.imageUrl;
+  const desktopSrc = banner.imageUrl;
+  const mobileSrc =
+    banner.mobileImageUrl && banner.mobileImageUrl !== banner.imageUrl
+      ? banner.mobileImageUrl
+      : null;
   const ctaHref = banner.ctaHref?.trim() || '/shop';
   const ctaLabel = banner.ctaLabel?.trim() || 'SHOP NOW';
 
   return (
     <section className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#2d2a27] bg-[#090909]">
       <div className="absolute inset-y-0 right-0 w-full sm:w-[62%]">
-        <Image
-          src={imageSrc}
-          alt={banner.title}
-          fill
-          priority
-          quality={85}
-          sizes="(max-width: 640px) 100vw, 62vw"
-          className="object-cover object-[68%_center] sm:object-center"
-        />
+        {mobileSrc ? (
+          <>
+            <Image
+              src={mobileSrc}
+              alt={banner.title}
+              fill
+              priority
+              quality={85}
+              sizes="100vw"
+              className="object-cover object-[68%_center] md:hidden"
+            />
+            <Image
+              src={desktopSrc}
+              alt={banner.title}
+              fill
+              priority
+              quality={85}
+              sizes="62vw"
+              className="hidden object-cover object-center md:block"
+            />
+          </>
+        ) : (
+          <Image
+            src={desktopSrc}
+            alt={banner.title}
+            fill
+            priority
+            quality={85}
+            sizes="(max-width: 640px) 100vw, 62vw"
+            className="object-cover object-[68%_center] sm:object-center"
+          />
+        )}
       </div>
       <div className="absolute inset-0 bg-linear-to-r from-[#080808] via-[#080808]/90 to-[#080808]/20 sm:inset-y-0 sm:left-0 sm:w-[68%] sm:bg-linear-to-r sm:from-[#080808] sm:via-[#080808]/95 sm:to-transparent" />
       <ArrowLeft
@@ -102,8 +133,7 @@ function Hero({ banner }: { banner: MarketingBanner }) {
             Discover Your Edge
           </p>
           <h1 className="mt-2 text-[clamp(42px,12vw,64px)] font-extrabold leading-[.93] tracking-[-.055em] text-white">
-            {lead}{' '}
-            {accent ? <span className="block text-[#e3bb78]">{accent}</span> : null}
+            {lead} {accent ? <span className="block text-[#e3bb78]">{accent}</span> : null}
           </h1>
           {banner.subtitle ? (
             <p className="mt-3 max-w-[260px] text-sm font-medium leading-[1.5] text-[#f6f4f2]">
@@ -157,6 +187,74 @@ function Benefits() {
             </div>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function HomePromo({ banner }: { banner: MarketingBanner }) {
+  const ctaHref = banner.ctaHref?.trim() || '/new-arrivals';
+  const ctaLabel = banner.ctaLabel?.trim() || 'SHOP NOW';
+  const desktopSrc = banner.imageUrl;
+  const mobileSrc =
+    banner.mobileImageUrl && banner.mobileImageUrl !== banner.imageUrl
+      ? banner.mobileImageUrl
+      : null;
+
+  return (
+    <section className="border-y border-[#2d2a27] bg-[#090909]">
+      <div className="relative mx-auto max-w-[1400px] overflow-hidden">
+        <div className="relative min-h-[160px] sm:min-h-[180px]">
+          {mobileSrc ? (
+            <>
+              <Image
+                src={mobileSrc}
+                alt=""
+                fill
+                quality={80}
+                sizes="100vw"
+                className="object-cover object-center opacity-50 md:hidden"
+              />
+              <Image
+                src={desktopSrc}
+                alt=""
+                fill
+                quality={80}
+                sizes="100vw"
+                className="hidden object-cover object-center opacity-50 md:block"
+              />
+            </>
+          ) : (
+            <Image
+              src={desktopSrc}
+              alt=""
+              fill
+              quality={80}
+              sizes="100vw"
+              className="object-cover object-center opacity-50"
+            />
+          )}
+          <div className="absolute inset-0 bg-linear-to-r from-[#090909] via-[#090909]/85 to-[#090909]/40" />
+          <div className="relative flex min-h-[160px] flex-col justify-center gap-3 px-5 py-8 sm:min-h-[180px] sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-10">
+            <div className="max-w-xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#e0bd7d]">
+                Featured
+              </p>
+              <h2 className="mt-1 text-2xl font-extrabold tracking-[-.03em] text-white sm:text-3xl">
+                {banner.title}
+              </h2>
+              {banner.subtitle ? (
+                <p className="mt-1.5 text-sm text-[#eee9e1]">{banner.subtitle}</p>
+              ) : null}
+            </div>
+            <Link
+              href={ctaHref}
+              className="inline-flex w-fit shrink-0 border border-[#efc677] bg-[#e5bd79] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a]"
+            >
+              {ctaLabel}
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -350,17 +448,20 @@ function Instagram() {
 }
 
 export default async function Home() {
-  const [featured, newArrivals, sale, banners] = await Promise.all([
+  const [featured, newArrivals, sale, heroBanners, promoBanners] = await Promise.all([
     productCatalog.list({ page: 1, pageSize: 6 }),
     productCatalog.newArrivals(),
     productCatalog.onSale(),
     marketingApi.listPublic('HOME_HERO').catch(() => [] as MarketingBanner[]),
+    marketingApi.listPublic('HOME_PROMO').catch(() => [] as MarketingBanner[]),
   ]);
-  const heroBanner = pickPrimaryBanner(banners, FALLBACK_HERO);
+  const heroBanner = pickPrimaryBanner(heroBanners, FALLBACK_HERO);
+  const promoBanner = pickPrimaryBanner(promoBanners, FALLBACK_PROMO);
   return (
     <main id="main-content" className="flex-1 bg-black">
       <Hero banner={heroBanner} />
       <Benefits />
+      <HomePromo banner={promoBanner} />
       <CollectionGrid />
       <Featured products={featured.items} />
       <NewArrivals products={newArrivals.slice(0, 6)} />

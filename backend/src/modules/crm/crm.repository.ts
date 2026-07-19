@@ -108,11 +108,40 @@ export class CrmRepository {
     });
   }
 
-  segmentSummary() {
-    return this.prisma.customerMetric.groupBy({
-      by: ['segmentKey'],
-      _count: { _all: true },
-    });
+  /**
+   * Counts active (non-deleted) customers by segment.
+   * Customers without a metric row are counted as NEW, matching listCustomers.
+   */
+  async segmentSummary(): Promise<Array<{ segmentKey: CustomerSegmentKey; count: number }>> {
+    const [grouped, missingMetric] = await Promise.all([
+      this.prisma.customerMetric.groupBy({
+        by: ['segmentKey'],
+        where: {
+          user: { role: Role.CUSTOMER, deletedAt: null },
+        },
+        _count: { _all: true },
+      }),
+      this.prisma.user.count({
+        where: {
+          role: Role.CUSTOMER,
+          deletedAt: null,
+          customerMetric: null,
+        },
+      }),
+    ]);
+
+    const counts = new Map<CustomerSegmentKey, number>(
+      grouped.map((row) => [row.segmentKey, row._count._all]),
+    );
+    counts.set(
+      CustomerSegmentKey.NEW,
+      (counts.get(CustomerSegmentKey.NEW) ?? 0) + missingMetric,
+    );
+
+    return Object.values(CustomerSegmentKey).map((segmentKey) => ({
+      segmentKey,
+      count: counts.get(segmentKey) ?? 0,
+    }));
   }
 
   async aggregateMetrics(userId: string, tx: Prisma.TransactionClient = this.prisma) {

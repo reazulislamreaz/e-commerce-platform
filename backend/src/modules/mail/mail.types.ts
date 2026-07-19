@@ -19,6 +19,7 @@ export enum EmailJobName {
   SHIPPING_UPDATE = 'shipping-update-email',
   DELIVERED = 'delivered-email',
   PAYMENT_CONFIRMATION = 'payment-confirmation-email',
+  RETURN_STATUS = 'return-status-email',
   ABANDONED_CART = 'abandoned-cart-email',
   CONTACT_ACK = 'contact-ack-email',
   CONTACT_INTERNAL = 'contact-internal-email',
@@ -85,6 +86,16 @@ export interface DeliveredEmail {
 export interface PaymentConfirmationEmail extends DeliveredEmail {
   totalTaka: number;
   paymentMethod: string;
+}
+
+export interface ReturnStatusEmail {
+  to: string;
+  firstName: string;
+  orderNumber: string;
+  requestType: 'return' | 'exchange';
+  status: string;
+  requestUrl: string;
+  note?: string;
 }
 
 export interface AbandonedCartEmail {

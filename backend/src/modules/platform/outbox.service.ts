@@ -11,6 +11,7 @@ export const OUTBOX_EVENT = {
   SHIPPING_UPDATE_EMAIL: 'order.shipping.email',
   DELIVERED_EMAIL: 'order.delivered.email',
   PAYMENT_CONFIRMATION_EMAIL: 'order.payment.email',
+  RETURN_STATUS_EMAIL: 'return.status.email',
   CONTACT_ACK_EMAIL: 'contact.ack.email',
   CONTACT_INTERNAL_EMAIL: 'contact.internal.email',
   NEWSLETTER_WELCOME_EMAIL: 'newsletter.welcome.email',
@@ -76,11 +77,7 @@ export class OutboxService {
     let processed = 0;
     for (const event of events) {
       try {
-        await this.dispatch(
-          event.eventType,
-          event.payload as Record<string, unknown>,
-          event.id,
-        );
+        await this.dispatch(event.eventType, event.payload as Record<string, unknown>, event.id);
         await this.prisma.outboxEvent.update({
           where: { id: event.id },
           data: {
@@ -146,6 +143,9 @@ export class OutboxService {
         return;
       case OUTBOX_EVENT.PAYMENT_CONFIRMATION_EMAIL:
         await this.emailQueue.add(EmailJobName.PAYMENT_CONFIRMATION, payload, options);
+        return;
+      case OUTBOX_EVENT.RETURN_STATUS_EMAIL:
+        await this.emailQueue.add(EmailJobName.RETURN_STATUS, payload, options);
         return;
       case OUTBOX_EVENT.CONTACT_ACK_EMAIL:
         await this.emailQueue.add(EmailJobName.CONTACT_ACK, payload, options);

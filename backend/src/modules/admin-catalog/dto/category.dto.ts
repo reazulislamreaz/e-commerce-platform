@@ -1,6 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, IsUUID, MaxLength, Min, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateCategoryDto {
   @ApiProperty({ example: 'Outerwear' })
@@ -25,6 +34,11 @@ export class CreateCategoryDto {
   @IsInt()
   @Min(0)
   position?: number;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class UpdateCategoryDto {
@@ -52,6 +66,11 @@ export class UpdateCategoryDto {
   @IsInt()
   @Min(0)
   position?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class CategoryResponseDto {
@@ -69,6 +88,12 @@ export class CategoryResponseDto {
 
   @ApiProperty()
   position!: number;
+
+  @ApiProperty()
+  isActive!: boolean;
+
+  @ApiProperty({ description: 'Number of non-deleted products assigned to the category' })
+  productCount!: number;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;

@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
   Min,
   ValidateNested,
@@ -41,6 +42,18 @@ export class CreateProductVariantDto {
   @IsString()
   @MaxLength(80)
   color!: string;
+
+  @ApiPropertyOptional({
+    example: 25,
+    default: 0,
+    description: 'Opening on-hand quantity at the selected inventory location',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(1_000_000)
+  openingQuantity?: number;
 }
 
 export class CreateProductMediaDto {
@@ -136,6 +149,14 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => CreateProductVariantDto)
   variants!: CreateProductVariantDto[];
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Required when any variant has a positive opening quantity',
+  })
+  @IsOptional()
+  @IsUUID()
+  inventoryLocationId?: string;
 
   @ApiProperty({ type: [CreateProductMediaDto] })
   @IsArray()

@@ -34,6 +34,7 @@ export default async function SalePage() {
         titleAccent={hero.titleAccent}
         description={hero.description}
         image={hero.image}
+        mobileImage={hero.mobileImage}
         imageAlt={hero.imageAlt}
         cta={hero.cta}
         secondaryCta={hero.secondaryCta}
