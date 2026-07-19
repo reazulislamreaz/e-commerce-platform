@@ -1,5 +1,13 @@
 export type AdminOrderStatus =
-  'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+  | 'pending'
+  | 'confirmed'
+  | 'processing'
+  | 'packed'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'returned'
+  | 'exchanged';
 
 export type AdminReturnStatus = 'pending' | 'approved' | 'rejected' | 'completed';
 export type AdminReviewStatus = 'pending' | 'published' | 'rejected';
@@ -8,6 +16,13 @@ export type NewsletterStatus = 'ACTIVE' | 'UNSUBSCRIBED';
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 export type UserStatus = 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED';
 export type AdminRole = 'SUPER_ADMIN' | 'ADMIN' | 'CUSTOMER';
+export type CustomerSegment =
+  | 'NEW'
+  | 'ONE_TIME'
+  | 'ACTIVE'
+  | 'HIGH_VALUE'
+  | 'AT_RISK'
+  | 'DORMANT';
 
 export type CursorPage<T> = {
   data: T[];
@@ -142,6 +157,7 @@ export type AdminProductSummary = {
 };
 
 export type AdminProductDetail = AdminProductSummary & {
+  brandId: string;
   description: string;
   primaryColor: string;
   categoryIds: string[];
@@ -176,6 +192,7 @@ export type AdminProductDetail = AdminProductSummary & {
 };
 
 export type CreateAdminProductInput = {
+  slug?: string;
   name: string;
   brandId: string;
   description: string;
@@ -183,7 +200,8 @@ export type CreateAdminProductInput = {
   categoryIds: string[];
   colors: Array<{ name: string; hex: string }>;
   variants: Array<{ sku: string; size: string; color: string }>;
-  media: Array<{ url: string; alt: string; isPrimary: boolean }>;
+  collectionIds?: string[];
+  media: Array<{ url: string; alt: string; position?: number; isPrimary: boolean }>;
   price: { amountTaka: number; compareAtTaka?: number };
 };
 
@@ -254,4 +272,118 @@ export type AdminUser = {
   lastName: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AnalyticsOverview = {
+  totalRevenue: number;
+  totalOrders: number;
+  ordersToday: number;
+  revenueToday: number;
+  revenue7d: number;
+  revenue30d: number;
+  deltas: {
+    ordersToday: number | null;
+    revenueToday: number | null;
+    revenue7d: number | null;
+    revenue30d: number | null;
+  };
+  currencyCode: 'BDT';
+};
+
+export type SalesPoint = { bucket: string; revenue: number; orders: number };
+
+export type Bestseller = {
+  productId: string;
+  name: string;
+  slug: string;
+  units: number;
+  revenue: number;
+};
+
+export type CustomerAnalytics = {
+  totalCustomers: number;
+  newCustomers: number;
+  highValueCount: number;
+  highValueThreshold: number;
+  topCustomers: Array<{
+    id: string;
+    email: string;
+    name: string;
+    orderCount: number;
+    lifetimeValue: number;
+  }>;
+};
+
+export type InventoryAnalytics = {
+  lowStockCount: number;
+  outOfStockCount: number;
+  topLowSkus: Array<{
+    variantId: string;
+    sku: string;
+    productName: string;
+    available: number;
+    threshold: number;
+  }>;
+};
+
+export type ReportExportType = 'REVENUE' | 'ORDERS' | 'PRODUCTS' | 'CUSTOMERS' | 'INVENTORY';
+export type ReportExportFormat = 'CSV' | 'XLSX';
+export type ReportExportJob = {
+  id: string;
+  type: ReportExportType;
+  format: ReportExportFormat;
+  status: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED';
+  fileName: string | null;
+  errorMessage: string | null;
+  rowCount: number | null;
+  createdAt: string;
+  completedAt: string | null;
+  expiresAt: string | null;
+};
+
+export type CustomerMetrics = {
+  orderCount: number;
+  deliveredOrderCount: number;
+  lifetimeValue: number;
+  averageOrderValue: number;
+  lastOrderAt?: string;
+  firstOrderAt?: string;
+  cancelledOrderCount: number;
+  returnCount: number;
+  wishlistItemCount: number;
+  segment: CustomerSegment;
+};
+
+export type AdminCustomer = {
+  id: string;
+  email: string;
+  phone: string;
+  firstName?: string;
+  lastName?: string;
+  status: UserStatus;
+  createdAt: string;
+  metrics: CustomerMetrics;
+};
+
+export type CustomerOrderHistory = {
+  id: string;
+  number: string;
+  status: string;
+  itemCount: number;
+  total: number;
+  createdAt: string;
+};
+
+export type CustomerActivity = {
+  id: string;
+  eventType: string;
+  title: string;
+  href?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type CustomerSegmentSummary = {
+  segment: CustomerSegment;
+  count: number;
 };

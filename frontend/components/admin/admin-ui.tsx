@@ -4,6 +4,26 @@ import { useState, type PropsWithChildren, type ReactNode } from 'react';
 import { AlertCircle, ChevronDown, Inbox, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+export function AdminPageHeader({
+  title,
+  description,
+  actions,
+}: {
+  title: ReactNode;
+  description?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="min-w-0">
+        <h1 className="text-xl font-extrabold tracking-[-.02em] text-white sm:text-2xl">{title}</h1>
+        {description ? <p className="mt-1 text-sm text-[#b5b0a8]">{description}</p> : null}
+      </div>
+      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+    </div>
+  );
+}
+
 export function AdminPanel({
   title,
   description,

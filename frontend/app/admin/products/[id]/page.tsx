@@ -7,128 +7,109 @@ import { useEffect, useState, type PropsWithChildren } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
+import { ProductEditor } from '@/features/admin/components/product-editor';
+import { ProductInventory } from '@/features/admin/components/product-inventory';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
-  AdminEmpty,
   AdminError,
   AdminInput,
   AdminPanel,
-  AdminSelect,
-  AdminTable,
-  AdminTd,
-  AdminTextarea,
-  AdminTh,
   StatusPill,
 } from '@/components/admin/admin-ui';
 import {
   adminApi,
+  adminKeys,
   useAdminBrands,
   useAdminCategories,
+  useAdminCollections,
   useAdminMutation,
   useAdminProduct,
+  useProductInventoryBalances,
+  type UpdateAdminProductInput,
 } from '@/features/admin';
 import { formatTaka } from '@/lib/currency';
 
-const updateSchema = z.object({
-  name: z.string().trim().min(2).max(160),
-  brandId: z.string().uuid(),
-  description: z.string().trim().min(10).max(5000),
-  primaryColor: z.string().trim().min(1).max(80),
-  categoryId: z.string().uuid(),
-  isNew: z.boolean(),
-  featuredPosition: z.number().int().min(0),
-});
+const PRODUCT_INVALIDATE = [adminKeys.productsRoot(), adminKeys.productRoot()] as const;
 
-const priceSchema = z.object({
-  amountTaka: z.number().min(0),
-  compareAtTaka: z.union([z.literal(''), z.number().min(0)]),
-});
+const priceSchema = z
+  .object({
+    amountTaka: z.number().min(0),
+    compareAtTaka: z.union([z.literal(''), z.number().min(0)]),
+  })
+  .superRefine((values, context) => {
+    if (values.compareAtTaka !== '' && values.compareAtTaka <= values.amountTaka) {
+      context.addIssue({
+        code: 'custom',
+        path: ['compareAtTaka'],
+        message: 'Compare-at price must be greater than the sale price',
+      });
+    }
+  });
 
-type UpdateValues = z.infer<typeof updateSchema>;
 type PriceValues = z.infer<typeof priceSchema>;
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
+type LifecycleAction = 'publish' | 'unpublish' | 'archive';
 
 export default function AdminProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const product = useAdminProduct(id);
   const brands = useAdminBrands();
   const categories = useAdminCategories();
-
+  const collections = useAdminCollections();
+  const variantIds = product.data?.variants.map((variant) => variant.id) ?? [];
+  const inventory = useProductInventoryBalances(variantIds);
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const updateProduct = useAdminMutation((values: UpdateValues) =>
-    adminApi.updateProduct(id, {
-      name: values.name,
-      brandId: values.brandId,
-      description: values.description,
-      primaryColor: values.primaryColor,
-      categoryIds: [values.categoryId],
-      isNew: values.isNew,
-      featuredPosition: values.featuredPosition,
-    }),
+  const updateProduct = useAdminMutation(
+    (values: UpdateAdminProductInput) => adminApi.updateProduct(id, values),
+    [...PRODUCT_INVALIDATE],
   );
-  const lifecycle = useAdminMutation((action: 'publish' | 'unpublish' | 'archive') =>
-    action === 'publish'
-      ? adminApi.publishProduct(id)
-      : action === 'unpublish'
-        ? adminApi.unpublishProduct(id)
-        : adminApi.archiveProduct(id),
+  const lifecycle = useAdminMutation(
+    (action: LifecycleAction) =>
+      action === 'publish'
+        ? adminApi.publishProduct(id)
+        : action === 'unpublish'
+          ? adminApi.unpublishProduct(id)
+          : adminApi.archiveProduct(id),
+    [...PRODUCT_INVALIDATE],
   );
-  const addPrice = useAdminMutation((values: PriceValues) =>
-    adminApi.addProductPrice(id, {
-      amountTaka: values.amountTaka,
-      ...(values.compareAtTaka === '' ? {} : { compareAtTaka: values.compareAtTaka }),
-    }),
+  const addPrice = useAdminMutation(
+    (values: PriceValues) =>
+      adminApi.addProductPrice(id, {
+        amountTaka: values.amountTaka,
+        ...(values.compareAtTaka === '' ? {} : { compareAtTaka: values.compareAtTaka }),
+      }),
+    [...PRODUCT_INVALIDATE],
   );
-
-  const updateForm = useForm<UpdateValues>({
-    resolver: zodResolver(updateSchema) as Resolver<UpdateValues>,
-    defaultValues: { featuredPosition: 0, isNew: false },
-  });
   const priceForm = useForm<PriceValues>({
     resolver: zodResolver(priceSchema) as Resolver<PriceValues>,
-    defaultValues: { amountTaka: 0, compareAtTaka: '' },
+    defaultValues: { amountTaka: product.data?.priceTaka ?? 0, compareAtTaka: '' },
   });
 
   useEffect(() => {
-    if (!product.data) return;
-    updateForm.reset({
-      name: product.data.name,
-      brandId: brands.data?.find((brand) => brand.name === product.data.brandName)?.id ?? '',
-      description: product.data.description,
-      primaryColor: product.data.primaryColor,
-      categoryId: product.data.categoryIds[0] ?? '',
-      isNew: product.data.isNew,
-      featuredPosition: product.data.featuredPosition,
-    });
-  }, [product.data, brands.data, updateForm]);
-
-  const busy = updateProduct.isPending || lifecycle.isPending || addPrice.isPending;
+    if (!product.data || priceForm.formState.isDirty) return;
+    priceForm.reset({ amountTaka: product.data.priceTaka, compareAtTaka: '' });
+  }, [priceForm, product.data]);
 
   function resetMessages() {
     setActionError(null);
     setSuccess(null);
   }
 
-  async function onSave(values: UpdateValues) {
+  async function onSave(values: UpdateAdminProductInput) {
     resetMessages();
     try {
-      await updateProduct.mutateAsync(values);
+      const updated = await updateProduct.mutateAsync(values);
       setSuccess('Product details saved.');
+      return updated;
     } catch (error) {
       setActionError(mutationErrorMessage(error, 'Could not save product.'));
+      throw error;
     }
   }
 
-  async function onLifecycle(action: 'publish' | 'unpublish' | 'archive') {
+  async function onLifecycle(action: LifecycleAction) {
     if (
       action === 'archive' &&
       !window.confirm('Archive this product? It will be removed from the storefront.')
@@ -153,17 +134,15 @@ export default function AdminProductDetailPage() {
   async function onAddPrice(values: PriceValues) {
     resetMessages();
     try {
-      await addPrice.mutateAsync(values);
+      const updated = await addPrice.mutateAsync(values);
       setSuccess('Price window added.');
-      priceForm.reset({ amountTaka: 0, compareAtTaka: '' });
+      priceForm.reset({ amountTaka: updated.priceTaka, compareAtTaka: '' });
     } catch (error) {
       setActionError(mutationErrorMessage(error, 'Could not add price window.'));
     }
   }
 
-  if (product.isLoading) {
-    return <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading product…</p>;
-  }
+  if (product.isLoading) return <AdminTableSkeleton />;
 
   if (product.isError || !product.data) {
     return (
@@ -180,8 +159,8 @@ export default function AdminProductDetailPage() {
   }
 
   const item = product.data;
-  const updateErrors = updateForm.formState.errors;
-  const priceErrors = priceForm.formState.errors;
+  const busy = updateProduct.isPending || lifecycle.isPending || addPrice.isPending;
+  const taxonomyLoading = brands.isLoading || categories.isLoading || collections.isLoading;
 
   return (
     <div className="space-y-5">
@@ -208,16 +187,11 @@ export default function AdminProductDetailPage() {
         actions={
           <>
             {item.status !== 'ACTIVE' ? (
-              <AdminButton
-                type="button"
-                onClick={() => void onLifecycle('publish')}
-                disabled={busy}
-              >
+              <AdminButton onClick={() => void onLifecycle('publish')} disabled={busy}>
                 Publish
               </AdminButton>
             ) : (
               <AdminButton
-                type="button"
                 variant="secondary"
                 onClick={() => void onLifecycle('unpublish')}
                 disabled={busy}
@@ -227,7 +201,6 @@ export default function AdminProductDetailPage() {
             )}
             {item.status !== 'ARCHIVED' ? (
               <AdminButton
-                type="button"
                 variant="danger"
                 onClick={() => void onLifecycle('archive')}
                 disabled={busy}
@@ -239,120 +212,56 @@ export default function AdminProductDetailPage() {
         }
       >
         <dl className="grid gap-3 text-sm sm:grid-cols-3">
-          <div>
-            <dt className="text-[#8b867d]">Current price</dt>
-            <dd className="font-semibold text-[#e3bb78]">{formatTaka(item.priceTaka)}</dd>
-          </div>
-          <div>
-            <dt className="text-[#8b867d]">Variants</dt>
-            <dd className="text-white">{item.variantCount}</dd>
-          </div>
-          <div>
-            <dt className="text-[#8b867d]">Published</dt>
-            <dd className="text-white">
-              {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : 'Not yet'}
-            </dd>
-          </div>
+          <Summary label="Current price" value={formatTaka(item.priceTaka)} accent />
+          <Summary label="Variants" value={String(item.variantCount)} />
+          <Summary
+            label="Published"
+            value={item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : 'Not yet'}
+          />
         </dl>
-        {item.activePrice ? (
-          <p className="mt-3 text-xs text-[#b5b0a8]">
-            Active window since {new Date(item.activePrice.validFrom).toLocaleDateString()}
-            {item.activePrice.compareAtTaka != null
-              ? ` · Compare-at ${formatTaka(item.activePrice.compareAtTaka)}`
-              : ''}
-          </p>
-        ) : null}
       </AdminPanel>
 
-      <AdminPanel
-        title="Merchandising fields"
-        description="Update customer-facing product information."
-      >
-        <form
-          onSubmit={updateForm.handleSubmit((values) => void onSave(values))}
-          className="grid gap-4 md:grid-cols-2"
-        >
-          <Field label="Name" error={updateErrors.name?.message}>
-            <AdminInput {...updateForm.register('name')} disabled={busy} />
-          </Field>
-          <Field label="Brand" error={updateErrors.brandId?.message}>
-            <AdminSelect {...updateForm.register('brandId')} disabled={busy || brands.isLoading}>
-              <option value="">Select brand</option>
-              {brands.data?.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name}
-                </option>
-              ))}
-            </AdminSelect>
-          </Field>
-          <Field
-            label="Description"
-            error={updateErrors.description?.message}
-            className="md:col-span-2"
-          >
-            <AdminTextarea rows={5} {...updateForm.register('description')} disabled={busy} />
-          </Field>
-          <Field label="Primary color" error={updateErrors.primaryColor?.message}>
-            <AdminInput {...updateForm.register('primaryColor')} disabled={busy} />
-          </Field>
-          <Field label="Primary category" error={updateErrors.categoryId?.message}>
-            <AdminSelect
-              {...updateForm.register('categoryId')}
-              disabled={busy || categories.isLoading}
-            >
-              <option value="">Select category</option>
-              {categories.data?.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </AdminSelect>
-          </Field>
-          <Field label="Featured position" error={updateErrors.featuredPosition?.message}>
-            <AdminInput
-              type="number"
-              min="0"
-              {...updateForm.register('featuredPosition', { valueAsNumber: true })}
-              disabled={busy}
-            />
-          </Field>
-          <label className="flex items-center gap-2 self-end pb-2 text-sm text-white">
-            <input
-              type="checkbox"
-              {...updateForm.register('isNew')}
-              className="accent-[#e3bb78]"
-              disabled={busy}
-            />
-            Show as new arrival
-          </label>
-          <div className="md:col-span-2">
-            <AdminButton type="submit" disabled={busy}>
-              {updateProduct.isPending ? 'Saving…' : 'Save changes'}
-            </AdminButton>
-          </div>
-        </form>
-      </AdminPanel>
+      {brands.isError || categories.isError || collections.isError ? (
+        <AdminError>Could not load product taxonomy.</AdminError>
+      ) : (
+        <ProductEditor
+          key={item.id}
+          product={item}
+          brands={brands.data ?? []}
+          categories={categories.data ?? []}
+          collections={collections.data ?? []}
+          balances={inventory.data}
+          inventoryReady={!inventory.isLoading && !inventory.isError}
+          disabled={busy || taxonomyLoading}
+          onSave={onSave}
+        />
+      )}
 
       <AdminPanel
         title="Price window"
-        description="A new price closes the currently active window."
+        description="A new price closes the current immutable price window."
       >
         <form
           onSubmit={priceForm.handleSubmit((values) => void onAddPrice(values))}
           className="grid gap-4 sm:grid-cols-2"
         >
-          <Field label="Amount (taka)" error={priceErrors.amountTaka?.message}>
+          <Field label="Amount (taka)" error={priceForm.formState.errors.amountTaka?.message}>
             <AdminInput
               type="number"
               min="0"
+              step="1"
               {...priceForm.register('amountTaka', { valueAsNumber: true })}
               disabled={busy}
             />
           </Field>
-          <Field label="Compare-at (optional)" error={priceErrors.compareAtTaka?.message}>
+          <Field
+            label="Compare-at (optional)"
+            error={priceForm.formState.errors.compareAtTaka?.message}
+          >
             <AdminInput
               type="number"
               min="0"
+              step="1"
               {...priceForm.register('compareAtTaka', {
                 setValueAs: (value) => (value === '' || value == null ? '' : Number(value)),
               })}
@@ -360,57 +269,28 @@ export default function AdminProductDetailPage() {
             />
           </Field>
           <div className="sm:col-span-2">
-            <AdminButton type="submit" disabled={busy}>
-              {addPrice.isPending ? 'Adding…' : 'Add price window'}
+            <AdminButton type="submit" loading={addPrice.isPending}>
+              Add price window
             </AdminButton>
           </div>
         </form>
       </AdminPanel>
 
-      <AdminPanel title="Variants and media">
-        {item.variants.length === 0 ? (
-          <AdminEmpty>No variants.</AdminEmpty>
-        ) : (
-          <AdminTable>
-            <thead>
-              <tr>
-                <AdminTh>SKU</AdminTh>
-                <AdminTh>Size</AdminTh>
-                <AdminTh>Color</AdminTh>
-                <AdminTh>State</AdminTh>
-              </tr>
-            </thead>
-            <tbody>
-              {item.variants.map((variant) => (
-                <tr key={variant.id}>
-                  <AdminTd>{variant.sku}</AdminTd>
-                  <AdminTd>{variant.size}</AdminTd>
-                  <AdminTd>{variant.color}</AdminTd>
-                  <AdminTd>{variant.isActive ? 'Active' : 'Inactive'}</AdminTd>
-                </tr>
-              ))}
-            </tbody>
-          </AdminTable>
-        )}
-        {item.media.length === 0 ? (
-          <AdminEmpty>No media assets.</AdminEmpty>
-        ) : (
-          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-            {item.media.map((media) => (
-              <li
-                key={media.id}
-                className="rounded-[4px] border border-[#2d2a27] p-3 text-sm text-[#b5b0a8]"
-              >
-                <p className="truncate text-white">{media.alt}</p>
-                <p className="truncate text-xs">{media.url}</p>
-                {media.isPrimary ? (
-                  <span className="text-[10px] uppercase text-[#e3bb78]">Primary</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </AdminPanel>
+      <ProductInventory
+        variants={item.variants}
+        balances={inventory.data}
+        loading={inventory.isLoading}
+        error={inventory.isError}
+      />
+    </div>
+  );
+}
+
+function Summary({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div>
+      <dt className="text-[#8b867d]">{label}</dt>
+      <dd className={accent ? 'font-semibold text-[#e3bb78]' : 'text-white'}>{value}</dd>
     </div>
   );
 }
@@ -418,14 +298,20 @@ export default function AdminProductDetailPage() {
 function Field({
   label,
   error,
-  className,
   children,
-}: PropsWithChildren<{ label: string; error?: string; className?: string }>) {
+}: PropsWithChildren<{ label: string; error?: string }>) {
   return (
-    <label className={className}>
+    <label>
       <span className="mb-1.5 block text-sm font-medium text-[#d8d4cd]">{label}</span>
       {children}
       {error ? <span className="mt-1 block text-xs text-red-400">{error}</span> : null}
     </label>
   );
+}
+
+function mutationErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
+    return error.response.data.message;
+  }
+  return error instanceof Error && error.message ? error.message : fallback;
 }

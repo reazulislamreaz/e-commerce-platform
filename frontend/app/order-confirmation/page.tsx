@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatTaka } from '@/lib/currency';
 import type { CustomerOrder } from '@/features/account';
+import { trackPurchase } from '@/features/analytics/facebook-pixel';
 
 function readLastOrder(): CustomerOrder | null {
   if (typeof window === 'undefined') return null;
@@ -17,6 +18,17 @@ function readLastOrder(): CustomerOrder | null {
 
 export default function OrderConfirmationPage() {
   const [order] = useState(readLastOrder);
+  const tracked = useRef(false);
+
+  useEffect(() => {
+    if (!order || tracked.current) return;
+    tracked.current = true;
+    trackPurchase({
+      content_ids: order.items.map((item) => item.productId),
+      value: order.total,
+      order_id: order.number,
+    });
+  }, [order]);
 
   return (
     <main id="main-content" className="flex-1 bg-black">

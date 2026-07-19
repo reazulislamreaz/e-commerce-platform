@@ -428,6 +428,29 @@ export class AdminCatalogService {
     }));
   }
 
+  async listStockAlerts(params?: { limit?: number }) {
+    const alerts = await this.inventory.listStockAlerts({
+      resolved: false,
+      limit: params?.limit,
+    });
+    return alerts.map((alert) => ({
+      id: alert.id,
+      level: alert.level,
+      available: alert.available,
+      threshold: alert.threshold,
+      createdAt: alert.createdAt.toISOString(),
+      variantId: alert.balance.variant.id,
+      sku: alert.balance.variant.sku,
+      size: alert.balance.variant.size,
+      color: alert.balance.variant.color,
+      locationId: alert.balance.location.id,
+      locationCode: alert.balance.location.code,
+      locationName: alert.balance.location.name,
+      onHand: alert.balance.onHand,
+      reserved: alert.balance.reserved,
+    }));
+  }
+
   async adjustInventory(actor: JwtPayload, dto: InventoryAdjustmentDto) {
     const variant = await this.adminCatalog.findVariantById(dto.variantId);
     if (!variant) throw new NotFoundException('Variant not found');

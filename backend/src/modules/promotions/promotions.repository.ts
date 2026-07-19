@@ -89,6 +89,15 @@ export class PromotionsRepository {
       .then(() => undefined);
   }
 
+  voidRedemptionForOrder(
+    orderId: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<void> {
+    return tx.couponRedemption
+      .deleteMany({ where: { orderId } })
+      .then(() => undefined);
+  }
+
   listAdminCoupons(): Promise<CouponWithPromotion[]> {
     return this.prisma.coupon.findMany({
       where: { deletedAt: null },

@@ -1,38 +1,19 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OutboxStatus } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Periodic cleanup for expired tokens, sessions, idempotency keys,
+ * Cleanup for expired tokens, sessions, idempotency keys,
  * processed outbox rows, and abandoned guest carts.
+ * Invoked by the platform BullMQ scheduler (not per-process timers).
  */
 @Injectable()
-export class RetentionService implements OnModuleInit, OnModuleDestroy {
+export class RetentionService {
   private readonly logger = new Logger(RetentionService.name);
-  private timer: NodeJS.Timeout | null = null;
 
   constructor(private readonly prisma: PrismaService) {}
-
-  onModuleInit(): void {
-    // Run shortly after boot, then hourly. unref so tests/process can exit.
-    this.timer = setInterval(() => {
-      void this.purgeExpired().catch((error: unknown) => {
-        this.logger.error({ err: error }, 'Retention purge failed');
-      });
-    }, HOUR_MS);
-    this.timer.unref();
-
-    void this.purgeExpired().catch((error: unknown) => {
-      this.logger.error({ err: error }, 'Initial retention purge failed');
-    });
-  }
-
-  onModuleDestroy(): void {
-    if (this.timer) clearInterval(this.timer);
-  }
 
   async purgeExpired(now = new Date()): Promise<{
     verificationTokens: number;

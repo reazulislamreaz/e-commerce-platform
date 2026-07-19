@@ -170,4 +170,22 @@ describe('AddressesService', () => {
       expect.anything(),
     );
   });
+
+  it('clears sibling defaults when updating address to default', async () => {
+    repository.findOwnedById.mockResolvedValue(record({ isDefault: false }));
+    repository.update.mockResolvedValue(record({ isDefault: true }));
+
+    await service.update(userId, addressId, { isDefault: true });
+
+    expect(repository.clearDefaults).toHaveBeenCalledWith(
+      userId,
+      AddressType.SHIPPING,
+      expect.anything(),
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      addressId,
+      expect.objectContaining({ isDefault: true }),
+      expect.anything(),
+    );
+  });
 });

@@ -99,6 +99,9 @@ export class AdminProductSummaryResponseDto {
 }
 
 export class AdminProductDetailResponseDto extends AdminProductSummaryResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  brandId!: string;
+
   @ApiProperty()
   description!: string;
 

@@ -14,7 +14,9 @@ describe('NotificationsService', () => {
     countUnread: jest.fn(),
     findOwnedById: jest.fn(),
     findByDedupeKey: jest.fn(),
+    getInAppPreference: jest.fn(),
     create: jest.fn(),
+    createInAppDelivery: jest.fn(),
     markRead: jest.fn(),
     markAllRead: jest.fn(),
   };

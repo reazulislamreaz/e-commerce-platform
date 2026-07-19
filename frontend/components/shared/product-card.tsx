@@ -1,25 +1,62 @@
+'use client';
+
+import { memo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { formatTaka } from '@/lib/currency';
 import type { CatalogProduct } from '@/features/products/types';
+import { usePrefetchProduct } from '@/features/products';
 import { WishlistButton } from '@/components/shared/wishlist-button';
+import { ProductImage } from '@/components/common/product-image';
 
-export function ProductCard({ product }: { product: CatalogProduct }) {
+function ProductCardComponent({
+  product,
+  priority = false,
+}: {
+  product: CatalogProduct;
+  priority?: boolean;
+}) {
+  const prefetch = usePrefetchProduct();
+  const rootRef = useRef<HTMLDivElement>(null);
   const discount =
     product.compareAtPrice && product.onSale
       ? Math.round((1 - product.price / product.compareAtPrice) * 100)
       : 0;
 
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          prefetch(product.slug);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px 0px', threshold: 0.01 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [prefetch, product.slug]);
+
+  const onIntent = () => prefetch(product.slug);
+
   return (
-    <div className="group min-w-0">
+    <div
+      ref={rootRef}
+      className="group min-w-0"
+      onPointerEnter={onIntent}
+      onFocus={onIntent}
+      onTouchStart={onIntent}
+    >
       <div className="relative overflow-hidden rounded-[4px] bg-[#e4e3e1]">
-        <Link href={`/product/${product.slug}`}>
+        <Link href={`/product/${product.slug}`} prefetch>
           {product.image ? (
-            <Image
+            <ProductImage
               src={product.image}
               alt={product.name}
               width={400}
               height={500}
+              priority={priority}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className="aspect-[.8] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -49,7 +86,7 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
         )}
         <WishlistButton productId={product.id} />
       </div>
-      <Link href={`/product/${product.slug}`}>
+      <Link href={`/product/${product.slug}`} prefetch onFocus={onIntent}>
         <p className="mt-2 truncate text-[11px] font-medium leading-4 text-white">{product.name}</p>
         <p className="text-[11px] leading-4 text-[#d0cbc4]">{product.color}</p>
         <p className="mt-1 flex items-baseline gap-2 text-[13px] font-semibold text-[#e5c17d]">
@@ -64,3 +101,5 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
     </div>
   );
 }
+
+export const ProductCard = memo(ProductCardComponent);

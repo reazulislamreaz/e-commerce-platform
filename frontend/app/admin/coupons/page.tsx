@@ -2,11 +2,13 @@
 
 import axios from 'axios';
 import { useState, type FormEvent } from 'react';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminEmpty,
   AdminError,
   AdminInput,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -15,7 +17,8 @@ import {
   AdminTh,
   StatusPill,
 } from '@/components/admin/admin-ui';
-import { adminApi, useAdminCoupons, useAdminMutation } from '@/features/admin';
+import { adminApi, adminKeys, useAdminCoupons, useAdminMutation } from '@/features/admin';
+import type { AdminCoupon } from '@/features/admin/types';
 import { formatTaka } from '@/lib/currency';
 
 function mutationErrorMessage(error: unknown, fallback: string): string {
@@ -38,6 +41,8 @@ export default function AdminCouponsPage() {
   const couponsQuery = useAdminCoupons();
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingCode, setEditingCode] = useState('');
 
   const [code, setCode] = useState('');
   const [title, setTitle] = useState('');
@@ -49,35 +54,73 @@ export default function AdminCouponsPage() {
   const [endsAt, setEndsAt] = useState('');
   const [maxRedemptionsPerUser, setMaxRedemptionsPerUser] = useState('1');
 
-  const createMutation = useAdminMutation(adminApi.createCoupon);
-  const deactivateMutation = useAdminMutation((id: string) => adminApi.deactivateCoupon(id));
+  const createMutation = useAdminMutation(adminApi.createCoupon, [adminKeys.coupons()]);
+  const updateMutation = useAdminMutation(
+    ({ id, body }: { id: string; body: Record<string, unknown> }) => adminApi.updateCoupon(id, body),
+    [adminKeys.coupons()],
+  );
+  const deactivateMutation = useAdminMutation(
+    (id: string) => adminApi.deactivateCoupon(id),
+    [adminKeys.coupons()],
+  );
 
-  const busy = createMutation.isPending || deactivateMutation.isPending;
+  const busy =
+    createMutation.isPending || updateMutation.isPending || deactivateMutation.isPending;
   const coupons = couponsQuery.data ?? [];
+  const isEditing = editingId !== null;
 
-  async function onCreate(event: FormEvent) {
-    event.preventDefault();
+  function resetForm() {
+    setEditingId(null);
+    setEditingCode('');
+    setCode('');
+    setTitle('');
+    setDescription('');
+    setRewardType('percent');
+    setValue('10');
+    setMinOrderTaka('1500');
+    setStartsAt(toDatetimeLocalValue(new Date().toISOString()));
+    setEndsAt('');
+    setMaxRedemptionsPerUser('1');
+  }
+
+  function startEdit(coupon: AdminCoupon) {
+    setEditingId(coupon.id);
+    setEditingCode(coupon.code);
+    setCode(coupon.code);
+    setTitle(coupon.title);
+    setDescription(coupon.description);
+    setRewardType(coupon.rewardType);
+    setValue(String(coupon.value ?? (coupon.rewardType === 'percent' ? 10 : 500)));
+    setMinOrderTaka(String(coupon.minOrderTaka));
+    setStartsAt(toDatetimeLocalValue(coupon.startsAt));
+    setEndsAt(toDatetimeLocalValue(coupon.endsAt ?? undefined));
+    setMaxRedemptionsPerUser(String(coupon.maxRedemptionsPerUser));
     setActionError(null);
     setSuccess(null);
+  }
 
-    if (!code.trim() || !title.trim() || !description.trim() || !startsAt) {
+  function buildBody(isUpdate: boolean): Record<string, unknown> | null {
+    if (!isUpdate && (!code.trim() || !title.trim() || !description.trim() || !startsAt)) {
       setActionError('Code, title, description, and start date are required.');
-      return;
+      return null;
+    }
+    if (isUpdate && (!title.trim() || !description.trim() || !startsAt)) {
+      setActionError('Title, description, and start date are required.');
+      return null;
     }
 
     const minOrder = Number(minOrderTaka);
     const maxPerUser = Number(maxRedemptionsPerUser);
     if (!Number.isFinite(minOrder) || minOrder < 0) {
       setActionError('Minimum order must be a non-negative number.');
-      return;
+      return null;
     }
     if (!Number.isInteger(maxPerUser) || maxPerUser < 1) {
       setActionError('Max redemptions per user must be at least 1.');
-      return;
+      return null;
     }
 
     const body: Record<string, unknown> = {
-      code: code.trim().toUpperCase(),
       title: title.trim(),
       description: description.trim(),
       rewardType,
@@ -86,31 +129,49 @@ export default function AdminCouponsPage() {
       maxRedemptionsPerUser: maxPerUser,
     };
 
+    if (!isUpdate) {
+      body.code = code.trim().toUpperCase();
+    }
+
     if (rewardType !== 'free_shipping') {
       const parsedValue = Number(value);
       if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
         setActionError('Value is required for percent and fixed coupons.');
-        return;
+        return null;
       }
       body.value = parsedValue;
     }
 
-    if (endsAt) {
-      body.endsAt = new Date(endsAt).toISOString();
-    }
+    body.endsAt = endsAt ? new Date(endsAt).toISOString() : null;
+
+    return body;
+  }
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setActionError(null);
+    setSuccess(null);
+
+    const body = buildBody(isEditing);
+    if (!body) return;
 
     try {
-      await createMutation.mutateAsync(body);
-      setSuccess(`Coupon ${code.trim().toUpperCase()} created.`);
-      setCode('');
-      setTitle('');
-      setDescription('');
-      setValue('10');
-      setMinOrderTaka('1500');
-      setEndsAt('');
-      setMaxRedemptionsPerUser('1');
+      if (isEditing && editingId) {
+        await updateMutation.mutateAsync({ id: editingId, body });
+        setSuccess(`Coupon ${editingCode} updated.`);
+        resetForm();
+      } else {
+        await createMutation.mutateAsync(body);
+        setSuccess(`Coupon ${code.trim().toUpperCase()} created.`);
+        resetForm();
+      }
     } catch (error) {
-      setActionError(mutationErrorMessage(error, 'Could not create coupon.'));
+      setActionError(
+        mutationErrorMessage(
+          error,
+          isEditing ? 'Could not update coupon.' : 'Could not create coupon.',
+        ),
+      );
     }
   }
 
@@ -126,8 +187,12 @@ export default function AdminCouponsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <AdminPanel title="Coupons" description="Active and disabled promotions.">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Coupons"
+        description="Create and manage storefront promotions."
+      />
+      <AdminPanel title="All coupons" description="Active and disabled promotions.">
         {couponsQuery.isError ? <AdminError>Could not load coupons.</AdminError> : null}
         {actionError ? <AdminError>{actionError}</AdminError> : null}
         {success ? (
@@ -137,7 +202,7 @@ export default function AdminCouponsPage() {
         ) : null}
 
         {couponsQuery.isLoading ? (
-          <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading coupons…</p>
+          <AdminTableSkeleton />
         ) : null}
 
         {!couponsQuery.isLoading && !couponsQuery.isError && coupons.length === 0 ? (
@@ -188,18 +253,28 @@ export default function AdminCouponsPage() {
                     <StatusPill>{coupon.status}</StatusPill>
                   </AdminTd>
                   <AdminTd className="text-right">
-                    {coupon.status === 'ACTIVE' ? (
+                    <div className="flex justify-end gap-2">
                       <AdminButton
                         type="button"
-                        variant="danger"
+                        variant="secondary"
                         disabled={busy}
-                        onClick={() => void onDeactivate(coupon.id, coupon.code)}
+                        onClick={() => startEdit(coupon)}
                       >
-                        Deactivate
+                        Edit
                       </AdminButton>
-                    ) : (
-                      <span className="text-xs text-[#8b867d]">—</span>
-                    )}
+                      {coupon.status === 'ACTIVE' ? (
+                        <AdminButton
+                          type="button"
+                          variant="danger"
+                          disabled={busy}
+                          onClick={() => void onDeactivate(coupon.id, coupon.code)}
+                        >
+                          Deactivate
+                        </AdminButton>
+                      ) : (
+                        <span className="self-center text-xs text-[#8b867d]">—</span>
+                      )}
+                    </div>
                   </AdminTd>
                 </tr>
               ))}
@@ -208,8 +283,15 @@ export default function AdminCouponsPage() {
         ) : null}
       </AdminPanel>
 
-      <AdminPanel title="Create coupon" description="New codes are uppercase and unique.">
-        <form onSubmit={(event) => void onCreate(event)} className="grid gap-3 sm:grid-cols-2">
+      <AdminPanel
+        title={isEditing ? 'Edit coupon' : 'Create coupon'}
+        description={
+          isEditing
+            ? `Update rules for ${editingCode}. Code cannot be changed.`
+            : 'New codes are uppercase and unique. Global coupons MVP — no product/category scoping yet.'
+        }
+      >
+        <form onSubmit={(event) => void onSubmit(event)} className="grid gap-3 sm:grid-cols-2">
           <label className="block space-y-1.5">
             <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
               Code
@@ -219,7 +301,7 @@ export default function AdminCouponsPage() {
               onChange={(event) => setCode(event.target.value)}
               placeholder="ELEVATE10"
               autoComplete="off"
-              disabled={busy}
+              disabled={busy || isEditing}
             />
           </label>
           <label className="block space-y-1.5">
@@ -318,10 +400,21 @@ export default function AdminCouponsPage() {
               disabled={busy}
             />
           </label>
-          <div className="sm:col-span-2">
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
             <AdminButton type="submit" disabled={busy}>
-              {createMutation.isPending ? 'Creating…' : 'Create coupon'}
+              {isEditing
+                ? updateMutation.isPending
+                  ? 'Saving…'
+                  : 'Save changes'
+                : createMutation.isPending
+                  ? 'Creating…'
+                  : 'Create coupon'}
             </AdminButton>
+            {isEditing ? (
+              <AdminButton type="button" variant="secondary" disabled={busy} onClick={resetForm}>
+                Cancel edit
+              </AdminButton>
+            ) : null}
           </div>
         </form>
       </AdminPanel>

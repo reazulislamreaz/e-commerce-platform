@@ -122,6 +122,13 @@ export class PromotionsService {
     await this.promotions.createRedemption(input, tx);
   }
 
+  async voidRedemptionForOrder(
+    orderId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    await this.promotions.voidRedemptionForOrder(orderId, tx);
+  }
+
   /**
    * Lock the coupon row, re-validate eligibility, and return a fresh quote inside a transaction.
    */

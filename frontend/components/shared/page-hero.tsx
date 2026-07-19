@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 type PageHeroProps = {
   eyebrow: string;
   title: ReactNode;
+  titleAccent?: string;
   description: string;
   image: string;
   imageAlt?: string;
@@ -14,9 +15,19 @@ type PageHeroProps = {
   secondaryCta?: { href: string; label: string };
 };
 
+function HeroTitle({ title, titleAccent }: { title: ReactNode; titleAccent?: string }) {
+  if (!titleAccent) return <>{title}</>;
+  return (
+    <>
+      {title} <span className="text-[#e3bb78]">{titleAccent}</span>
+    </>
+  );
+}
+
 export function PageHero({
   eyebrow,
   title,
+  titleAccent,
   description,
   image,
   imageAlt = '',
@@ -41,7 +52,7 @@ export function PageHero({
             {eyebrow}
           </p>
           <h1 className="mt-2 max-w-xl text-[clamp(36px,8vw,64px)] font-extrabold leading-[.95] tracking-[-.04em] text-white">
-            {title}
+            <HeroTitle title={title} titleAccent={titleAccent} />
           </h1>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-[#eee9e1]">{description}</p>
           <HeroActions cta={cta} secondaryCta={secondaryCta} />
@@ -57,7 +68,7 @@ export function PageHero({
           {eyebrow}
         </p>
         <h1 className="mx-auto mt-2 max-w-2xl text-[clamp(36px,7vw,56px)] font-extrabold leading-[.95] tracking-[-.04em] text-white">
-          {title}
+          <HeroTitle title={title} titleAccent={titleAccent} />
         </h1>
         <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-[#eee9e1]">{description}</p>
         <div className="mt-6 flex justify-center">
@@ -76,7 +87,7 @@ export function PageHero({
               {eyebrow}
             </p>
             <h1 className="mt-2 text-[clamp(36px,7vw,58px)] font-extrabold leading-[.95] tracking-[-.04em] text-white">
-              {title}
+              <HeroTitle title={title} titleAccent={titleAccent} />
             </h1>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-[#eee9e1]">{description}</p>
             <HeroActions cta={cta} secondaryCta={secondaryCta} />
@@ -105,7 +116,7 @@ export function PageHero({
             {eyebrow}
           </p>
           <h1 className="mt-2 text-[clamp(36px,7vw,58px)] font-extrabold leading-[.95] tracking-[-.04em] text-white">
-            {title}
+            <HeroTitle title={title} titleAccent={titleAccent} />
           </h1>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-[#eee9e1]">{description}</p>
           <HeroActions cta={cta} secondaryCta={secondaryCta} />

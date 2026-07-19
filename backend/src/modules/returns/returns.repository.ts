@@ -1,22 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus, Prisma, ReturnStatus } from '@/generated/prisma/client';
+import { OrderStatus, Prisma, ReturnStatus, ReturnType } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 const returnInclude = {
   order: { select: { id: true, number: true, userId: true, status: true, deliveredAt: true } },
-  items: { select: { id: true, orderItemId: true, variantId: true, quantity: true } },
+  items: {
+    select: {
+      id: true,
+      orderItemId: true,
+      variantId: true,
+      quantity: true,
+      exchangeVariantId: true,
+    },
+  },
 } satisfies Prisma.ReturnRequestInclude;
 
 export type ReturnDetailRecord = Prisma.ReturnRequestGetPayload<{
   include: typeof returnInclude;
 }>;
 
+const ACTIVE_RETURN_STATUSES: ReturnStatus[] = [
+  ReturnStatus.PENDING,
+  ReturnStatus.APPROVED,
+  ReturnStatus.COMPLETED,
+];
+
 @Injectable()
 export class ReturnsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: string): Promise<ReturnDetailRecord | null> {
-    return this.prisma.returnRequest.findUnique({
+  findById(
+    id: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<ReturnDetailRecord | null> {
+    return tx.returnRequest.findUnique({
       where: { id },
       include: returnInclude,
     });
@@ -49,8 +66,11 @@ export class ReturnsRepository {
     });
   }
 
-  findActiveByOrderId(orderId: string): Promise<ReturnDetailRecord | null> {
-    return this.prisma.returnRequest.findFirst({
+  findActiveByOrderId(
+    orderId: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<ReturnDetailRecord | null> {
+    return tx.returnRequest.findFirst({
       where: {
         orderId,
         status: { in: [ReturnStatus.PENDING, ReturnStatus.APPROVED] },
@@ -78,6 +98,40 @@ export class ReturnsRepository {
       where: { id: { in: productIds } },
       select: { id: true, onSale: true },
     });
+  }
+
+  findActiveVariantsByIds(variantIds: string[], tx: Prisma.TransactionClient = this.prisma) {
+    if (variantIds.length === 0) return Promise.resolve([]);
+    return tx.productVariant.findMany({
+      where: {
+        id: { in: variantIds },
+        isActive: true,
+        deletedAt: null,
+      },
+      select: { id: true, productId: true, size: true, color: true },
+    });
+  }
+
+  async sumReturnQuantitiesByOrderItem(
+    orderId: string,
+    statuses: ReturnStatus[],
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<Map<string, number>> {
+    const rows = await tx.returnItem.findMany({
+      where: {
+        returnRequest: {
+          orderId,
+          status: { in: statuses },
+        },
+      },
+      select: { orderItemId: true, quantity: true },
+    });
+
+    const totals = new Map<string, number>();
+    for (const row of rows) {
+      totals.set(row.orderItemId, (totals.get(row.orderItemId) ?? 0) + row.quantity);
+    }
+    return totals;
   }
 
   create(
@@ -114,10 +168,52 @@ export class ReturnsRepository {
     return tx.returnStatusHistory.create({ data });
   }
 
-  markOrderReturned(orderId: string, tx: Prisma.TransactionClient = this.prisma) {
-    return tx.customerOrder.update({
+  async applyOrderOutcomeAfterCompletion(orderId: string, tx: Prisma.TransactionClient = this.prisma) {
+    const order = await tx.customerOrder.findUnique({
       where: { id: orderId },
-      data: { status: OrderStatus.RETURNED },
+      include: { items: true },
+    });
+    if (!order || order.status !== OrderStatus.DELIVERED) return;
+
+    const completedQty = await this.sumReturnQuantitiesByOrderItem(
+      orderId,
+      [ReturnStatus.COMPLETED],
+      tx,
+    );
+
+    const allLinesFullyProcessed = order.items.every(
+      (item) => (completedQty.get(item.id) ?? 0) >= item.quantity,
+    );
+    if (!allLinesFullyProcessed) return;
+
+    const hasCompletedExchange = await tx.returnRequest.findFirst({
+      where: { orderId, status: ReturnStatus.COMPLETED, type: ReturnType.EXCHANGE },
+      select: { id: true },
+    });
+
+    const now = new Date();
+    const nextStatus = hasCompletedExchange ? OrderStatus.EXCHANGED : OrderStatus.RETURNED;
+
+    await tx.customerOrder.update({
+      where: { id: orderId },
+      data: {
+        status: nextStatus,
+        ...(nextStatus === OrderStatus.EXCHANGED
+          ? { exchangedAt: now }
+          : { returnedAt: now }),
+        version: { increment: 1 },
+      },
+    });
+
+    await tx.orderStatusHistory.create({
+      data: {
+        orderId,
+        status: nextStatus,
+        note:
+          nextStatus === OrderStatus.EXCHANGED
+            ? 'All items exchanged'
+            : 'All items returned',
+      },
     });
   }
 
@@ -125,3 +221,5 @@ export class ReturnsRepository {
     return this.prisma.$transaction(fn);
   }
 }
+
+export { ACTIVE_RETURN_STATUSES };

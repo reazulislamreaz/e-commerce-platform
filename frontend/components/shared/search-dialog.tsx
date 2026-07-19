@@ -5,12 +5,18 @@ import Image from 'next/image';
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { SEARCH_DIALOG_LIMIT, searchSuggestions, useProductSearch } from '@/features/products';
+import {
+  SEARCH_DIALOG_LIMIT,
+  searchSuggestions,
+  usePrefetchProduct,
+  useProductSearch,
+} from '@/features/products';
 import { formatTaka } from '@/lib/currency';
 import { readStorage, writeStorage } from '@/lib/storage';
 
 export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
+  const prefetchProduct = usePrefetchProduct();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
@@ -152,6 +158,8 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
                       <Link
                         href={`/product/${product.slug}`}
                         onClick={onClose}
+                        onPointerEnter={() => prefetchProduct(product.slug)}
+                        onFocus={() => prefetchProduct(product.slug)}
                         className="flex items-center gap-3 rounded-[4px] p-2 transition-colors hover:bg-[#1a1815]"
                       >
                         <div className="relative h-12 w-10 overflow-hidden rounded-[4px] bg-[#e4e3e1]">

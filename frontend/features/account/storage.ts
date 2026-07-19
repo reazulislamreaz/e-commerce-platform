@@ -28,6 +28,8 @@ export type OrderStatus =
   | 'returned';
 
 export interface OrderLineItem {
+  orderItemId?: string;
+  variantId?: string;
   productId: string;
   name: string;
   slug: string;

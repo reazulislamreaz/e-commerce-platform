@@ -9,17 +9,23 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
   ApiConflictResponse,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiPayloadTooLargeResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -42,7 +48,13 @@ import {
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateProductPriceWindowDto } from './dto/create-product-price.dto';
 import { ListAdminProductsQueryDto } from './dto/list-admin-products.query.dto';
+import { ProductImageUploadResponseDto } from './dto/product-image-upload.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import {
+  productImageMulterOptions,
+  ProductImageStorageService,
+  type UploadedImageFile,
+} from './product-image-storage.service';
 
 @ApiTags('Admin Catalog')
 @ApiBearerAuth()
@@ -51,7 +63,10 @@ import { UpdateProductDto } from './dto/update-product.dto';
 @Roles(Role.ADMIN)
 @Controller('admin')
 export class AdminCatalogController {
-  constructor(private readonly adminCatalog: AdminCatalogService) {}
+  constructor(
+    private readonly adminCatalog: AdminCatalogService,
+    private readonly productImages: ProductImageStorageService,
+  ) {}
 
   @Get('products')
   @ApiOperation({ summary: 'List products including draft and archived states' })
@@ -66,6 +81,30 @@ export class AdminCatalogController {
   @ApiConflictResponse({ description: 'Slug or SKU already exists' })
   createProduct(@CurrentUser() actor: JwtPayload, @Body() dto: CreateProductDto) {
     return this.adminCatalog.createProduct(actor, dto);
+  }
+
+  @Post('products/images')
+  @UseInterceptors(FileInterceptor('file', productImageMulterOptions))
+  @ApiOperation({
+    summary: 'Upload a product image',
+    description:
+      'Accepts a single multipart JPEG/PNG/WebP file (max 8 MB), validates its binary signature, ' +
+      'stores it under a server-generated name, and returns the served relative URL.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiCreatedResponse({ type: ProductImageUploadResponseDto })
+  @ApiBadRequestResponse({ description: 'Missing, non-image, or mismatched file content' })
+  @ApiPayloadTooLargeResponse({ description: 'Image exceeds 8 MB' })
+  uploadProductImage(@UploadedFile() file?: UploadedImageFile) {
+    return this.productImages.store(file);
   }
 
   @Get('products/:id')

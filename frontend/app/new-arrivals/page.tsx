@@ -1,8 +1,10 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
+import { CatalogPageSkeleton } from '@/components/common/skeleton';
 import { productCatalog } from '@/features/products';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'New Arrivals',
@@ -33,7 +35,9 @@ export default async function NewArrivalsPage() {
       </section>
 
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
-        <ShopCatalog products={products} title="Fresh Drops" />
+        <Suspense fallback={<CatalogPageSkeleton />}>
+          <ShopCatalog products={products} title="Fresh Drops" />
+        </Suspense>
       </section>
     </main>
   );

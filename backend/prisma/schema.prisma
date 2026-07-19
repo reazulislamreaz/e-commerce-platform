@@ -66,10 +66,12 @@ enum OrderStatus {
   PENDING
   CONFIRMED
   PROCESSING
+  PACKED
   SHIPPED
   DELIVERED
   CANCELLED
   RETURNED
+  EXCHANGED
 }
 
 enum PaymentMethod {
@@ -104,11 +106,72 @@ enum NotificationType {
   WELCOME
   ORDER_STATUS
   SHIPPING
+  DELIVERY
+  PAYMENT
   RETURN_STATUS
+  EXCHANGE_STATUS
+  ABANDONED_CART
+  LOW_STOCK
   SECURITY
   MARKETING
   SYSTEM
   CONTACT_ACK
+}
+
+enum BannerPlacement {
+  HOME_HERO
+  HOME_PROMO
+  SHOP_BANNER
+  SALE_BANNER
+}
+
+enum BannerStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  ARCHIVED
+}
+
+enum CustomerSegmentKey {
+  NEW
+  ACTIVE
+  HIGH_VALUE
+  AT_RISK
+  DORMANT
+  ONE_TIME
+}
+
+enum ReportExportType {
+  REVENUE
+  ORDERS
+  PRODUCTS
+  CUSTOMERS
+  INVENTORY
+}
+
+enum ReportExportFormat {
+  CSV
+  XLSX
+}
+
+enum ReportExportStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum CartRecoveryStatus {
+  PENDING
+  SENT
+  CONVERTED
+  SUPPRESSED
+  EXPIRED
+}
+
+enum StockAlertLevel {
+  LOW
+  OUT
 }
 
 enum NotificationDeliveryStatus {
@@ -146,6 +209,7 @@ enum ConsentAction {
 
 enum OutboxStatus {
   PENDING
+  PROCESSING
   PROCESSED
   FAILED
 }
@@ -180,6 +244,11 @@ model User {
   contactMessages    ContactMessage[]
   newsletterSubs     NewsletterSubscription[]
   auditLogs          AuditLog[]
+  customerMetric     CustomerMetric?
+  segmentMemberships CustomerSegmentMember[]
+  activityEvents     CustomerActivityEvent[]
+  cartRecoveries     AbandonedCartRecovery[]
+  reportExports      ReportExportJob[]
 
   @@index([role, status])
   @@index([createdAt])
@@ -406,13 +475,14 @@ model ProductVariant {
   createdAt DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @db.Timestamptz(3)
 
-  product           Product                    @relation(fields: [productId], references: [id], onDelete: Restrict)
-  inventoryBalances InventoryBalance[]
-  movements         InventoryMovement[]
-  cartItems         CartItem[]
-  orderItems        OrderItem[]
-  reservationItems  InventoryReservationItem[]
-  returnItems       ReturnItem[]
+  product                 Product                    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  inventoryBalances       InventoryBalance[]
+  movements               InventoryMovement[]
+  cartItems               CartItem[]
+  orderItems              OrderItem[]
+  reservationItems        InventoryReservationItem[]
+  returnItems             ReturnItem[]
+  exchangeReturnItems     ReturnItem[]               @relation("ReturnExchangeVariant")
 
   @@unique([productId, size, color])
   @@index([productId, isActive, position])
@@ -456,21 +526,43 @@ model InventoryLocation {
 /// Authoritative mutable balance. CHECK constraints added in SQL guarantee
 /// on_hand >= 0, reserved >= 0, and reserved <= on_hand.
 model InventoryBalance {
-  id         String   @id @default(uuid()) @db.Uuid
-  variantId  String   @db.Uuid
-  locationId String   @db.Uuid
-  onHand     Int      @default(0)
-  reserved   Int      @default(0)
-  version    Int      @default(0)
-  createdAt  DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+  id                String   @id @default(uuid()) @db.Uuid
+  variantId         String   @db.Uuid
+  locationId        String   @db.Uuid
+  onHand            Int      @default(0)
+  reserved          Int      @default(0)
+  /// Available units at or below this value trigger a LOW stock alert.
+  lowStockThreshold Int      @default(5)
+  version           Int      @default(0)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
 
   variant  ProductVariant    @relation(fields: [variantId], references: [id], onDelete: Restrict)
   location InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  alerts   StockAlert[]
 
   @@unique([variantId, locationId])
   @@index([locationId, variantId])
   @@map("inventory_balance")
+}
+
+/// Deduplicated low/out-of-stock alerts for admin monitoring.
+model StockAlert {
+  id         String          @id @default(uuid()) @db.Uuid
+  balanceId  String          @db.Uuid
+  level      StockAlertLevel
+  available  Int
+  threshold  Int
+  resolvedAt DateTime?       @db.Timestamptz(3)
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime        @updatedAt @db.Timestamptz(3)
+
+  balance InventoryBalance @relation(fields: [balanceId], references: [id], onDelete: Cascade)
+
+  @@index([resolvedAt, level, createdAt(sort: Desc)])
+  @@index([balanceId, resolvedAt])
+  /// Partial unique for open alerts is enforced in SQL (resolvedAt IS NULL).
+  @@map("stock_alert")
 }
 
 /// Append-only audit of every stock mutation. `idempotencyKey` prevents an
@@ -636,16 +728,20 @@ model Cart {
   id             String    @id @default(uuid()) @db.Uuid
   userId         String?   @unique @db.Uuid
   guestTokenHash String?   @unique @db.Char(64)
+  /// Optional email captured at checkout start for guest abandoned-cart recovery.
+  recoveryEmail  String?
   currencyCode   String    @default("BDT") @db.Char(3)
   version        Int       @default(0)
   expiresAt      DateTime? @db.Timestamptz(3)
   createdAt      DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
 
-  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items CartItem[]
+  user       User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items      CartItem[]
+  recoveries AbandonedCartRecovery[]
 
   @@index([expiresAt])
+  @@index([updatedAt])
   @@map("cart")
 }
 
@@ -759,6 +855,8 @@ model CustomerOrder {
   phone          String
   notes          String?
   status         OrderStatus   @default(CONFIRMED)
+  /// Optimistic concurrency for status transitions.
+  version        Int           @default(0)
   currencyCode   String        @default("BDT") @db.Char(3)
   subtotalPoisha BigInt
   shippingPoisha BigInt
@@ -769,9 +867,13 @@ model CustomerOrder {
   createdAt      DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
   confirmedAt    DateTime?     @db.Timestamptz(3)
+  processingAt   DateTime?     @db.Timestamptz(3)
+  packedAt       DateTime?     @db.Timestamptz(3)
   shippedAt      DateTime?     @db.Timestamptz(3)
   deliveredAt    DateTime?     @db.Timestamptz(3)
   cancelledAt    DateTime?     @db.Timestamptz(3)
+  returnedAt     DateTime?     @db.Timestamptz(3)
+  exchangedAt    DateTime?     @db.Timestamptz(3)
 
   user          User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
   address       OrderAddress?
@@ -786,6 +888,7 @@ model CustomerOrder {
   @@index([userId, createdAt(sort: Desc)])
   @@index([email, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
   @@map("customer_order")
 }
 
@@ -852,6 +955,8 @@ model Payment {
   status       PaymentStatus @default(PENDING)
   amountPoisha BigInt
   currencyCode String        @default("BDT") @db.Char(3)
+  /// Provider reference reserved for future online payment gateways.
+  providerRef  String?
   collectedAt  DateTime?     @db.Timestamptz(3)
   createdAt    DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime      @updatedAt @db.Timestamptz(3)
@@ -859,20 +964,25 @@ model Payment {
   order CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
 
   @@index([status, createdAt(sort: Desc)])
+  @@index([status, collectedAt(sort: Desc)])
   @@map("payment")
 }
 
 model InventoryReservation {
-  id        String            @id @default(uuid()) @db.Uuid
-  orderId   String            @unique @db.Uuid
-  status    ReservationStatus @default(ACTIVE)
-  createdAt DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime          @updatedAt @db.Timestamptz(3)
+  id         String            @id @default(uuid()) @db.Uuid
+  orderId    String            @unique @db.Uuid
+  status     ReservationStatus @default(ACTIVE)
+  /// Soft hold window for unpaid/COD reservations; release worker uses this.
+  expiresAt  DateTime?         @db.Timestamptz(3)
+  releasedAt DateTime?         @db.Timestamptz(3)
+  createdAt  DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime          @updatedAt @db.Timestamptz(3)
 
   order CustomerOrder              @relation(fields: [orderId], references: [id], onDelete: Restrict)
   items InventoryReservationItem[]
 
   @@index([status, createdAt])
+  @@index([status, expiresAt])
   @@map("inventory_reservation")
 }
 
@@ -912,7 +1022,10 @@ model ReturnRequest {
   userId      String       @db.Uuid
   type        ReturnType
   status      ReturnStatus @default(PENDING)
+  version     Int          @default(0)
   reason      String
+  /// Customer attestation that items are unworn with tags attached.
+  conditionAttested Boolean @default(false)
   createdAt   DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
   decidedAt   DateTime?    @db.Timestamptz(3)
@@ -930,16 +1043,20 @@ model ReturnRequest {
 }
 
 model ReturnItem {
-  id              String @id @default(uuid()) @db.Uuid
-  returnRequestId String @db.Uuid
-  orderItemId     String @db.Uuid
-  variantId       String @db.Uuid
-  quantity        Int
+  id                String  @id @default(uuid()) @db.Uuid
+  returnRequestId   String  @db.Uuid
+  orderItemId       String  @db.Uuid
+  variantId         String  @db.Uuid
+  quantity          Int
+  /// Replacement variant for exchange lines (same product family).
+  exchangeVariantId String? @db.Uuid
 
-  returnRequest ReturnRequest  @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
-  variant       ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  returnRequest   ReturnRequest   @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  variant         ProductVariant  @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  exchangeVariant ProductVariant? @relation("ReturnExchangeVariant", fields: [exchangeVariantId], references: [id], onDelete: Restrict)
 
   @@unique([returnRequestId, orderItemId])
+  @@index([exchangeVariantId])
   @@map("return_item")
 }
 
@@ -1034,4 +1151,127 @@ model NewsletterSubscription {
 
   @@index([status, createdAt(sort: Desc)])
   @@map("newsletter_subscription")
+}
+
+/// Projected customer commerce metrics for CRM list/detail (maintained on order events).
+model CustomerMetric {
+  userId              String    @id @db.Uuid
+  orderCount          Int       @default(0)
+  deliveredOrderCount Int       @default(0)
+  lifetimeValuePoisha BigInt    @default(0)
+  averageOrderPoisha  BigInt    @default(0)
+  lastOrderAt         DateTime? @db.Timestamptz(3)
+  firstOrderAt        DateTime? @db.Timestamptz(3)
+  cancelledOrderCount Int       @default(0)
+  returnCount         Int       @default(0)
+  wishlistItemCount   Int       @default(0)
+  segmentKey          CustomerSegmentKey @default(NEW)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([segmentKey, lifetimeValuePoisha(sort: Desc)])
+  @@index([lifetimeValuePoisha(sort: Desc)])
+  @@index([lastOrderAt(sort: Desc)])
+  @@map("customer_metric")
+}
+
+model CustomerSegmentMember {
+  id         String             @id @default(uuid()) @db.Uuid
+  userId     String             @db.Uuid
+  segmentKey CustomerSegmentKey
+  assignedAt DateTime           @default(now()) @db.Timestamptz(3)
+  source     String             @default("system")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, segmentKey])
+  @@index([segmentKey, assignedAt(sort: Desc)])
+  @@map("customer_segment_member")
+}
+
+model CustomerActivityEvent {
+  id        BigInt   @id @default(autoincrement())
+  userId    String   @db.Uuid
+  eventType String
+  title     String
+  href      String?
+  metadata  Json?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([eventType, createdAt(sort: Desc)])
+  @@map("customer_activity_event")
+}
+
+model MarketingBanner {
+  id          String          @id @default(uuid()) @db.Uuid
+  placement   BannerPlacement
+  status      BannerStatus    @default(DRAFT)
+  title       String
+  subtitle    String?
+  ctaLabel    String?
+  ctaHref     String?
+  imageUrl    String
+  mobileImageUrl String?
+  position    Int             @default(0)
+  startsAt    DateTime?       @db.Timestamptz(3)
+  endsAt      DateTime?       @db.Timestamptz(3)
+  deletedAt   DateTime?       @db.Timestamptz(3)
+  createdAt   DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@index([placement, status, position])
+  @@index([status, startsAt, endsAt])
+  @@map("marketing_banner")
+}
+
+model AbandonedCartRecovery {
+  id             String             @id @default(uuid()) @db.Uuid
+  cartId         String             @db.Uuid
+  userId         String?            @db.Uuid
+  email          String
+  status         CartRecoveryStatus @default(PENDING)
+  reminderCount  Int                @default(0)
+  nextSendAt     DateTime           @db.Timestamptz(3)
+  lastSentAt     DateTime?          @db.Timestamptz(3)
+  convertedAt    DateTime?          @db.Timestamptz(3)
+  suppressedAt   DateTime?          @db.Timestamptz(3)
+  cartSnapshot   Json?
+  createdAt      DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime           @updatedAt @db.Timestamptz(3)
+
+  cart Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([cartId])
+  @@index([status, nextSendAt])
+  @@index([email, createdAt(sort: Desc)])
+  @@map("abandoned_cart_recovery")
+}
+
+/// Async report export jobs (CSV/XLSX). File path is local in MVP; S3-ready later.
+model ReportExportJob {
+  id           String             @id @default(uuid()) @db.Uuid
+  requestedBy  String             @db.Uuid
+  type         ReportExportType
+  format       ReportExportFormat
+  status       ReportExportStatus @default(PENDING)
+  params       Json?
+  filePath     String?
+  fileName     String?
+  errorMessage String?
+  rowCount     Int?
+  completedAt  DateTime?          @db.Timestamptz(3)
+  expiresAt    DateTime?          @db.Timestamptz(3)
+  createdAt    DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime           @updatedAt @db.Timestamptz(3)
+
+  requester User @relation(fields: [requestedBy], references: [id], onDelete: Cascade)
+
+  @@index([requestedBy, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("report_export_job")
 }

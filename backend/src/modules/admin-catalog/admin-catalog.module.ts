@@ -4,11 +4,12 @@ import { AdminCatalogController } from './admin-catalog.controller';
 import { AdminInventoryController } from './admin-inventory.controller';
 import { AdminCatalogRepository } from './admin-catalog.repository';
 import { AdminCatalogService } from './admin-catalog.service';
+import { ProductImageStorageService } from './product-image-storage.service';
 
 @Module({
   imports: [InventoryModule],
   controllers: [AdminCatalogController, AdminInventoryController],
-  providers: [AdminCatalogRepository, AdminCatalogService],
+  providers: [AdminCatalogRepository, AdminCatalogService, ProductImageStorageService],
   exports: [AdminCatalogService],
 })
 export class AdminCatalogModule {}

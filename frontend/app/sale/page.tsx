@@ -1,10 +1,14 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageHero } from '@/components/shared/page-hero';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
+import { CatalogPageSkeleton } from '@/components/common/skeleton';
 import { productCatalog } from '@/features/products';
+import { marketingApi } from '@/features/marketing/api';
+import { bannerToPageHero, FALLBACK_BANNERS, pickPrimaryBanner } from '@/features/marketing/banners';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Sale',
@@ -12,22 +16,27 @@ export const metadata: Metadata = {
 };
 
 export default async function SalePage() {
-  const products = await productCatalog.onSale();
+  const [products, banners] = await Promise.all([
+    productCatalog.onSale(),
+    marketingApi.listPublic('SALE_BANNER').catch(() => []),
+  ]);
+  const banner = pickPrimaryBanner(banners, FALLBACK_BANNERS.SALE_BANNER);
+  const hero = bannerToPageHero(banner, {
+    secondaryCta: { href: '/new-arrivals', label: 'New Arrivals' },
+  });
 
   return (
     <main id="main-content" className="flex-1 bg-black">
       <PageHero
         variant="full"
         eyebrow="Limited Time"
-        title={
-          <>
-            SALE <span className="text-[#e3bb78]">UP TO 40% OFF</span>
-          </>
-        }
-        description="Select essentials at sharper prices. Elevate more — spend less."
-        image="/images/home/collection-sale.webp"
-        cta={{ href: '/shop', label: 'Shop All' }}
-        secondaryCta={{ href: '/new-arrivals', label: 'New Arrivals' }}
+        title={hero.title}
+        titleAccent={hero.titleAccent}
+        description={hero.description}
+        image={hero.image}
+        imageAlt={hero.imageAlt}
+        cta={hero.cta}
+        secondaryCta={hero.secondaryCta}
       />
 
       {/* Unique: bold promo strip */}
@@ -46,11 +55,13 @@ export default async function SalePage() {
       </section>
 
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
-        <ShopCatalog
-          products={products}
-          title="On Sale"
-          initialFilters={{ discount: true }}
-        />
+        <Suspense fallback={<CatalogPageSkeleton />}>
+          <ShopCatalog
+            products={products}
+            title="On Sale"
+            initialFilters={{ discount: true }}
+          />
+        </Suspense>
       </section>
     </main>
   );

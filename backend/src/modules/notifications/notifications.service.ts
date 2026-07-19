@@ -45,8 +45,10 @@ export class NotificationsService {
   async createForUser(
     input: CreateNotificationInput,
     tx?: Prisma.TransactionClient,
-  ): Promise<NotificationRecord> {
+  ): Promise<NotificationRecord | null> {
     const href = sanitizeHref(input.href);
+    const preference = await this.notifications.getInAppPreference(input.userId, tx);
+    if (preference?.inAppEnabled === false) return null;
 
     if (input.dedupeKey) {
       const existing = await this.notifications.findByDedupeKey(
@@ -57,7 +59,7 @@ export class NotificationsService {
       if (existing) return existing;
     }
 
-    return this.notifications.create(
+    const created = await this.notifications.create(
       {
         userId: input.userId,
         type: input.type,
@@ -69,6 +71,15 @@ export class NotificationsService {
       },
       tx,
     );
+    await this.notifications.createInAppDelivery(created.id, tx);
+    return created;
+  }
+
+  createEmailDelivery(
+    notificationId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    return this.notifications.createEmailDelivery(notificationId, tx);
   }
 }
 

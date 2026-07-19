@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { wishlistToggled } from '@/store/slices/wishlist-slice';
 import { selectAuthUser, selectIsWishlisted } from '@/store/selectors';
 import { addWishlistProduct, removeWishlistProduct } from '@/features/wishlist/api';
+import { flashMessage } from '@/components/common/flash-message';
 import { cn } from '@/lib/utils';
 
 export function WishlistButton({
@@ -27,7 +28,10 @@ export function WishlistButton({
     void (nextWishlisted
       ? addWishlistProduct(productId)
       : removeWishlistProduct(productId)
-    ).catch(() => undefined);
+    ).catch(() => {
+      dispatch(wishlistToggled(productId));
+      flashMessage('Could not update wishlist. Please try again.');
+    });
   };
 
   if (variant === 'button') {

@@ -3,10 +3,12 @@
 import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState, type FormEvent } from 'react';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminEmpty,
   AdminError,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -17,6 +19,7 @@ import {
 } from '@/components/admin/admin-ui';
 import {
   adminApi,
+  adminKeys,
   useAdminContact,
   useAdminMutation,
   type ContactMessage,
@@ -74,6 +77,7 @@ function ContactListBody({ status }: { status: string }) {
         ...(args.status ? { status: args.status } : {}),
         ...(args.adminNotes != null ? { adminNotes: args.adminNotes } : {}),
       }),
+    [adminKeys.contactRoot()],
   );
 
   const pageRows = query.data?.data ?? [];
@@ -121,8 +125,12 @@ function ContactListBody({ status }: { status: string }) {
   }
 
   return (
-    <div className="space-y-5">
-      <AdminPanel title="Contact messages" description="Inbox from the storefront contact form.">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Contact"
+        description="Messages from the storefront contact form."
+      />
+      <AdminPanel title="Inbox" description="Filter messages by status.">
         <form onSubmit={applyFilters} className="mb-5 flex flex-wrap items-end gap-3">
           <label className="block min-w-[180px] flex-1 space-y-1.5">
             <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
@@ -158,7 +166,7 @@ function ContactListBody({ status }: { status: string }) {
         ) : null}
 
         {showInitialLoading ? (
-          <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading messages…</p>
+          <AdminTableSkeleton />
         ) : null}
 
         {!showInitialLoading && !query.isError && rows.length === 0 ? (
@@ -286,7 +294,7 @@ function ContactListInner() {
 export default function AdminContactPage() {
   return (
     <Suspense
-      fallback={<p className="py-8 text-center text-sm text-[#b5b0a8]">Loading messages…</p>}
+      fallback={<AdminTableSkeleton />}
     >
       <ContactListInner />
     </Suspense>

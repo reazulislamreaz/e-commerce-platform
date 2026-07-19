@@ -1,0 +1,5 @@
+import { PageShellSkeleton } from '@/components/common/skeleton';
+
+export default function CheckoutLoading() {
+  return <PageShellSkeleton />;
+}

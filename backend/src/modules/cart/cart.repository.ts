@@ -114,6 +114,18 @@ export class CartRepository {
     return tx.cartItem.deleteMany({ where: { cartId } });
   }
 
+  setRecoveryEmail(
+    cartId: string,
+    recoveryEmail: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ) {
+    return tx.cart.update({
+      where: { id: cartId },
+      data: { recoveryEmail },
+      include: cartWithItemsInclude,
+    });
+  }
+
   deleteCart(cartId: string) {
     return this.prisma.cart.delete({ where: { id: cartId } });
   }

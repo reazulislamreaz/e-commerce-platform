@@ -5,11 +5,13 @@ import type { PropsWithChildren } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminEmpty,
   AdminError,
   AdminInput,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -19,6 +21,7 @@ import {
 } from '@/components/admin/admin-ui';
 import {
   adminApi,
+  adminKeys,
   useAdminMutation,
   useAdminUsers,
   type AdminRole,
@@ -26,6 +29,8 @@ import {
 } from '@/features/admin';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
+
+const USER_INVALIDATE = [adminKeys.usersRoot()] as const;
 
 const createAdminSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
@@ -47,14 +52,22 @@ export default function AdminUsersPage() {
   const currentUser = useAppSelector(selectAuthUser)!;
   const superAdmin = currentUser.role === 'SUPER_ADMIN';
   const users = useAdminUsers({ limit: 50 });
-  const statusMutation = useAdminMutation(({ id, status }: { id: string; status: UserStatus }) =>
-    adminApi.updateUserStatus(id, status),
+  const statusMutation = useAdminMutation(
+    ({ id, status }: { id: string; status: UserStatus }) => adminApi.updateUserStatus(id, status),
+    [...USER_INVALIDATE],
   );
   const roleMutation = useAdminMutation(
     ({ id, role }: { id: string; role: 'ADMIN' | 'CUSTOMER' }) => adminApi.updateUserRole(id, role),
+    [...USER_INVALIDATE],
   );
-  const deleteMutation = useAdminMutation((id: string) => adminApi.deleteUser(id));
-  const createAdmin = useAdminMutation((values: CreateAdminValues) => adminApi.createAdmin(values));
+  const deleteMutation = useAdminMutation(
+    (id: string) => adminApi.deleteUser(id),
+    [...USER_INVALIDATE],
+  );
+  const createAdmin = useAdminMutation(
+    (values: CreateAdminValues) => adminApi.createAdmin(values),
+    [...USER_INVALIDATE],
+  );
   const {
     register,
     handleSubmit,
@@ -63,15 +76,19 @@ export default function AdminUsersPage() {
   } = useForm<CreateAdminValues>({ resolver: zodResolver(createAdminSchema) });
 
   return (
-    <div className="space-y-5">
-      <AdminPanel title="Users" description="Manage customer access and account lifecycle.">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Users"
+        description="Manage customer access and account lifecycle."
+      />
+      <AdminPanel title="All users" description="Update roles, status, and account access.">
         {users.isError ? <AdminError>Could not load users.</AdminError> : null}
         {statusMutation.isError || roleMutation.isError || deleteMutation.isError ? (
           <AdminError>
             {errorMessage(statusMutation.error ?? roleMutation.error ?? deleteMutation.error)}
           </AdminError>
         ) : null}
-        {users.isLoading ? <AdminEmpty>Loading users…</AdminEmpty> : null}
+        {users.isLoading ? <AdminTableSkeleton /> : null}
         {users.data?.data.length === 0 ? <AdminEmpty>No users found.</AdminEmpty> : null}
         {(users.data?.data.length ?? 0) > 0 ? (
           <AdminTable>

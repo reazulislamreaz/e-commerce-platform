@@ -24,69 +24,93 @@ import {
 } from './storage';
 import { httpAccountRepository } from './http-api';
 
+export interface CursorPage<T> {
+  data: T[];
+  meta: { limit: number; nextCursor: string | null };
+}
+
+export type CreateAddressInput = Omit<SavedAddress, 'id' | 'country'> & { country?: string };
+
+export type PlaceOrderInput = {
+  fullName: string;
+  phone: string;
+  email: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  district: string;
+  postalCode: string;
+  paymentMethod: 'cod';
+  notes?: string;
+  couponCode?: string;
+  items: Array<{ variantId: string; quantity: number }>;
+};
+
+export type CreateReturnInput = {
+  orderId: string;
+  type: 'return' | 'exchange';
+  reason: string;
+  conditionAttested: boolean;
+  items?: Array<{
+    orderItemId: string;
+    quantity: number;
+    exchangeVariantId?: string;
+  }>;
+};
+
 /**
- * Customer account persistence.
- * Active implementation talks to Nest account/orders APIs.
- * Local adapter remains for isolated tests.
+ * Production account repository — HTTP-backed methods only.
  */
 export interface AccountRepository {
-  getAddresses(userId?: string): Promise<SavedAddress[]>;
-  createAddress?(
-    input: Omit<SavedAddress, 'id' | 'country'> & { country?: string },
+  getAddresses(): Promise<SavedAddress[]>;
+  createAddress(input: CreateAddressInput): Promise<SavedAddress>;
+  updateAddress(
+    id: string,
+    input: Partial<Omit<SavedAddress, 'id' | 'country'>> & { country?: string },
   ): Promise<SavedAddress>;
-  deleteAddress?(id: string): Promise<void>;
-  saveAddresses(userId: string, addresses: SavedAddress[]): Promise<void>;
-  getOrders(userId?: string): Promise<CustomerOrder[]>;
-  getOrder?(id: string): Promise<CustomerOrder>;
-  saveOrders(userId: string, orders: CustomerOrder[]): Promise<void>;
-  placeOrder(userId: string | null, order: CustomerOrder): Promise<CustomerOrder>;
-  placeOrderCheckout?(
-    input: {
-      fullName: string;
-      phone: string;
-      email: string;
-      line1: string;
-      line2?: string;
-      city: string;
-      district: string;
-      postalCode: string;
-      paymentMethod: 'cod';
-      notes?: string;
-      couponCode?: string;
-      items: Array<{ variantId: string; quantity: number }>;
-    },
-    idempotencyKey?: string,
-  ): Promise<CustomerOrder>;
-  trackOrder?(number: string, email: string): Promise<CustomerOrder>;
-  getNotifications(userId?: string): Promise<AccountNotification[]>;
-  saveNotifications(userId: string, items: AccountNotification[]): Promise<void>;
-  markAllNotificationsRead?(): Promise<void>;
-  getCoupons(userId?: string): Promise<AccountCoupon[]>;
-  saveCoupons(userId: string, items: AccountCoupon[]): Promise<void>;
-  validateCoupon?(
+  setDefaultAddress(id: string): Promise<SavedAddress>;
+  deleteAddress(id: string): Promise<void>;
+
+  getOrders(params?: { cursor?: string; limit?: number }): Promise<CursorPage<CustomerOrder>>;
+  getOrder(id: string): Promise<CustomerOrder>;
+  placeOrderCheckout(input: PlaceOrderInput, idempotencyKey?: string): Promise<CustomerOrder>;
+  trackOrder(number: string, email: string): Promise<CustomerOrder>;
+
+  getNotifications(): Promise<AccountNotification[]>;
+  markAllNotificationsRead(): Promise<void>;
+
+  getCoupons(): Promise<AccountCoupon[]>;
+  validateCoupon(
     code: string,
     subtotal: number,
   ): Promise<{ code: string; discount: number; shippingWaived: boolean; title: string }>;
-  getReturnRequests(userId?: string): Promise<ReturnRequest[]>;
-  saveReturnRequests(userId: string, items: ReturnRequest[]): Promise<void>;
-  createReturnRequest?(input: {
-    orderId: string;
-    type: 'return' | 'exchange';
-    reason: string;
-  }): Promise<ReturnRequest>;
-  getReviews(userId?: string): Promise<AccountReview[]>;
-  saveReviews(userId: string, items: AccountReview[]): Promise<void>;
-  createReview?(input: {
+
+  getReturnRequests(): Promise<ReturnRequest[]>;
+  createReturnRequest(input: CreateReturnInput): Promise<ReturnRequest>;
+
+  getReviews(): Promise<AccountReview[]>;
+  createReview(input: {
     productId: string;
     rating: number;
     title: string;
     body: string;
   }): Promise<AccountReview>;
-  updateReview?(
+  updateReview(
     id: string,
     input: { rating?: number; title?: string; body?: string },
   ): Promise<AccountReview>;
-  deleteReview?(id: string): Promise<void>;
+  deleteReview(id: string): Promise<void>;
+}
+
+/** Local storage adapter for isolated tests — not used in production UI. */
+export interface LocalAccountRepository extends AccountRepository {
+  saveAddresses(userId: string, addresses: SavedAddress[]): Promise<void>;
+  saveOrders(userId: string, orders: CustomerOrder[]): Promise<void>;
+  saveNotifications(userId: string, items: AccountNotification[]): Promise<void>;
+  saveCoupons(userId: string, items: AccountCoupon[]): Promise<void>;
+  saveReturnRequests(userId: string, items: ReturnRequest[]): Promise<void>;
+  saveReviews(userId: string, items: AccountReview[]): Promise<void>;
+  placeOrder(userId: string | null, order: CustomerOrder): Promise<CustomerOrder>;
   applyCoupon(
     code: string,
     subtotal: number,
@@ -95,15 +119,35 @@ export interface AccountRepository {
   createOrderNumber(): string;
 }
 
-export const localAccountRepository: AccountRepository = {
+function notSupported(method: string): never {
+  throw new Error(`${method} is not supported on the local account adapter stub`);
+}
+
+export const localAccountRepository: LocalAccountRepository = {
   async getAddresses(userId = '') {
     return getAddresses(userId);
+  },
+  async createAddress() {
+    return notSupported('createAddress');
+  },
+  async updateAddress() {
+    return notSupported('updateAddress');
+  },
+  async setDefaultAddress() {
+    return notSupported('setDefaultAddress');
+  },
+  async deleteAddress() {
+    return notSupported('deleteAddress');
   },
   async saveAddresses(userId, addresses) {
     saveAddresses(userId, addresses);
   },
-  async getOrders(userId = '') {
-    return getOrders(userId);
+  async getOrders(_params?: { cursor?: string; limit?: number }) {
+    return { data: getOrders(''), meta: { limit: _params?.limit ?? 20, nextCursor: null } };
+  },
+  async getOrder(id: string) {
+    void id;
+    return notSupported('getOrder');
   },
   async saveOrders(userId, orders) {
     saveOrders(userId, orders);
@@ -115,11 +159,20 @@ export const localAccountRepository: AccountRepository = {
     }
     return order;
   },
+  async placeOrderCheckout() {
+    return notSupported('placeOrderCheckout');
+  },
+  async trackOrder() {
+    return notSupported('trackOrder');
+  },
   async getNotifications(userId = '') {
     return getNotifications(userId);
   },
   async saveNotifications(userId, items) {
     saveNotifications(userId, items);
+  },
+  async markAllNotificationsRead() {
+    return notSupported('markAllNotificationsRead');
   },
   async getCoupons(userId = '') {
     return getCoupons(userId);
@@ -127,17 +180,41 @@ export const localAccountRepository: AccountRepository = {
   async saveCoupons(userId, items) {
     saveCoupons(userId, items);
   },
+  async validateCoupon(code, subtotal) {
+    const result = applyCoupon(code, subtotal, getCoupons(''));
+    if (result.error || !result.coupon) {
+      throw new Error(result.error ?? 'Invalid coupon');
+    }
+    return {
+      code: result.coupon.code,
+      discount: result.discount,
+      shippingWaived: result.coupon.discountType === 'free_shipping',
+      title: result.coupon.title,
+    };
+  },
   async getReturnRequests(userId = '') {
     return getReturnRequests(userId);
   },
   async saveReturnRequests(userId, items) {
     saveReturnRequests(userId, items);
   },
+  async createReturnRequest() {
+    return notSupported('createReturnRequest');
+  },
   async getReviews(userId = '') {
     return getAccountReviews(userId);
   },
   async saveReviews(userId, items) {
     saveAccountReviews(userId, items);
+  },
+  async createReview() {
+    return notSupported('createReview');
+  },
+  async updateReview() {
+    return notSupported('updateReview');
+  },
+  async deleteReview() {
+    return notSupported('deleteReview');
   },
   applyCoupon,
   createOrderNumber,

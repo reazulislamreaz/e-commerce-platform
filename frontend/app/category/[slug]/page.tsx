@@ -1,9 +1,13 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { productCatalog } from '@/features/products';
+import { CatalogPageSkeleton } from '@/components/common/skeleton';
+import { dehydrateProductList } from '@/features/products';
+import { QueryHydration } from '@/providers/query-hydration';
+import { PAGE_SIZE } from '@/features/products/constants';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 const collections = {
   men: {
@@ -35,27 +39,39 @@ export async function generateMetadata({
   };
 }
 
+async function CategoryCatalog({ collection }: { collection: CollectionKey }) {
+  const filters = { collections: [collection] };
+  const { state, result, facets } = await dehydrateProductList({
+    filters,
+    page: 1,
+    pageSize: PAGE_SIZE,
+    facets: true,
+  });
+
+  return (
+    <QueryHydration state={state}>
+      <ShopCatalog
+        remote
+        initialResult={result}
+        initialFacets={facets}
+        title={collections[collection].title}
+        initialFilters={filters}
+      />
+    </QueryHydration>
+  );
+}
+
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const key = slug as CollectionKey;
   if (!(key in collections)) notFound();
 
-  const filters = { collections: [key] };
-  const [initialResult, initialFacets] = await Promise.all([
-    productCatalog.list({ filters, page: 1, pageSize: 8 }),
-    productCatalog.facets(),
-  ]);
-
   return (
     <main id="main-content" className="flex-1 bg-black">
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
-        <ShopCatalog
-          remote
-          initialResult={initialResult}
-          initialFacets={initialFacets}
-          title={collections[key].title}
-          initialFilters={filters}
-        />
+        <Suspense fallback={<CatalogPageSkeleton />}>
+          <CategoryCatalog collection={key} />
+        </Suspense>
       </section>
     </main>
   );

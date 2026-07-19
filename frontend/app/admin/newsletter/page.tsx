@@ -3,10 +3,12 @@
 import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState, type FormEvent } from 'react';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminEmpty,
   AdminError,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -16,6 +18,7 @@ import {
 } from '@/components/admin/admin-ui';
 import {
   adminApi,
+  adminKeys,
   useAdminMutation,
   useAdminNewsletter,
   type NewsletterStatus,
@@ -58,7 +61,10 @@ function NewsletterListBody({ status }: { status: string }) {
   );
 
   const query = useAdminNewsletter(queryParams);
-  const unsubscribeMutation = useAdminMutation((id: string) => adminApi.forceUnsubscribe(id));
+  const unsubscribeMutation = useAdminMutation(
+    (id: string) => adminApi.forceUnsubscribe(id),
+    [adminKeys.newsletterRoot()],
+  );
 
   const pageRows = query.data?.data ?? [];
   const rows = cursor ? [...priorRows, ...pageRows] : pageRows;
@@ -91,9 +97,13 @@ function NewsletterListBody({ status }: { status: string }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Newsletter"
+        description="Manage marketing subscriptions and consent."
+      />
       <AdminPanel
-        title="Newsletter subscriptions"
+        title="Subscribers"
         description="Force-unsubscribe removes marketing consent immediately."
       >
         <form onSubmit={applyFilters} className="mb-5 flex flex-wrap items-end gap-3">
@@ -131,7 +141,7 @@ function NewsletterListBody({ status }: { status: string }) {
         ) : null}
 
         {showInitialLoading ? (
-          <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading subscriptions…</p>
+          <AdminTableSkeleton />
         ) : null}
 
         {!showInitialLoading && !query.isError && rows.length === 0 ? (
@@ -216,7 +226,7 @@ export default function AdminNewsletterPage() {
   return (
     <Suspense
       fallback={
-        <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading subscriptions…</p>
+        <AdminTableSkeleton />
       }
     >
       <NewsletterListInner />

@@ -27,6 +27,10 @@ import { PreferencesModule } from '@/modules/preferences/preferences.module';
 import { ContactModule } from '@/modules/contact/contact.module';
 import { NewsletterModule } from '@/modules/newsletter/newsletter.module';
 import { AdminCatalogModule } from '@/modules/admin-catalog/admin-catalog.module';
+import { MarketingModule } from '@/modules/marketing/marketing.module';
+import { CartRecoveryModule } from '@/modules/cart-recovery/cart-recovery.module';
+import { CrmModule } from '@/modules/crm/crm.module';
+import { AnalyticsModule } from '@/modules/analytics/analytics.module';
 import { HealthModule } from '@/modules/health/health.module';
 
 @Module({
@@ -68,6 +72,10 @@ import { HealthModule } from '@/modules/health/health.module';
     ContactModule,
     NewsletterModule,
     AdminCatalogModule,
+    MarketingModule,
+    CartRecoveryModule,
+    CrmModule,
+    AnalyticsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

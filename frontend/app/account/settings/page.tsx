@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useLogout } from '@/features/auth/hooks';
 import { removeStorage } from '@/lib/storage';
 import { getPreferences, updatePreferences } from '@/features/preferences/api';
+import { writeStorage } from '@/lib/storage';
+import { MARKETING_CONSENT_STORAGE_KEY } from '@/features/analytics/pixel-consent';
+import { AccountPanelSkeleton } from '@/components/common/skeleton';
 
 export default function SettingsPage() {
   const logout = useLogout();
@@ -18,6 +21,7 @@ export default function SettingsPage() {
   useEffect(() => {
     void getPreferences()
       .then((prefs) => {
+        writeStorage(MARKETING_CONSENT_STORAGE_KEY, prefs.emailMarketing);
         setMarketing(prefs.emailMarketing);
         setOrderUpdates(prefs.emailOrderUpdates);
       })
@@ -30,6 +34,7 @@ export default function SettingsPage() {
     setError(null);
     try {
       const prefs = await updatePreferences(next);
+      writeStorage(MARKETING_CONSENT_STORAGE_KEY, prefs.emailMarketing);
       setMarketing(prefs.emailMarketing);
       setOrderUpdates(prefs.emailOrderUpdates);
     } catch {
@@ -46,7 +51,7 @@ export default function SettingsPage() {
           Account Settings
         </h2>
         {loading ? (
-          <p className="mt-4 text-sm text-[#b5b0a8]">Loading preferences…</p>
+          <AccountPanelSkeleton />
         ) : (
           <div className="mt-4 space-y-3">
             <label className="flex items-center justify-between gap-3 text-sm text-[#e9e5de]">

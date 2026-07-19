@@ -4,6 +4,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminError,
@@ -11,7 +12,9 @@ import {
   AdminTextarea,
   StatusPill,
 } from '@/components/admin/admin-ui';
-import { adminApi, useAdminMutation, useAdminReview } from '@/features/admin';
+import { adminApi, adminKeys, useAdminMutation, useAdminReview } from '@/features/admin';
+
+const REVIEW_INVALIDATE = [adminKeys.reviewsRoot(), adminKeys.reviewRoot()] as const;
 
 function mutationErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
@@ -30,11 +33,13 @@ export default function AdminReviewDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const publishMutation = useAdminMutation((args: { id: string; note?: string }) =>
-    adminApi.publishReview(args.id, args.note),
+  const publishMutation = useAdminMutation(
+    (args: { id: string; note?: string }) => adminApi.publishReview(args.id, args.note),
+    [...REVIEW_INVALIDATE],
   );
-  const rejectMutation = useAdminMutation((args: { id: string; note?: string }) =>
-    adminApi.rejectReview(args.id, args.note),
+  const rejectMutation = useAdminMutation(
+    (args: { id: string; note?: string }) => adminApi.rejectReview(args.id, args.note),
+    [...REVIEW_INVALIDATE],
   );
 
   const busy = publishMutation.isPending || rejectMutation.isPending;
@@ -55,7 +60,7 @@ export default function AdminReviewDetailPage() {
   }
 
   if (reviewQuery.isLoading) {
-    return <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading review…</p>;
+    return <AdminTableSkeleton />;
   }
 
   if (reviewQuery.isError || !review) {

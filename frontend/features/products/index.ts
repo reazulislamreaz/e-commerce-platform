@@ -7,6 +7,7 @@ export {
   productCatalog,
   httpProductCatalog,
   localProductCatalog,
+  getCachedProductBySlug,
   type ProductCatalog,
   type ProductFacets,
   type ProductPage,
@@ -17,9 +18,14 @@ export {
   useProductList,
   useProductSearch,
   useProductBySlug,
+  useRelatedProducts,
   useProductsByIds,
   useProductFacets,
+  usePrefetchProduct,
+  seedProductDetails,
 } from './hooks';
+
+export { dehydrateProductList, dehydrateProductDetail, createCatalogQueryClient } from './query';
 
 export {
   PAGE_SIZE,

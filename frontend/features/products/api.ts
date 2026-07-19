@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import axios from 'axios';
 import { apiClient } from '@/services/api-client';
 import type { ApiResponse, OffsetPageMeta } from '@/types/api';
@@ -214,3 +215,8 @@ export const httpProductCatalog: ProductCatalog = {
 };
 
 export const productCatalog: ProductCatalog = httpProductCatalog;
+
+/** Request-memoized slug lookup for RSC metadata + page (dedupes double fetch). */
+export const getCachedProductBySlug = cache(async (slug: string) =>
+  httpProductCatalog.getBySlug(slug),
+);

@@ -9,6 +9,7 @@ import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
 import { accountRepository, useAccountReviews, type CustomerOrder } from '@/features/account';
 import { formatTaka } from '@/lib/currency';
+import { AccountPanelSkeleton } from '@/components/common/skeleton';
 
 function OrderDetailInner() {
   const { id } = useParams<{ id: string }>();
@@ -22,14 +23,14 @@ function OrderDetailInner() {
 
   useEffect(() => {
     void accountRepository
-      .getOrder?.(id)
+      .getOrder(id)
       .then(setOrder)
       .catch(() => setOrder(null))
       .finally(() => setLoading(false));
   }, [id, user.id]);
 
   if (loading) {
-    return <p className="text-sm text-[#b5b0a8]">Loading order…</p>;
+    return <AccountPanelSkeleton />;
   }
 
   if (!order) {
@@ -216,7 +217,7 @@ function OrderDetailInner() {
 
 export default function OrderDetailPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-[#b5b0a8]">Loading order…</p>}>
+    <Suspense fallback={<AccountPanelSkeleton />}>
       <OrderDetailInner />
     </Suspense>
   );

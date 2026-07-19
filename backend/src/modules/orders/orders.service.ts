@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -9,12 +10,14 @@ import {
   PaymentMethod,
   PaymentStatus,
   Prisma,
+  ReservationStatus,
 } from '@/generated/prisma/client';
 import { normalizeBdPhone } from '@/common/utils/bd-phone';
 import { generateOrderNumber } from '@/common/utils/hash';
 import { poishaToTaka, STANDARD_SHIPPING_POISHA } from '@/common/utils/money';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { CartService } from '@/modules/cart/cart.service';
+import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { InventoryService } from '@/modules/inventory/inventory.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
@@ -40,16 +43,25 @@ const TERMINAL_STATUSES = new Set<OrderStatus>([
   OrderStatus.CANCELLED,
   OrderStatus.DELIVERED,
   OrderStatus.RETURNED,
+  OrderStatus.EXCHANGED,
 ]);
 const PRE_SHIP_STATUSES = new Set<OrderStatus>([
   OrderStatus.PENDING,
   OrderStatus.CONFIRMED,
   OrderStatus.PROCESSING,
+  OrderStatus.PACKED,
 ]);
 
+export { PRE_SHIP_STATUSES };
+
+/** Default COD reservation hold; release worker can reclaim expired ACTIVE holds. */
+const RESERVATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 const FULFILLMENT_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
+  [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
   [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
-  [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+  [OrderStatus.PROCESSING]: [OrderStatus.PACKED, OrderStatus.CANCELLED],
+  [OrderStatus.PACKED]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
   [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED],
 };
 
@@ -67,6 +79,8 @@ export type CreateOrderResult =
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly orders: OrdersRepository,
@@ -77,6 +91,7 @@ export class OrdersService {
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly customerMetrics: CustomerMetricsService,
   ) {}
 
   computeCheckoutTotals(input: {
@@ -213,6 +228,7 @@ export class OrdersService {
           quantity: line.quantity,
         })),
         tx,
+        new Date(Date.now() + RESERVATION_TTL_MS),
       );
 
       if (couponId && normalizedCouponCode && userId) {
@@ -242,20 +258,44 @@ export class OrdersService {
 
       const mapped = this.toOrderResponse(created);
 
-      await this.outbox.enqueue(
-        OUTBOX_EVENT.ORDER_CONFIRMATION_EMAIL,
-        orderId,
-        {
+      const emailProfile = userId
+        ? await tx.user.findUnique({
+            where: { id: userId },
+            select: {
+              firstName: true,
+              preference: { select: { emailOrderUpdates: true } },
+            },
+          })
+        : null;
+      const emailOrderUpdates = emailProfile?.preference?.emailOrderUpdates !== false;
+
+      if (emailOrderUpdates) {
+        await this.outbox.enqueue(
+          OUTBOX_EVENT.ORDER_CONFIRMATION_EMAIL,
           orderId,
-          orderNumber: created.number,
-          email: created.email,
-          totalTaka: poishaToTaka(created.totalPoisha),
-        },
-        tx,
-      );
+          {
+            orderId,
+            orderNumber: created.number,
+            email: created.email,
+            firstName: emailProfile?.firstName ?? '',
+            totalTaka: poishaToTaka(created.totalPoisha),
+            items: created.items.map((item) => ({
+              name: item.name,
+              size: item.size,
+              color: item.color,
+              quantity: item.quantity,
+              unitPriceTaka: poishaToTaka(item.unitPricePoisha),
+            })),
+            subtotalTaka: poishaToTaka(created.subtotalPoisha),
+            shippingTaka: poishaToTaka(created.shippingPoisha),
+            discountTaka: poishaToTaka(created.discountPoisha),
+          },
+          tx,
+        );
+      }
 
       if (userId) {
-        await this.notifications.createForUser(
+        const notification = await this.notifications.createForUser(
           {
             userId,
             type: NotificationType.ORDER_STATUS,
@@ -267,6 +307,18 @@ export class OrdersService {
           },
           tx,
         );
+        if (notification && emailOrderUpdates) {
+          await this.notifications.createEmailDelivery(notification.id, tx);
+        }
+        await this.customerMetrics.recordActivity(
+          userId,
+          'ORDER_CREATED',
+          `Order ${created.number} placed`,
+          `/account/orders/${orderId}`,
+          { orderId, orderNumber: created.number, totalPoisha: created.totalPoisha.toString() },
+          tx,
+        );
+        await this.customerMetrics.recomputeForUser(userId, tx);
       }
 
       await this.idempotency.saveResponse(
@@ -317,18 +369,60 @@ export class OrdersService {
     dto: AdminUpdateOrderStatusDto,
   ): Promise<OrderResponseDto> {
     return this.prisma.$transaction(async (tx) => {
-      const order = await tx.customerOrder.findUnique({
+      const locked = await tx.$queryRaw<
+        Array<{
+          id: string;
+          number: string;
+          email: string;
+          userId: string | null;
+          status: OrderStatus;
+          version: number;
+        }>
+      >`
+        SELECT id, number, email, "userId", status, version
+        FROM customer_order
+        WHERE id = ${orderId}::uuid
+        FOR UPDATE
+      `;
+      const orderRow = locked[0];
+      if (!orderRow) throw new NotFoundException('Order not found');
+
+      const order = await tx.customerOrder.findUniqueOrThrow({
         where: { id: orderId },
         include: {
           payment: true,
           shipments: { orderBy: { createdAt: 'desc' }, take: 1 },
         },
       });
-      if (!order) throw new NotFoundException('Order not found');
+
+      // Idempotent no-op when already at the requested status.
+      if (order.status === dto.status) {
+        return this.toOrderResponse(
+          await tx.customerOrder.findUniqueOrThrow({
+            where: { id: order.id },
+            include: {
+              address: true,
+              items: { orderBy: { createdAt: 'asc' } },
+              statusHistory: { orderBy: { createdAt: 'asc' } },
+              shipments: { orderBy: { createdAt: 'desc' }, take: 1 },
+            },
+          }),
+        );
+      }
 
       this.assertFulfillmentTransition(order.status, dto.status);
 
-      if (dto.status === OrderStatus.SHIPPED) {
+      const now = new Date();
+      const statusData: Prisma.CustomerOrderUpdateInput = {
+        status: dto.status,
+        version: { increment: 1 },
+      };
+
+      if (dto.status === OrderStatus.PROCESSING) {
+        statusData.processingAt = now;
+      } else if (dto.status === OrderStatus.PACKED) {
+        statusData.packedAt = now;
+      } else if (dto.status === OrderStatus.SHIPPED) {
         await this.ensureShipmentForShip(
           tx,
           order.id,
@@ -337,10 +431,7 @@ export class OrdersService {
           dto.carrier,
         );
         await this.inventory.consumeForShipment(order.id, tx);
-        await tx.customerOrder.update({
-          where: { id: order.id },
-          data: { status: OrderStatus.SHIPPED, shippedAt: new Date() },
-        });
+        statusData.shippedAt = now;
       } else if (dto.status === OrderStatus.CANCELLED) {
         if (PRE_SHIP_STATUSES.has(order.status)) {
           await this.inventory.releaseForOrder(order.id, tx);
@@ -351,27 +442,21 @@ export class OrdersService {
             });
           }
         }
-        await tx.customerOrder.update({
-          where: { id: order.id },
-          data: { status: OrderStatus.CANCELLED, cancelledAt: new Date() },
-        });
+        statusData.cancelledAt = now;
       } else if (dto.status === OrderStatus.DELIVERED) {
-        await tx.customerOrder.update({
-          where: { id: order.id },
-          data: { status: OrderStatus.DELIVERED, deliveredAt: new Date() },
-        });
+        statusData.deliveredAt = now;
         if (order.payment) {
           await tx.payment.update({
             where: { id: order.payment.id },
-            data: { status: PaymentStatus.COLLECTED, collectedAt: new Date() },
+            data: { status: PaymentStatus.COLLECTED, collectedAt: now },
           });
         }
-      } else {
-        await tx.customerOrder.update({
-          where: { id: order.id },
-          data: { status: dto.status },
-        });
       }
+
+      await tx.customerOrder.update({
+        where: { id: order.id },
+        data: statusData,
+      });
 
       await tx.orderStatusHistory.create({
         data: {
@@ -389,34 +474,112 @@ export class OrdersService {
           action: 'order.status.update',
           resourceType: 'order',
           resourceId: order.id,
-          before: { status: order.status },
+          before: { status: order.status, version: orderRow.version },
           after: { status: dto.status, note: dto.note ?? null },
         },
         tx,
       );
 
-      await this.outbox.enqueue(
-        OUTBOX_EVENT.ORDER_STATUS_EMAIL,
-        order.id,
-        {
-          orderId: order.id,
-          orderNumber: order.number,
-          email: order.email,
-          status: mapStatusToApi(dto.status),
-          note: dto.note?.trim() || null,
-        },
-        tx,
-      );
+      const trackingNumber =
+        dto.trackingNumber?.trim() || order.shipments[0]?.trackingNumber || null;
+
+      if (dto.status === OrderStatus.CANCELLED && order.couponCode) {
+        // Free the redemption slot so the customer can reuse the coupon.
+        await this.promotions.voidRedemptionForOrder(order.id, tx);
+      }
+
+      const emailProfile = order.userId
+        ? await tx.user.findUnique({
+            where: { id: order.userId },
+            select: {
+              firstName: true,
+              preference: { select: { emailOrderUpdates: true } },
+            },
+          })
+        : null;
+      const emailOrderUpdates = emailProfile?.preference?.emailOrderUpdates !== false;
+      const firstName = emailProfile?.firstName ?? '';
+      const orderUrl = order.userId
+        ? `/account/orders/${order.id}`
+        : `/track-order?number=${encodeURIComponent(order.number)}`;
+
+      if (emailOrderUpdates) {
+        if (dto.status === OrderStatus.SHIPPED && trackingNumber) {
+          await this.outbox.enqueue(
+            OUTBOX_EVENT.SHIPPING_UPDATE_EMAIL,
+            order.id,
+            {
+              orderId: order.id,
+              orderNumber: order.number,
+              to: order.email,
+              firstName,
+              status: mapStatusToApi(dto.status),
+              trackingNumber,
+              carrier: dto.carrier?.trim() || undefined,
+              orderUrl,
+            },
+            tx,
+          );
+        } else if (dto.status === OrderStatus.DELIVERED) {
+          await this.outbox.enqueue(
+            OUTBOX_EVENT.DELIVERED_EMAIL,
+            order.id,
+            {
+              orderId: order.id,
+              orderNumber: order.number,
+              to: order.email,
+              firstName,
+              orderUrl,
+            },
+            tx,
+          );
+          if (order.payment) {
+            // COD is collected on delivery, so payment confirmation rides the same transition.
+            await this.outbox.enqueue(
+              OUTBOX_EVENT.PAYMENT_CONFIRMATION_EMAIL,
+              order.id,
+              {
+                orderId: order.id,
+                orderNumber: order.number,
+                to: order.email,
+                firstName,
+                totalTaka: poishaToTaka(order.payment.amountPoisha),
+                paymentMethod: 'Cash on Delivery',
+                orderUrl,
+              },
+              tx,
+            );
+          }
+        } else {
+          await this.outbox.enqueue(
+            OUTBOX_EVENT.ORDER_STATUS_EMAIL,
+            order.id,
+            {
+              orderId: order.id,
+              orderNumber: order.number,
+              email: order.email,
+              firstName,
+              status: mapStatusToApi(dto.status),
+              note: dto.note?.trim() || null,
+              trackingNumber,
+            },
+            tx,
+          );
+        }
+      }
 
       if (order.userId) {
         const statusLabel = mapStatusToApi(dto.status);
-        await this.notifications.createForUser(
+        const notificationType =
+          dto.status === OrderStatus.SHIPPED
+            ? NotificationType.SHIPPING
+            : dto.status === OrderStatus.DELIVERED
+              ? NotificationType.DELIVERY
+              : NotificationType.ORDER_STATUS;
+        const notification = await this.notifications.createForUser(
           {
             userId: order.userId,
-            type:
-              dto.status === OrderStatus.SHIPPED
-                ? NotificationType.SHIPPING
-                : NotificationType.ORDER_STATUS,
+            type: notificationType,
             title: `Order ${statusLabel}`,
             body: `Your order ${order.number} is now ${statusLabel}.`,
             href: `/account/orders/${order.id}`,
@@ -425,6 +588,37 @@ export class OrdersService {
           },
           tx,
         );
+        if (notification && emailOrderUpdates) {
+          await this.notifications.createEmailDelivery(notification.id, tx);
+        }
+
+        if (dto.status === OrderStatus.DELIVERED) {
+          const paymentNotification = await this.notifications.createForUser(
+            {
+              userId: order.userId,
+              type: NotificationType.PAYMENT,
+              title: 'Payment collected',
+              body: `COD payment for order ${order.number} was collected on delivery.`,
+              href: `/account/orders/${order.id}`,
+              dedupeKey: `order:${order.id}:payment:collected`,
+              payload: { orderId: order.id, paymentStatus: PaymentStatus.COLLECTED },
+            },
+            tx,
+          );
+          if (paymentNotification && emailOrderUpdates) {
+            await this.notifications.createEmailDelivery(paymentNotification.id, tx);
+          }
+        }
+
+        await this.customerMetrics.recordActivity(
+          order.userId,
+          'ORDER_STATUS_CHANGED',
+          `Order ${order.number} ${statusLabel}`,
+          `/account/orders/${order.id}`,
+          { orderId: order.id, status: dto.status },
+          tx,
+        );
+        await this.customerMetrics.recomputeForUser(order.userId, tx);
       }
 
       const updated = await tx.customerOrder.findUniqueOrThrow({
@@ -483,6 +677,87 @@ export class OrdersService {
       status: OrderStatus.CANCELLED,
       note: dto.reason,
     });
+  }
+
+  /**
+   * Atomically releases expired ACTIVE holds and cancels still pre-ship orders so
+   * fulfillment cannot proceed after inventory was silently reclaimed.
+   */
+  async releaseExpiredReservationHolds(limit = 50): Promise<number> {
+    const expired = await this.prisma.inventoryReservation.findMany({
+      where: {
+        status: ReservationStatus.ACTIVE,
+        expiresAt: { lte: new Date() },
+      },
+      select: { orderId: true },
+      take: limit,
+      orderBy: { expiresAt: 'asc' },
+    });
+
+    let released = 0;
+    for (const row of expired) {
+      try {
+        const didRelease = await this.prisma.$transaction(async (tx) => {
+          const reservation = await tx.inventoryReservation.findUnique({
+            where: { orderId: row.orderId },
+          });
+          if (
+            !reservation ||
+            reservation.status !== ReservationStatus.ACTIVE ||
+            !reservation.expiresAt ||
+            reservation.expiresAt > new Date()
+          ) {
+            return false;
+          }
+
+          const order = await tx.customerOrder.findUnique({
+            where: { id: row.orderId },
+            include: { payment: true },
+          });
+          if (!order) return false;
+
+          await this.inventory.releaseForOrder(row.orderId, tx);
+
+          if (PRE_SHIP_STATUSES.has(order.status)) {
+            const now = new Date();
+            await tx.customerOrder.update({
+              where: { id: order.id },
+              data: {
+                status: OrderStatus.CANCELLED,
+                cancelledAt: now,
+                version: { increment: 1 },
+              },
+            });
+            await tx.orderStatusHistory.create({
+              data: {
+                orderId: order.id,
+                status: OrderStatus.CANCELLED,
+                note: 'Inventory hold expired',
+              },
+            });
+            if (order.payment) {
+              await tx.payment.update({
+                where: { id: order.payment.id },
+                data: { status: PaymentStatus.CANCELLED },
+              });
+            }
+            if (order.couponCode) {
+              await this.promotions.voidRedemptionForOrder(order.id, tx);
+            }
+          }
+
+          return true;
+        });
+        if (didRelease) released += 1;
+      } catch (error: unknown) {
+        this.logger.warn(
+          { err: error, orderId: row.orderId },
+          'Failed to release expired reservation',
+        );
+      }
+    }
+
+    return released;
   }
 
   private async createOrderRecord(
@@ -644,6 +919,8 @@ export class OrdersService {
       createdAt: order.createdAt.toISOString(),
       status: mapStatusToApi(order.status),
       items: order.items.map((item) => ({
+        orderItemId: item.id,
+        variantId: item.variantId,
         productId: item.productId,
         name: item.name,
         slug: item.slug,
@@ -695,6 +972,12 @@ export function buildTimeline(order: OrderDetailRecord): OrderResponseDto['timel
     if (status === OrderStatus.CONFIRMED && order.confirmedAt) {
       return order.confirmedAt.toISOString();
     }
+    if (status === OrderStatus.PROCESSING && order.processingAt) {
+      return order.processingAt.toISOString();
+    }
+    if (status === OrderStatus.PACKED && order.packedAt) {
+      return order.packedAt.toISOString();
+    }
     if (status === OrderStatus.SHIPPED && order.shippedAt) {
       return order.shippedAt.toISOString();
     }
@@ -707,6 +990,16 @@ export function buildTimeline(order: OrderDetailRecord): OrderResponseDto['timel
   const stepDone = (statuses: OrderStatus[]): boolean =>
     statuses.some((status) => reached.has(status));
 
+  const fulfillmentTrail = [
+    OrderStatus.CONFIRMED,
+    OrderStatus.PROCESSING,
+    OrderStatus.PACKED,
+    OrderStatus.SHIPPED,
+    OrderStatus.DELIVERED,
+    OrderStatus.RETURNED,
+    OrderStatus.EXCHANGED,
+  ];
+
   return [
     {
       label: 'Order placed',
@@ -716,27 +1009,45 @@ export function buildTimeline(order: OrderDetailRecord): OrderResponseDto['timel
     {
       label: 'Confirmed',
       at: historyAt(OrderStatus.CONFIRMED),
-      done: stepDone([
-        OrderStatus.CONFIRMED,
-        OrderStatus.PROCESSING,
-        OrderStatus.SHIPPED,
-        OrderStatus.DELIVERED,
-      ]),
+      done: stepDone(fulfillmentTrail),
     },
     {
       label: 'Processing',
       at: historyAt(OrderStatus.PROCESSING),
-      done: stepDone([OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED]),
+      done: stepDone([
+        OrderStatus.PROCESSING,
+        OrderStatus.PACKED,
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+        OrderStatus.RETURNED,
+        OrderStatus.EXCHANGED,
+      ]),
+    },
+    {
+      label: 'Packed',
+      at: historyAt(OrderStatus.PACKED),
+      done: stepDone([
+        OrderStatus.PACKED,
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+        OrderStatus.RETURNED,
+        OrderStatus.EXCHANGED,
+      ]),
     },
     {
       label: 'Shipped',
       at: historyAt(OrderStatus.SHIPPED),
-      done: stepDone([OrderStatus.SHIPPED, OrderStatus.DELIVERED]),
+      done: stepDone([
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+        OrderStatus.RETURNED,
+        OrderStatus.EXCHANGED,
+      ]),
     },
     {
       label: 'Delivered',
       at: historyAt(OrderStatus.DELIVERED),
-      done: reached.has(OrderStatus.DELIVERED),
+      done: stepDone([OrderStatus.DELIVERED, OrderStatus.RETURNED, OrderStatus.EXCHANGED]),
     },
   ];
 }

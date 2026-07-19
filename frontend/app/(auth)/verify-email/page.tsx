@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { VerifyEmailClient } from '@/features/auth/components/verify-email-client';
+import { AuthFormSkeleton } from '@/components/common/skeleton';
 
 export const metadata: Metadata = {
   title: 'Verify Email',
@@ -15,7 +16,7 @@ export default function VerifyEmailPage() {
         Account verification
       </p>
       <div className="mt-6">
-        <Suspense fallback={null}>
+        <Suspense fallback={<AuthFormSkeleton />}>
           <VerifyEmailClient />
         </Suspense>
       </div>

@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, type PropsWithChildren } from 'react';
+import { useEffect, useRef, type PropsWithChildren } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { authHydrated } from '@/store/slices/auth-slice';
 import { cartHydrated, type CartItem } from '@/store/slices/cart-slice';
 import { wishlistHydrated } from '@/store/slices/wishlist-slice';
 import { recentlyViewedHydrated } from '@/store/slices/recently-viewed-slice';
+import { mergeServerCart, toReduxCartItems } from '@/features/cart/api';
+import { mergeWishlist } from '@/features/wishlist/api';
 import { readStorage, writeStorage, removeStorage } from '@/lib/storage';
 import type { AuthUser } from '@/types/auth';
 
@@ -81,6 +83,7 @@ export function StoreHydrator({ children }: PropsWithChildren) {
   const wishlistHydratedFlag = useAppSelector((s) => s.wishlist.hydrated);
   const recentIds = useAppSelector((s) => s.recentlyViewed.productIds);
   const recentHydratedFlag = useAppSelector((s) => s.recentlyViewed.hydrated);
+  const commerceSyncedForUser = useRef<string | null>(null);
 
   useEffect(() => {
     dispatch(authHydrated(readAuth()));
@@ -97,6 +100,50 @@ export function StoreHydrator({ children }: PropsWithChildren) {
       rememberMe: auth.rememberMe,
     });
   }, [auth.hydrated, auth.accessToken, auth.user, auth.rememberMe]);
+
+  // Reconcile cart + wishlist with the server after a signed-in session is restored
+  // (login merge already covers fresh sign-in).
+  useEffect(() => {
+    if (!auth.hydrated || !wishlistHydratedFlag || !cartHydratedFlag) return;
+    if (!auth.accessToken || !auth.user) {
+      commerceSyncedForUser.current = null;
+      return;
+    }
+    if (commerceSyncedForUser.current === auth.user.id) return;
+
+    let cancelled = false;
+    commerceSyncedForUser.current = auth.user.id;
+
+    void (async () => {
+      let failed = false;
+      try {
+        const cart = await mergeServerCart();
+        if (!cancelled) dispatch(cartHydrated(toReduxCartItems(cart)));
+      } catch {
+        failed = true;
+      }
+      try {
+        const productIds = await mergeWishlist(readStorage<string[]>('wishlist', []));
+        if (!cancelled) dispatch(wishlistHydrated(productIds));
+      } catch {
+        failed = true;
+      }
+      if (failed && !cancelled) {
+        commerceSyncedForUser.current = null;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    auth.hydrated,
+    auth.accessToken,
+    auth.user,
+    wishlistHydratedFlag,
+    cartHydratedFlag,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (!cartHydratedFlag) return;

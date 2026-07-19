@@ -22,7 +22,7 @@ function TrackOrderInner() {
     setError(null);
     setOrder(null);
     try {
-      const result = await accountRepository.trackOrder!(number.trim(), email.trim());
+      const result = await accountRepository.trackOrder(number.trim(), email.trim());
       setOrder(result);
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)

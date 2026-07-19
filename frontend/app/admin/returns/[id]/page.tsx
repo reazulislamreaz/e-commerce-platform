@@ -4,6 +4,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminError,
@@ -11,7 +12,9 @@ import {
   AdminTextarea,
   StatusPill,
 } from '@/components/admin/admin-ui';
-import { adminApi, useAdminMutation, useAdminReturn } from '@/features/admin';
+import { adminApi, adminKeys, useAdminMutation, useAdminReturn } from '@/features/admin';
+
+const RETURN_INVALIDATE = [adminKeys.returnsRoot(), adminKeys.returnRoot()] as const;
 
 function mutationErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
@@ -30,14 +33,17 @@ export default function AdminReturnDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const approveMutation = useAdminMutation((args: { id: string; note?: string }) =>
-    adminApi.approveReturn(args.id, args.note),
+  const approveMutation = useAdminMutation(
+    (args: { id: string; note?: string }) => adminApi.approveReturn(args.id, args.note),
+    [...RETURN_INVALIDATE],
   );
-  const rejectMutation = useAdminMutation((args: { id: string; note?: string }) =>
-    adminApi.rejectReturn(args.id, args.note),
+  const rejectMutation = useAdminMutation(
+    (args: { id: string; note?: string }) => adminApi.rejectReturn(args.id, args.note),
+    [...RETURN_INVALIDATE],
   );
-  const completeMutation = useAdminMutation((args: { id: string; note?: string }) =>
-    adminApi.completeReturn(args.id, args.note),
+  const completeMutation = useAdminMutation(
+    (args: { id: string; note?: string }) => adminApi.completeReturn(args.id, args.note),
+    [...RETURN_INVALIDATE],
   );
 
   const busy =
@@ -66,7 +72,7 @@ export default function AdminReturnDetailPage() {
   }
 
   if (returnQuery.isLoading) {
-    return <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading return…</p>;
+    return <AdminTableSkeleton />;
   }
 
   if (returnQuery.isError || !item) {

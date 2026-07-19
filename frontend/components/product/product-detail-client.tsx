@@ -1,42 +1,31 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Star } from 'lucide-react';
 import { formatTaka } from '@/lib/currency';
 import type { CatalogProduct } from '@/features/products/types';
 import { normalizeProduct } from '@/features/products/types';
-import { ProductCard } from '@/components/shared/product-card';
-import { EasyReturnsExchange } from '@/components/product/easy-returns-exchange';
-import { InlineSizeGuide } from '@/components/product/inline-size-guide';
+import { trackAddToCart, trackViewContent } from '@/features/analytics/facebook-pixel';
 import { ProductActionButtons } from '@/components/product/product-action-buttons';
+import { ProductBelowFold } from '@/components/product/product-below-fold';
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
 import { WishlistButton } from '@/components/shared/wishlist-button';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { ProductImage } from '@/components/common/product-image';
+import { useAppDispatch } from '@/store/hooks';
 import { itemAdded } from '@/store/slices/cart-slice';
-import { productViewed } from '@/store/slices/recently-viewed-slice';
-import { useProductsByIds } from '@/features/products';
+import { flashMessage } from '@/components/common/flash-message';
 import {
   buildProductOrderWhatsAppHref,
   buildTelHref,
   getContactConfig,
 } from '@/lib/contact-config';
 
-export function ProductDetailClient({
-  product,
-  related,
-}: {
-  product: CatalogProduct;
-  related: CatalogProduct[];
-}) {
+export function ProductDetailClient({ product }: { product: CatalogProduct }) {
   const p = normalizeProduct(product);
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const recentIds = useAppSelector((s) => s.recentlyViewed.productIds);
-  const recentProductIds = recentIds.filter((id) => id !== product.id).slice(0, 4);
-  const recentProducts = useProductsByIds(recentProductIds);
 
   const [activeImage, setActiveImage] = useState(0);
   const [size, setSize] = useState(p.sizes[0] ?? 'M');
@@ -46,8 +35,12 @@ export function ProductDetailClient({
   const [addedMsg, setAddedMsg] = useState(false);
 
   useEffect(() => {
-    dispatch(productViewed(p.id));
-  }, [dispatch, p.id]);
+    trackViewContent({
+      content_ids: [p.id],
+      content_name: p.name,
+      value: p.price,
+    });
+  }, [p.id, p.name, p.price]);
 
   const variant = useMemo(
     () => p.variants.find((v) => v.size === size && v.color === color),
@@ -62,13 +55,6 @@ export function ProductDetailClient({
       ? Math.round((1 - p.price / p.compareAtPrice) * 100)
       : 0;
 
-  const recentlyViewed = recentProductIds.flatMap((id) => {
-    const item = recentProducts.data?.find(
-      (candidate) => candidate.id === id || candidate.legacyId === id,
-    );
-    return item ? [item] : [];
-  });
-
   const contact = getContactConfig();
   const whatsappOrderHref = buildProductOrderWhatsAppHref(
     contact.whatsappNumber,
@@ -76,6 +62,14 @@ export function ProductDetailClient({
     { size, color, quantity: qty },
   );
   const callOrderHref = buildTelHref(contact.phoneNumber);
+
+  const syncCart = (variantId: string, quantity: number) => {
+    void import('@/features/cart/api')
+      .then(({ upsertServerCartItem }) => upsertServerCartItem(variantId, quantity))
+      .catch(() => {
+        flashMessage('Could not sync bag. Changes saved on this device.');
+      });
+  };
 
   const addToBag = () => {
     if (!inStock) return;
@@ -89,9 +83,12 @@ export function ProductDetailClient({
         quantity: qty,
       }),
     );
-    void import('@/features/cart/api').then(({ upsertServerCartItem }) =>
-      upsertServerCartItem(variantId, qty).catch(() => undefined),
-    );
+    syncCart(variantId, qty);
+    trackAddToCart({
+      content_ids: [p.id],
+      content_name: p.name,
+      value: p.price * qty,
+    });
     setAddedMsg(true);
     window.setTimeout(() => setAddedMsg(false), 2000);
   };
@@ -108,9 +105,7 @@ export function ProductDetailClient({
         quantity: qty,
       }),
     );
-    void import('@/features/cart/api').then(({ upsertServerCartItem }) =>
-      upsertServerCartItem(variantId, qty).catch(() => undefined),
-    );
+    syncCart(variantId, qty);
     router.push('/checkout');
   };
 
@@ -133,7 +128,7 @@ export function ProductDetailClient({
               onMouseEnter={() => setZoom(true)}
               onMouseLeave={() => setZoom(false)}
             >
-              <Image
+              <ProductImage
                 src={p.images[activeImage] ?? p.image}
                 alt={p.name}
                 width={800}
@@ -161,12 +156,13 @@ export function ProductDetailClient({
                       index === activeImage ? 'border-[#e5bd79]' : 'border-transparent'
                     }`}
                   >
-                    <Image
+                    <ProductImage
                       src={src}
                       alt={`${p.name} view ${index + 1}`}
                       fill
                       className="object-cover"
                       sizes="64px"
+                      containerClassName="absolute inset-0"
                     />
                   </button>
                 ))}
@@ -290,10 +286,6 @@ export function ProductDetailClient({
               onOrderNow={orderNow}
             />
 
-            <InlineSizeGuide category={p.category} />
-
-            <EasyReturnsExchange />
-
             <Link
               href="/shop"
               className="mt-6 text-[11px] font-semibold uppercase tracking-wide text-[#b5b0a8] hover:text-[#e3bb78]"
@@ -302,67 +294,9 @@ export function ProductDetailClient({
             </Link>
           </div>
         </div>
-
-        {p.reviews.length > 0 && (
-          <section className="mt-12 border-t border-[#2d2a27] pt-8">
-            <h2 className="text-base font-bold uppercase tracking-tight text-white">
-              Reviews & Ratings
-            </h2>
-            <div className="mt-5 space-y-4">
-              {p.reviews.map((review) => (
-                <article
-                  key={review.id}
-                  className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-4"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1 text-[#e5c17d]">
-                      {Array.from({ length: review.rating }).map((_, i) => (
-                        <Star key={i} className="size-3 fill-[#e5c17d]" strokeWidth={0} />
-                      ))}
-                    </span>
-                    <h3 className="text-sm font-semibold text-white">{review.title}</h3>
-                    {review.verified && (
-                      <span className="text-[10px] uppercase tracking-wide text-[#8fbf8f]">
-                        Verified
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-2 text-sm text-[#b5b0a8]">{review.body}</p>
-                  <p className="mt-2 text-[11px] text-[#8b867d]">
-                    {review.author} · {review.createdAt}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
       </section>
 
-      {related.length > 0 && (
-        <section className="mx-auto max-w-[1400px] border-t border-[#2d2a27] px-3 py-8 sm:px-6 sm:py-10">
-          <h2 className="mb-5 text-base font-bold uppercase tracking-tight text-white">
-            You May Also Like
-          </h2>
-          <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 min-[480px]:grid-cols-3 lg:grid-cols-4">
-            {related.map((item) => (
-              <ProductCard key={item.id} product={item} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {recentlyViewed.length > 0 && (
-        <section className="mx-auto max-w-[1400px] border-t border-[#2d2a27] px-3 py-8 sm:px-6 sm:py-10">
-          <h2 className="mb-5 text-base font-bold uppercase tracking-tight text-white">
-            Recently Viewed
-          </h2>
-          <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 min-[480px]:grid-cols-3 lg:grid-cols-4">
-            {recentlyViewed.map((item) => (
-              <ProductCard key={item.id} product={item} />
-            ))}
-          </div>
-        </section>
-      )}
+      <ProductBelowFold product={product} />
     </main>
   );
 }

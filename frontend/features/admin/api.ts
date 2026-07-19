@@ -14,6 +14,8 @@ import type {
   AdminReviewStatus,
   AdminReturnStatus,
   AdminUser,
+  AnalyticsOverview,
+  Bestseller,
   ContactMessage,
   ContactStatus,
   CursorPage,
@@ -21,11 +23,22 @@ import type {
   InventoryBalance,
   InventoryLocation,
   InventoryMovement,
+  InventoryAnalytics,
   NewsletterStatus,
   NewsletterSubscription,
   ProductStatus,
+  ReportExportFormat,
+  ReportExportJob,
+  ReportExportType,
+  SalesPoint,
+  CustomerAnalytics,
   UpdateAdminProductInput,
   UserStatus,
+  AdminCustomer,
+  CustomerActivity,
+  CustomerOrderHistory,
+  CustomerSegment,
+  CustomerSegmentSummary,
 } from './types';
 
 async function getData<T>(path: string, config?: Parameters<typeof apiClient.get>[1]): Promise<T> {
@@ -62,6 +75,28 @@ async function deleteData(path: string): Promise<void> {
 }
 
 export const adminApi = {
+  listCustomers(params?: {
+    cursor?: string;
+    limit?: number;
+    search?: string;
+    segment?: CustomerSegment | string;
+    sort?: 'RECENT' | 'HIGH_VALUE';
+  }) {
+    return getPage<AdminCustomer>('/admin/customers', params);
+  },
+  getCustomer(id: string) {
+    return getData<AdminCustomer>(`/admin/customers/${id}`);
+  },
+  listCustomerOrders(id: string, params?: { cursor?: string; limit?: number }) {
+    return getPage<CustomerOrderHistory>(`/admin/customers/${id}/orders`, params);
+  },
+  listCustomerActivity(id: string, params?: { cursor?: string; limit?: number }) {
+    return getPage<CustomerActivity>(`/admin/customers/${id}/activity`, params);
+  },
+  getCustomerSegmentSummary() {
+    return getData<CustomerSegmentSummary[]>('/admin/customers/segments/summary');
+  },
+
   listOrders(params?: {
     cursor?: string;
     limit?: number;
@@ -135,6 +170,26 @@ export const adminApi = {
   listInventoryLocations() {
     return getData<InventoryLocation[]>('/admin/inventory/locations');
   },
+  listStockAlerts(params?: { limit?: number }) {
+    return getData<
+      Array<{
+        id: string;
+        level: 'LOW' | 'OUT';
+        available: number;
+        threshold: number;
+        createdAt: string;
+        variantId: string;
+        sku: string;
+        size: string;
+        color: string;
+        locationId: string;
+        locationCode: string;
+        locationName: string;
+        onHand: number;
+        reserved: number;
+      }>
+    >('/admin/inventory/alerts', { params });
+  },
   adjustInventory(body: {
     variantId: string;
     locationId: string;
@@ -188,6 +243,15 @@ export const adminApi = {
   },
   updateProduct(id: string, body: UpdateAdminProductInput) {
     return patchData<AdminProductDetail>(`/admin/products/${id}`, body);
+  },
+  async uploadProductImage(file: File) {
+    const body = new FormData();
+    body.append('file', file);
+    const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
+      '/admin/product-images',
+      body,
+    );
+    return unwrapData(data);
   },
   publishProduct(id: string) {
     return postData<AdminProductDetail>(`/admin/products/${id}/publish`);
@@ -291,6 +355,45 @@ export const adminApi = {
   },
   deleteUser(id: string) {
     return deleteData(`/users/${id}`);
+  },
+
+  getAnalyticsOverview() {
+    return getData<AnalyticsOverview>('/admin/analytics/overview');
+  },
+  getSales(params?: { granularity?: 'day' | 'month'; from?: string; to?: string }) {
+    return getData<SalesPoint[]>('/admin/analytics/sales', { params });
+  },
+  getBestsellers(limit = 10) {
+    return getData<Bestseller[]>('/admin/analytics/products/bestsellers', {
+      params: { limit },
+    });
+  },
+  getCustomerAnalytics() {
+    return getData<CustomerAnalytics>('/admin/analytics/customers/summary');
+  },
+  getInventoryAnalytics() {
+    return getData<InventoryAnalytics>('/admin/analytics/inventory');
+  },
+  createReportExport(body: {
+    type: ReportExportType;
+    format: ReportExportFormat;
+    params?: { from?: string; to?: string };
+  }) {
+    return postData<ReportExportJob>('/admin/reports/exports', body);
+  },
+  getReportExport(id: string) {
+    return getData<ReportExportJob>(`/admin/reports/exports/${id}`);
+  },
+  async downloadReportExport(id: string, fileName: string) {
+    const response = await apiClient.get<Blob>(`/admin/reports/exports/${id}/download`, {
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(response.data);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
   },
 };
 

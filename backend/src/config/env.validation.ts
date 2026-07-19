@@ -32,4 +32,10 @@ export const envValidationSchema = Joi.object({
     otherwise: Joi.optional().allow(''),
   }),
   CONTACT_INBOX: Joi.string().email().optional().allow(''),
+  // Directory for locally stored product images; defaults to backend/uploads/products.
+  PRODUCT_UPLOAD_DIR: Joi.string().optional().allow(''),
+  // Local MVP report storage; use durable object storage in multi-instance production.
+  REPORTS_STORAGE_DIR: Joi.string().optional().allow(''),
+  // CRM high-value customer lifetime threshold in poisha (default ৳10,000).
+  CRM_HIGH_VALUE_THRESHOLD_POISHA: Joi.number().integer().min(0).default(1_000_000),
 });

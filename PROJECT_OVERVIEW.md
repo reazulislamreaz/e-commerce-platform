@@ -20,7 +20,7 @@ ecommerce-platform/
 └── PROJECT_OVERVIEW.md       This document
 ```
 
-The platform foundation, identity, public catalog, inventory read model, COD commerce stack (server cart/wishlist, addresses, coupons, orders, returns, notifications, preferences, contact/newsletter, and admin commerce APIs), moderated product reviews, and a role-gated `/admin` UI are implemented. Online payment gateways and review media/object storage remain deferred.
+The MVP commerce platform is implemented end-to-end for Cash on Delivery: identity, public catalog, inventory (reservations, stock alerts, expiry cancellation), server cart/wishlist, addresses, coupons, orders (PENDING→CONFIRMED→PROCESSING→PACKED→SHIPPED→DELIVERED plus cancel/return/exchange), returns/exchanges (7-day window, condition attestation, sale exchange-only), notifications, preferences, contact/newsletter, moderated product reviews, CRM (metrics/segments/activity + 6h backfill), marketing banners CMS, abandoned-cart recovery, consent-gated Facebook Pixel, analytics dashboards with CSV/XLSX exports (recognized revenue = collected payments only), professional transactional email templates, and a role-gated `/admin` UI. Background work (outbox relay, retention, inventory expiry, CRM backfill, cart recovery, report generation) runs via replica-safe BullMQ jobs. Online payment gateways, invoice generation/download/print, and review media/object storage remain deferred; `Payment.providerRef` and order architecture stay extensible for later.
 
 ## Technology and runtime
 
@@ -170,7 +170,7 @@ Use `PrismaService` through dependency injection. Always use `select`, cursor pa
 
 ### Planned module boundaries
 
-Implemented modules: auth, users, mail, health, catalog, inventory, platform (idempotency/outbox/audit/retention), addresses, promotions, cart, wishlist, orders, returns, reviews, notifications, preferences, contact, newsletter, and admin-catalog. Inventory availability is embedded in catalog responses; checkout reservations and admin adjustments are live. Online payment gateway modules remain deferred.
+Implemented modules: auth, users, mail, health, catalog, inventory, platform (idempotency/outbox with SKIP LOCKED claims/audit/retention + BullMQ platform queue), addresses, promotions, cart, wishlist, orders, returns, reviews, notifications, preferences, contact, newsletter, admin-catalog, marketing (banners), cart-recovery, crm, and analytics/reports. Inventory availability is embedded in catalog responses; checkout reservations, stock alerts, PACKED fulfillment, reservation expiry (cancels stale pre-ship COD holds), exchange replacement reserves, and admin adjustments are live. Recognized revenue for analytics/CRM is payment `COLLECTED` only. Online payment gateway and invoice modules remain deferred.
 
 When implementing one, create a focused NestJS module with controller, service, repository/data-access layer, DTOs, tests, Swagger annotations, and only the Prisma models/indexes necessary for that feature.
 
@@ -185,7 +185,7 @@ When implementing one, create a focused NestJS module with controller, service, 
 - `frontend/services/api-client.ts` — shared Axios client
 - `frontend/store/` — Redux store and client-only slices
 
-The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI. Auth, catalog, cart/wishlist (server-backed with Redux projection), checkout (COD), account commerce (addresses, orders, returns, coupons, notifications, preferences, moderated reviews), contact, and newsletter are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. A role-gated `/admin` shell (ADMIN/SUPER_ADMIN) covers orders, returns, review moderation, inventory, coupons, catalog/taxonomy, contact, newsletter, and users; storefront chrome is isolated from admin routes. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Online payment methods remain deferred.
+The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI. Auth, catalog, cart/wishlist (server-backed with Redux projection), checkout (COD), account commerce (addresses, orders, returns, coupons, notifications, preferences, moderated reviews), contact, and newsletter are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. A role-gated `/admin` shell (ADMIN/SUPER_ADMIN) covers overview, analytics/exports, orders, returns, review moderation, inventory/stock alerts, coupons, banners, catalog/taxonomy, CRM customers, contact, newsletter, and users; storefront chrome is isolated from admin routes. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Online payment methods remain deferred.
 
 ### State rules
 

@@ -1,7 +1,8 @@
 import { Test } from '@nestjs/testing';
+import { CartRecoveryService } from '@/modules/cart-recovery/cart-recovery.service';
+import { InventoryService } from '@/modules/inventory/inventory.service';
 import { CartRepository } from './cart.repository';
 import { CartService } from './cart.service';
-import { InventoryService } from '@/modules/inventory/inventory.service';
 
 describe('CartService', () => {
   let service: CartService;
@@ -18,10 +19,15 @@ describe('CartService', () => {
     deleteAllItems: jest.fn(),
     deleteCart: jest.fn(),
     findActiveVariant: jest.fn(),
+    setRecoveryEmail: jest.fn(),
   };
 
   const inventoryService = {
     getAvailableByVariantIds: jest.fn(),
+  };
+
+  const cartRecoveryService = {
+    suppressForCart: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -31,6 +37,7 @@ describe('CartService', () => {
         CartService,
         { provide: CartRepository, useValue: cartRepository },
         { provide: InventoryService, useValue: inventoryService },
+        { provide: CartRecoveryService, useValue: cartRecoveryService },
       ],
     }).compile();
     service = moduleRef.get(CartService);

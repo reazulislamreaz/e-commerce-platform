@@ -3,13 +3,14 @@
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
 import { useAccountCoupons } from '@/features/account';
+import { AccountPanelSkeleton } from '@/components/common/skeleton';
 
 export default function CouponsPage() {
   const user = useAppSelector(selectAuthUser)!;
   const { data: coupons, loading } = useAccountCoupons(user.id);
 
   if (loading) {
-    return <p className="text-sm text-[#b5b0a8]">Loading coupons…</p>;
+    return <AccountPanelSkeleton />;
   }
 
   return (

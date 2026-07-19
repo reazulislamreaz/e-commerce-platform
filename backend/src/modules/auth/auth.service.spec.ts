@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import { Prisma, Role, UserStatus, VerificationTokenType } from '@/generated/prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
+import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { MailService } from '@/modules/mail/mail.service';
 import { AuthService } from './auth.service';
 
@@ -79,6 +80,11 @@ describe('AuthService', () => {
   const mail = {
     sendEmailVerification: jest.fn().mockResolvedValue(undefined),
     sendPasswordReset: jest.fn().mockResolvedValue(undefined),
+    sendWelcome: jest.fn().mockResolvedValue(undefined),
+  };
+  const customerMetrics = {
+    recordActivity: jest.fn().mockResolvedValue(undefined),
+    recomputeForUser: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -89,6 +95,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: { signAsync: jest.fn().mockResolvedValue('jwt') } },
         { provide: MailService, useValue: mail },
+        { provide: CustomerMetricsService, useValue: customerMetrics },
         {
           provide: ConfigService,
           useValue: {

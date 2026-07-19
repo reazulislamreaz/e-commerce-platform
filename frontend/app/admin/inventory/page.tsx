@@ -2,11 +2,13 @@
 
 import axios from 'axios';
 import { useMemo, useState, type FormEvent } from 'react';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminEmpty,
   AdminError,
   AdminInput,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -16,6 +18,7 @@ import {
 } from '@/components/admin/admin-ui';
 import {
   adminApi,
+  adminKeys,
   useAdminMutation,
   useInventoryBalances,
   useInventoryLocations,
@@ -93,7 +96,7 @@ function InventoryBalancesPanel({
       ) : null}
 
       {showInitialLoading ? (
-        <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading balances…</p>
+        <AdminTableSkeleton />
       ) : null}
 
       {!showInitialLoading && !balancesQuery.isError && rows.length === 0 ? (
@@ -173,7 +176,7 @@ export default function AdminInventoryPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const adjustMutation = useAdminMutation(adminApi.adjustInventory);
+  const adjustMutation = useAdminMutation(adminApi.adjustInventory, [adminKeys.inventoryRoot()]);
   const locations = locationsQuery.data ?? [];
 
   async function onAdjust(event: FormEvent) {
@@ -217,7 +220,11 @@ export default function AdminInventoryPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Inventory"
+        description="Track stock balances and record adjustments."
+      />
       <InventoryBalancesPanel
         key={locationId || 'all'}
         locationId={locationId}

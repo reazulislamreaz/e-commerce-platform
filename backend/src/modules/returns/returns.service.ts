@@ -6,10 +6,12 @@ import {
 import {
   NotificationType,
   OrderStatus,
+  Prisma,
   ReturnStatus,
   ReturnType,
 } from '@/generated/prisma/client';
 import { InventoryService } from '@/modules/inventory/inventory.service';
+import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
@@ -17,9 +19,20 @@ import type { AdminReturnActionDto } from './dto/admin-return-action.dto';
 import type { CreateReturnDto } from './dto/create-return.dto';
 import type { ListReturnsQueryDto } from './dto/list-returns.query.dto';
 import type { ReturnDetailResponseDto, ReturnRequestResponseDto } from './dto/return-response.dto';
-import { ReturnsRepository, type ReturnDetailRecord } from './returns.repository';
+import {
+  ACTIVE_RETURN_STATUSES,
+  ReturnsRepository,
+  type ReturnDetailRecord,
+} from './returns.repository';
 
 const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+type ResolvedReturnLine = {
+  orderItemId: string;
+  variantId: string;
+  quantity: number;
+  exchangeVariantId?: string;
+};
 
 @Injectable()
 export class ReturnsService {
@@ -28,28 +41,27 @@ export class ReturnsService {
     private readonly inventory: InventoryService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly customerMetrics: CustomerMetricsService,
   ) {}
 
   async create(userId: string, dto: CreateReturnDto): Promise<ReturnRequestResponseDto> {
+    if (!dto.conditionAttested) {
+      throw new BadRequestException('You must attest that items are unworn with tags attached');
+    }
+
     return this.returns.runTransaction(async (tx) => {
       const order = await this.returns.findOrderForReturn(dto.orderId, userId, tx);
       if (!order) throw new NotFoundException('Order not found');
 
       this.assertReturnEligibility(order.status, order.deliveredAt);
 
-      const existing = await this.returns.findActiveByOrderId(order.id);
+      const existing = await this.returns.findActiveByOrderId(order.id, tx);
       if (existing) {
         throw new BadRequestException('An active return request already exists for this order');
       }
 
       const returnType = mapApiTypeToPrisma(dto.type);
-      const lines = this.resolveReturnLines(order.items, dto.items);
-
-      const productIds = [...new Set(order.items.map((item) => item.productId))];
-      const products = await this.returns.findProductsOnSale(productIds, tx);
-      if (returnType === ReturnType.RETURN && products.some((product) => product.onSale)) {
-        throw new BadRequestException('Sale items are exchange only');
-      }
+      const lines = await this.resolveReturnLines(order.items, dto, returnType, order.id, tx);
 
       const created = await this.returns.create(
         {
@@ -57,11 +69,15 @@ export class ReturnsService {
           user: { connect: { id: userId } },
           type: returnType,
           reason: dto.reason.trim(),
+          conditionAttested: dto.conditionAttested,
           items: {
             create: lines.map((line) => ({
               orderItemId: line.orderItemId,
               variantId: line.variantId,
               quantity: line.quantity,
+              ...(line.exchangeVariantId
+                ? { exchangeVariantId: line.exchangeVariantId }
+                : {}),
             })),
           },
           statusHistory: {
@@ -113,7 +129,87 @@ export class ReturnsService {
   }
 
   async approve(actor: JwtPayload, id: string, dto: AdminReturnActionDto) {
-    return this.transition(actor, id, ReturnStatus.APPROVED, dto.note, { decidedAt: new Date() });
+    return this.returns.runTransaction(async (tx) => {
+      const current = await tx.returnRequest.findUnique({
+        where: { id },
+        include: {
+          order: { select: { id: true, number: true, userId: true, status: true, deliveredAt: true } },
+          items: {
+            select: {
+              id: true,
+              orderItemId: true,
+              variantId: true,
+              quantity: true,
+              exchangeVariantId: true,
+            },
+          },
+        },
+      });
+      if (!current) throw new NotFoundException('Return request not found');
+
+      if (current.status !== ReturnStatus.PENDING) {
+        throw new BadRequestException(`Cannot approve a ${current.status.toLowerCase()} return`);
+      }
+
+      if (current.type === ReturnType.EXCHANGE) {
+        const exchangeLines = current.items.filter((item) => item.exchangeVariantId);
+        if (exchangeLines.length !== current.items.length) {
+          throw new BadRequestException('Exchange approval requires replacement variants on every line');
+        }
+        await this.inventory.reserveExchangeReplacements(
+          current.id,
+          exchangeLines.map((item) => ({
+            variantId: item.exchangeVariantId!,
+            quantity: item.quantity,
+          })),
+          tx,
+        );
+      }
+
+      const updated = await this.returns.updateStatus(
+        id,
+        { status: ReturnStatus.APPROVED, decidedAt: new Date() },
+        tx,
+      );
+
+      await this.returns.appendStatusHistory(
+        {
+          returnRequestId: id,
+          status: ReturnStatus.APPROVED,
+          note: dto.note?.trim() || null,
+          actorId: actor.sub,
+        },
+        tx,
+      );
+
+      await this.audit.write(
+        {
+          actorUserId: actor.sub,
+          actorRole: actor.role,
+          action: 'return.approve',
+          resourceType: 'return_request',
+          resourceId: id,
+          before: { status: current.status },
+          after: { status: ReturnStatus.APPROVED, note: dto.note ?? null },
+        },
+        tx,
+      );
+
+      await this.notifications.createForUser(
+        {
+          userId: current.userId,
+          type: NotificationType.RETURN_STATUS,
+          title: 'Return approved',
+          body: `Your return for order ${current.order.number} was approved.`,
+          href: '/account/returns',
+          dedupeKey: `return:${id}:${ReturnStatus.APPROVED}`,
+          payload: { returnId: id, status: ReturnStatus.APPROVED },
+        },
+        tx,
+      );
+
+      return toDetailResponse(updated);
+    });
   }
 
   async reject(actor: JwtPayload, id: string, dto: AdminReturnActionDto) {
@@ -122,14 +218,39 @@ export class ReturnsService {
 
   async complete(actor: JwtPayload, id: string, dto: AdminReturnActionDto) {
     return this.returns.runTransaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: string; status: ReturnStatus; version: number }>>`
+        SELECT id, status, version
+        FROM return_request
+        WHERE id = ${id}::uuid
+        FOR UPDATE
+      `;
+      if (!locked[0]) throw new NotFoundException('Return request not found');
+
       const current = await tx.returnRequest.findUnique({
         where: { id },
         include: {
           order: { select: { id: true, number: true, userId: true, status: true, deliveredAt: true } },
-          items: { select: { id: true, orderItemId: true, variantId: true, quantity: true } },
+          items: {
+            select: {
+              id: true,
+              orderItemId: true,
+              variantId: true,
+              quantity: true,
+              exchangeVariantId: true,
+            },
+          },
         },
       });
       if (!current) throw new NotFoundException('Return request not found');
+
+      if (current.status === ReturnStatus.COMPLETED) {
+        return toDetailResponse(
+          (await this.returns.findById(id, tx)) ??
+            (() => {
+              throw new NotFoundException('Return request not found');
+            })(),
+        );
+      }
 
       if (current.status !== ReturnStatus.APPROVED) {
         throw new BadRequestException('Only approved return requests can be completed');
@@ -144,11 +265,27 @@ export class ReturnsService {
         tx,
       );
 
+      if (current.type === ReturnType.EXCHANGE) {
+        const exchangeLines = current.items.filter((item) => item.exchangeVariantId);
+        if (exchangeLines.length !== current.items.length) {
+          throw new BadRequestException('Exchange completion requires replacement variants on every line');
+        }
+        await this.inventory.consumeExchangeReplacements(
+          current.id,
+          exchangeLines.map((item) => ({
+            variantId: item.exchangeVariantId!,
+            quantity: item.quantity,
+          })),
+          tx,
+        );
+      }
+
       const updated = await this.returns.updateStatus(
         id,
         {
           status: ReturnStatus.COMPLETED,
           completedAt: new Date(),
+          version: { increment: 1 },
         },
         tx,
       );
@@ -163,9 +300,7 @@ export class ReturnsService {
         tx,
       );
 
-      if (current.type === ReturnType.RETURN) {
-        await this.returns.markOrderReturned(current.orderId, tx);
-      }
+      await this.returns.applyOrderOutcomeAfterCompletion(current.orderId, tx);
 
       await this.audit.write(
         {
@@ -175,23 +310,35 @@ export class ReturnsService {
           resourceType: 'return_request',
           resourceId: id,
           before: { status: current.status },
-          after: { status: ReturnStatus.COMPLETED, orderId: current.orderId },
+          after: { status: ReturnStatus.COMPLETED, orderId: current.orderId, type: current.type },
         },
         tx,
       );
 
+      const isExchange = current.type === ReturnType.EXCHANGE;
       await this.notifications.createForUser(
         {
           userId: current.userId,
-          type: NotificationType.RETURN_STATUS,
-          title: 'Return completed',
-          body: `Your return for order ${current.order.number} has been completed.`,
-          href: '/account/returns',
+          type: isExchange ? NotificationType.EXCHANGE_STATUS : NotificationType.RETURN_STATUS,
+          title: isExchange ? 'Exchange completed' : 'Return completed',
+          body: isExchange
+            ? `Your exchange for order ${current.order.number} has been completed.`
+            : `Your return for order ${current.order.number} has been completed.`,
+          href: isExchange ? '/account/exchanges' : '/account/returns',
           dedupeKey: `return:${id}:completed`,
-          payload: { returnId: id, status: ReturnStatus.COMPLETED },
+          payload: { returnId: id, status: ReturnStatus.COMPLETED, type: current.type },
         },
         tx,
       );
+      await this.customerMetrics.recordActivity(
+        current.userId,
+        'RETURN_COMPLETED',
+        `Return for order ${current.order.number} completed`,
+        '/account/returns',
+        { returnId: id, orderId: current.orderId },
+        tx,
+      );
+      await this.customerMetrics.recomputeForUser(current.userId, tx);
 
       return toDetailResponse(updated);
     });
@@ -209,7 +356,15 @@ export class ReturnsService {
         where: { id },
         include: {
           order: { select: { id: true, number: true, userId: true, status: true, deliveredAt: true } },
-          items: { select: { id: true, orderItemId: true, variantId: true, quantity: true } },
+          items: {
+            select: {
+              id: true,
+              orderItemId: true,
+              variantId: true,
+              quantity: true,
+              exchangeVariantId: true,
+            },
+          },
         },
       });
       if (!current) throw new NotFoundException('Return request not found');
@@ -275,24 +430,103 @@ export class ReturnsService {
     }
   }
 
-  private resolveReturnLines(
+  private async resolveReturnLines(
     orderItems: Array<{
       id: string;
       variantId: string;
+      productId: string;
       quantity: number;
     }>,
+    dto: CreateReturnDto,
+    returnType: ReturnType,
+    orderId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<ResolvedReturnLine[]> {
+    const requested = this.buildRequestedLines(orderItems, dto.items);
+    const priorQty = await this.returns.sumReturnQuantitiesByOrderItem(
+      orderId,
+      ACTIVE_RETURN_STATUSES,
+      tx,
+    );
+
+    const products = await this.returns.findProductsOnSale(
+      [...new Set(orderItems.map((item) => item.productId))],
+      tx,
+    );
+    const saleByProductId = new Map(products.map((product) => [product.id, product.onSale]));
+
+    const exchangeVariantIds = requested
+      .map((line) => line.exchangeVariantId)
+      .filter((id): id is string => Boolean(id));
+    const exchangeVariants = await this.returns.findActiveVariantsByIds(exchangeVariantIds, tx);
+    const exchangeVariantById = new Map(exchangeVariants.map((variant) => [variant.id, variant]));
+
+    const orderItemById = new Map(orderItems.map((item) => [item.id, item]));
+    const lines: ResolvedReturnLine[] = [];
+
+    for (const line of requested) {
+      const orderItem = orderItemById.get(line.orderItemId);
+      if (!orderItem) {
+        throw new BadRequestException('One or more return items are invalid for this order');
+      }
+
+      const alreadyReturned = priorQty.get(orderItem.id) ?? 0;
+      const remaining = orderItem.quantity - alreadyReturned;
+      if (line.quantity > remaining) {
+        throw new BadRequestException('Return quantity exceeds remaining returnable quantity');
+      }
+
+      if (returnType === ReturnType.RETURN && saleByProductId.get(orderItem.productId)) {
+        throw new BadRequestException('Sale items are exchange only');
+      }
+
+      if (returnType === ReturnType.EXCHANGE) {
+        if (!line.exchangeVariantId) {
+          throw new BadRequestException('Exchange requests require a replacement variant for each line');
+        }
+        const replacement = exchangeVariantById.get(line.exchangeVariantId);
+        if (!replacement) {
+          throw new BadRequestException('One or more exchange variants are unavailable');
+        }
+        if (replacement.productId !== orderItem.productId) {
+          throw new BadRequestException('Exchange variants must belong to the same product');
+        }
+      } else if (line.exchangeVariantId) {
+        throw new BadRequestException('Replacement variants are only allowed for exchanges');
+      }
+
+      lines.push({
+        orderItemId: orderItem.id,
+        variantId: orderItem.variantId,
+        quantity: line.quantity,
+        ...(line.exchangeVariantId ? { exchangeVariantId: line.exchangeVariantId } : {}),
+      });
+    }
+
+    return lines;
+  }
+
+  private buildRequestedLines(
+    orderItems: Array<{ id: string; variantId: string; quantity: number }>,
     requested?: CreateReturnDto['items'],
-  ): Array<{ orderItemId: string; variantId: string; quantity: number }> {
+  ): Array<{
+    orderItemId: string;
+    quantity: number;
+    exchangeVariantId?: string;
+  }> {
     if (!requested || requested.length === 0) {
       return orderItems.map((item) => ({
         orderItemId: item.id,
-        variantId: item.variantId,
         quantity: item.quantity,
       }));
     }
 
     const byId = new Map(orderItems.map((item) => [item.id, item]));
-    const lines: Array<{ orderItemId: string; variantId: string; quantity: number }> = [];
+    const lines: Array<{
+      orderItemId: string;
+      quantity: number;
+      exchangeVariantId?: string;
+    }> = [];
 
     for (const line of requested) {
       const orderItem = byId.get(line.orderItemId);
@@ -304,8 +538,8 @@ export class ReturnsService {
       }
       lines.push({
         orderItemId: orderItem.id,
-        variantId: orderItem.variantId,
         quantity: line.quantity,
+        ...(line.exchangeVariantId ? { exchangeVariantId: line.exchangeVariantId } : {}),
       });
     }
 
@@ -367,6 +601,7 @@ function toDetailResponse(row: ReturnDetailRecord): ReturnDetailResponseDto {
     items: row.items.map((item) => ({
       orderItemId: item.orderItemId,
       quantity: item.quantity,
+      ...(item.exchangeVariantId ? { exchangeVariantId: item.exchangeVariantId } : {}),
     })),
   };
 }

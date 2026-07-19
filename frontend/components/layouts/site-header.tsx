@@ -31,7 +31,27 @@ import { MobileNavDrawer } from '@/components/layouts/mobile-nav-drawer';
 const SearchDialog = dynamic(
   () =>
     import('@/components/shared/search-dialog').then((mod) => mod.SearchDialog),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="fixed inset-0 z-70 flex items-start justify-center bg-black/70 pt-[12vh] backdrop-blur-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-busy="true"
+        aria-label="Loading search"
+      >
+        <div className="w-full max-w-xl rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 shadow-2xl">
+          <div className="h-11 animate-pulse rounded-[4px] bg-[#1a1815]" />
+          <div className="mt-4 space-y-2">
+            <div className="h-10 animate-pulse rounded-[4px] bg-[#1a1815]" />
+            <div className="h-10 animate-pulse rounded-[4px] bg-[#1a1815]" />
+            <div className="h-10 animate-pulse rounded-[4px] bg-[#1a1815]" />
+          </div>
+        </div>
+      </div>
+    ),
+  },
 );
 
 export function SiteHeader() {
@@ -335,7 +355,9 @@ export function SiteHeader() {
         onLogout={() => logout.mutate()}
       />
 
-      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {searchOpen ? (
+        <SearchDialog open onClose={() => setSearchOpen(false)} />
+      ) : null}
     </header>
   );
 }

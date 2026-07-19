@@ -92,7 +92,7 @@ Elevate Apparel is a Bangladesh-oriented premium apparel ecommerce storefront (B
 
 ### What is not implemented
 
-Online payment gateways (bKash/card), review media/object-storage upload transport, affiliate, Google OAuth.
+Online payment gateways (bKash/card), invoice generation/download/print, review media/object-storage upload transport, affiliate, Google OAuth. COD MVP modules (account, inventory/orders/returns/exchanges, CRM, marketing banners + abandoned cart + Pixel, notifications, email templates, analytics/exports) are implemented in the application code; run migrations against a live Postgres/Redis stack to activate.
 
 ### User journeys (from frontend)
 

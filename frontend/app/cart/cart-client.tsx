@@ -13,6 +13,7 @@ import {
   shippingForSubtotal,
 } from '@/features/cart/pricing';
 import { useProductsByIds } from '@/features/products';
+import { trackAddToCart } from '@/features/analytics/facebook-pixel';
 
 export function CartClient() {
   const dispatch = useAppDispatch();
@@ -23,10 +24,33 @@ export function CartClient() {
     hydrated,
   );
 
-  if (!hydrated || (items.length > 0 && products.isLoading)) {
+  if (!hydrated || (items.length > 0 && products.isLoading && !products.data)) {
     return (
-      <main id="main-content" className="flex flex-1 items-center justify-center bg-black py-20">
-        <p className="text-sm text-[#b5b0a8]">Loading bag…</p>
+      <main id="main-content" className="flex-1 bg-black" aria-busy="true">
+        <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-7 sm:py-10">
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+            Shopping Bag
+          </p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-white">YOUR BAG</h1>
+          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <ul className="space-y-4">
+              {Array.from({ length: Math.min(items.length || 2, 3) }, (_, i) => (
+                <li
+                  key={i}
+                  className="flex gap-4 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-3 sm:p-4"
+                >
+                  <div className="h-28 w-24 shrink-0 animate-pulse rounded-[4px] bg-[#1a1815]" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-[66%] animate-pulse rounded-[4px] bg-[#1a1815]" />
+                    <div className="h-3 w-[33%] animate-pulse rounded-[4px] bg-[#1a1815]" />
+                    <div className="h-4 w-[25%] animate-pulse rounded-[4px] bg-[#1a1815]" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <aside className="h-40 animate-pulse rounded-[4px] border border-[#2d2a27] bg-[#111110]" />
+          </div>
+        </section>
       </main>
     );
   }
@@ -106,7 +130,11 @@ export function CartClient() {
                           itemRemoved({ productId: item.productId, variantId: item.variantId }),
                         );
                         void import('@/features/cart/api').then(({ removeServerCartItem }) =>
-                          removeServerCartItem(item.variantId).catch(() => undefined),
+                          removeServerCartItem(item.variantId).catch(() => {
+                            void import('@/components/common/flash-message').then(({ flashMessage }) =>
+                              flashMessage('Could not sync bag. Changes saved on this device.'),
+                            );
+                          }),
                         );
                       }}
                       className="p-1 text-[#8b867d] hover:text-red-400"
@@ -148,6 +176,11 @@ export function CartClient() {
                             quantity,
                           }),
                         );
+                        trackAddToCart({
+                          content_ids: [item.productId],
+                          content_name: product.name,
+                          value: product.price,
+                        });
                         void import('@/features/cart/api').then(({ setServerCartItemQuantity }) =>
                           setServerCartItemQuantity(item.variantId, quantity).catch(() => undefined),
                         );

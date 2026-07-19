@@ -8,6 +8,7 @@ import {
   AdminEmpty,
   AdminError,
   AdminInput,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -15,6 +16,7 @@ import {
   AdminTh,
   StatusPill,
 } from '@/components/admin/admin-ui';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import { useAdminOrders, type AdminOrder } from '@/features/admin';
 import { formatTaka } from '@/lib/currency';
 
@@ -81,9 +83,13 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
   }
 
   return (
-    <div className="space-y-5">
-      <AdminPanel
+    <div className="space-y-6">
+      <AdminPageHeader
         title="Orders"
+        description="Track, filter, and fulfill customer orders."
+      />
+      <AdminPanel
+        title="Order queue"
         description="Filter fulfillment queue by status, order number, or customer email."
       >
         <form
@@ -138,9 +144,7 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
 
         {query.isError ? <AdminError>Could not load orders.</AdminError> : null}
 
-        {showInitialLoading ? (
-          <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading orders…</p>
-        ) : null}
+        {showInitialLoading ? <AdminTableSkeleton /> : null}
 
         {!showInitialLoading && !query.isError && rows.length === 0 ? (
           <AdminEmpty>No orders match these filters.</AdminEmpty>
@@ -184,6 +188,8 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
                     <AdminTd className="text-right">
                       <Link
                         href={`/admin/orders/${order.id}`}
+                        prefetch
+                        onMouseEnter={() => router.prefetch(`/admin/orders/${order.id}`)}
                         className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
                       >
                         View
@@ -229,7 +235,7 @@ function OrdersListInner() {
 export default function AdminOrdersPage() {
   return (
     <Suspense
-      fallback={<p className="py-8 text-center text-sm text-[#b5b0a8]">Loading orders…</p>}
+      fallback={<AdminTableSkeleton />}
     >
       <OrdersListInner />
     </Suspense>

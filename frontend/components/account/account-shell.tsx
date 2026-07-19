@@ -22,6 +22,7 @@ import {
 import { useAppSelector } from '@/store/hooks';
 import { useLogout } from '@/features/auth/hooks';
 import { displayName } from '@/features/account';
+import { AccountPanelSkeleton } from '@/components/common/skeleton';
 import { cn } from '@/lib/utils';
 
 const nav: {
@@ -58,13 +59,7 @@ export function AccountShell({ children }: PropsWithChildren) {
     }
   }, [hydrated, user, router, pathname]);
 
-  if (!hydrated || !user) {
-    return (
-      <main className="flex flex-1 items-center justify-center bg-black py-20">
-        <p className="text-sm text-[#b5b0a8]">Loading account…</p>
-      </main>
-    );
-  }
+  const ready = hydrated && Boolean(user);
 
   return (
     <main id="main-content" className="flex-1 bg-black">
@@ -74,9 +69,11 @@ export function AccountShell({ children }: PropsWithChildren) {
             My Account
           </p>
           <h1 className="mt-1 text-2xl font-extrabold tracking-[-.03em] text-white sm:text-3xl">
-            {displayName(user)}
+            {ready && user ? displayName(user) : 'Your account'}
           </h1>
-          <p className="mt-1 text-sm text-[#b5b0a8]">{user.email}</p>
+          <p className="mt-1 text-sm text-[#b5b0a8]">
+            {ready && user ? user.email : 'Loading your profile…'}
+          </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -96,7 +93,9 @@ export function AccountShell({ children }: PropsWithChildren) {
                       active
                         ? 'bg-[#1a1815] text-[#e3bb78]'
                         : 'text-[#e9e5de] hover:bg-[#1a1815] hover:text-[#e3bb78]',
+                      !ready && 'pointer-events-none opacity-60',
                     )}
+                    tabIndex={ready ? undefined : -1}
                   >
                     <Icon className="size-3.5 shrink-0" strokeWidth={1.6} />
                     {item.label}
@@ -105,15 +104,16 @@ export function AccountShell({ children }: PropsWithChildren) {
               })}
               <button
                 type="button"
+                disabled={!ready}
                 onClick={() => logout.mutate(undefined, { onSuccess: () => router.push('/') })}
-                className="flex w-full items-center gap-2.5 rounded-[4px] px-3 py-2.5 text-left text-[12px] font-semibold text-[#e9e5de] transition-colors hover:bg-[#1a1815] hover:text-red-300"
+                className="flex w-full items-center gap-2.5 rounded-[4px] px-3 py-2.5 text-left text-[12px] font-semibold text-[#e9e5de] transition-colors hover:bg-[#1a1815] hover:text-red-300 disabled:opacity-50"
               >
                 <LogOut className="size-3.5 shrink-0" strokeWidth={1.6} />
                 Logout
               </button>
             </nav>
           </aside>
-          <div className="min-w-0">{children}</div>
+          <div className="min-w-0">{ready ? children : <AccountPanelSkeleton />}</div>
         </div>
       </section>
     </main>

@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import type { ProductFilters, ProductCollection } from '@/features/products/types';
-import { DEFAULT_FILTERS, countActiveFilters } from '@/features/products/filter';
+import { countActiveFilters } from '@/features/products/filter';
 import { PRICE_PRESETS } from '@/features/products/constants';
 
 type Facets = {
@@ -367,14 +367,4 @@ export function MobileFilterDrawer({
       </div>
     </div>
   );
-}
-
-export function useShopFilters(initial?: Partial<ProductFilters>) {
-  const [filters, setFilters] = useState<ProductFilters>({
-    ...DEFAULT_FILTERS,
-    ...initial,
-  });
-  const clear = () => setFilters({ ...DEFAULT_FILTERS, query: filters.query });
-  const activeCount = useMemo(() => countActiveFilters(filters), [filters]);
-  return { filters, setFilters, clear, activeCount };
 }

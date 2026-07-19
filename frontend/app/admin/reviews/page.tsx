@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState, type FormEvent } from 'react';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminEmpty,
   AdminError,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -59,8 +61,12 @@ function ReviewsListBody({ status }: { status: string }) {
   }
 
   return (
-    <div className="space-y-5">
-      <AdminPanel title="Reviews" description="Moderate product reviews before they go live.">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Reviews"
+        description="Moderate product reviews before they go live."
+      />
+      <AdminPanel title="Moderation queue" description="Filter reviews by status.">
         <form onSubmit={applyFilters} className="mb-5 flex flex-wrap items-end gap-3">
           <label className="block min-w-[180px] flex-1 space-y-1.5">
             <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
@@ -90,7 +96,7 @@ function ReviewsListBody({ status }: { status: string }) {
         {query.isError ? <AdminError>Could not load reviews.</AdminError> : null}
 
         {showInitialLoading ? (
-          <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading reviews…</p>
+          <AdminTableSkeleton />
         ) : null}
 
         {!showInitialLoading && !query.isError && rows.length === 0 ? (
@@ -172,7 +178,7 @@ function ReviewsListInner() {
 export default function AdminReviewsPage() {
   return (
     <Suspense
-      fallback={<p className="py-8 text-center text-sm text-[#b5b0a8]">Loading reviews…</p>}
+      fallback={<AdminTableSkeleton />}
     >
       <ReviewsListInner />
     </Suspense>

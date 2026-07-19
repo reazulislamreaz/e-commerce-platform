@@ -65,4 +65,14 @@ export class AdminInventoryController {
   listLocations() {
     return this.adminCatalog.listInventoryLocations();
   }
+
+  @Get('alerts')
+  @ApiOperation({ summary: 'List open low-stock and out-of-stock alerts' })
+  @ApiOkResponse({ description: 'Stock alerts for admin monitoring' })
+  listAlerts(@Query('limit') limit?: string) {
+    const parsed = limit ? Number(limit) : 50;
+    return this.adminCatalog.listStockAlerts({
+      limit: Number.isFinite(parsed) ? parsed : 50,
+    });
+  }
 }

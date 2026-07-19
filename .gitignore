@@ -7,3 +7,5 @@ dist
 coverage
 *.log
 backend/src/generated
+backend/uploads
+backend/storage

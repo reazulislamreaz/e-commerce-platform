@@ -1,6 +1,10 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { productCatalog } from '@/features/products';
+import { CatalogPageSkeleton } from '@/components/common/skeleton';
+import { dehydrateProductList } from '@/features/products';
+import { QueryHydration } from '@/providers/query-hydration';
+import { PAGE_SIZE } from '@/features/products/constants';
 
 type Props = { searchParams: Promise<{ q?: string }> };
 
@@ -16,14 +20,31 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   };
 }
 
+async function SearchCatalog({ query }: { query: string }) {
+  const filters = query ? { query } : undefined;
+  const { state, result, facets } = await dehydrateProductList({
+    filters,
+    page: 1,
+    pageSize: PAGE_SIZE,
+    facets: true,
+  });
+
+  return (
+    <QueryHydration state={state}>
+      <ShopCatalog
+        remote
+        initialResult={result}
+        initialFacets={facets}
+        title={query ? 'Matching Products' : 'All Products'}
+        initialFilters={filters}
+      />
+    </QueryHydration>
+  );
+}
+
 export default async function SearchPage({ searchParams }: Props) {
   const { q } = await searchParams;
   const query = q?.trim() ?? '';
-  const filters = query ? { query } : undefined;
-  const [initialResult, initialFacets] = await Promise.all([
-    productCatalog.list({ filters, page: 1, pageSize: 8 }),
-    productCatalog.facets(),
-  ]);
 
   return (
     <main id="main-content" className="flex-1 bg-black">
@@ -35,13 +56,9 @@ export default async function SearchPage({ searchParams }: Props) {
           {query ? `Results for “${query}”` : 'Search'}
         </h1>
         <div className="mt-8">
-          <ShopCatalog
-            remote
-            initialResult={initialResult}
-            initialFacets={initialFacets}
-            title={query ? 'Matching Products' : 'All Products'}
-            initialFilters={filters}
-          />
+          <Suspense fallback={<CatalogPageSkeleton />}>
+            <SearchCatalog query={query} />
+          </Suspense>
         </div>
       </section>
     </main>

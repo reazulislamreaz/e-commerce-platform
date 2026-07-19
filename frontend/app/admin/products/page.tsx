@@ -7,11 +7,13 @@ import { useState, type PropsWithChildren } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminEmpty,
   AdminError,
   AdminInput,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -22,6 +24,7 @@ import {
 } from '@/components/admin/admin-ui';
 import {
   adminApi,
+  adminKeys,
   useAdminBrands,
   useAdminCategories,
   useAdminMutation,
@@ -60,7 +63,10 @@ export default function AdminProductsPage() {
   const products = useAdminProducts({ limit: 50, status: status || undefined });
   const brands = useAdminBrands();
   const categories = useAdminCategories();
-  const createProduct = useAdminMutation(adminApi.createProduct);
+  const createProduct = useAdminMutation(adminApi.createProduct, [
+    adminKeys.productsRoot(),
+    adminKeys.productRoot(),
+  ]);
   const {
     register,
     handleSubmit,
@@ -88,9 +94,13 @@ export default function AdminProductsPage() {
   });
 
   return (
-    <div className="space-y-5">
-      <AdminPanel
+    <div className="space-y-6">
+      <AdminPageHeader
         title="Products"
+        description="Manage the catalog and create new drafts."
+      />
+      <AdminPanel
+        title="Product list"
         description="Manage draft, active, and archived catalog products."
         actions={
           <AdminSelect
@@ -107,7 +117,7 @@ export default function AdminProductsPage() {
         }
       >
         {products.isError ? <AdminError>Could not load products.</AdminError> : null}
-        {products.isLoading ? <AdminEmpty>Loading products…</AdminEmpty> : null}
+        {products.isLoading ? <AdminTableSkeleton /> : null}
         {!products.isLoading && products.data?.data.length === 0 ? (
           <AdminEmpty>No products match this filter.</AdminEmpty>
         ) : null}

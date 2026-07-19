@@ -4,67 +4,31 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Fragment, useEffect, useState, type PropsWithChildren } from 'react';
 import {
+  ArrowUpRight,
+  Bell,
   ChevronDown,
   ChevronRight,
-  Layers,
-  LayoutDashboard,
+  Lightbulb,
   Loader2,
   LogOut,
   Mail,
   Menu,
-  Newspaper,
   Package,
   PanelLeftClose,
   PanelLeft,
   RotateCcw,
-  Shirt,
   Star,
   Store,
-  Tag,
-  Users,
-  Warehouse,
   X,
 } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useLogout } from '@/features/auth/hooks';
+import { useAdminQueues } from '@/features/admin';
+import { adminNavGroups } from '@/components/admin/admin-nav';
+import { AdminQuickSearch } from '@/components/admin/admin-quick-search';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import { cn } from '@/lib/utils';
-import type { Role } from '@/types/auth';
-
-type NavItem = {
-  href: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  exact?: boolean;
-};
-
-const navGroups: { label: string; items: NavItem[] }[] = [
-  {
-    label: 'Operations',
-    items: [
-      { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
-      { href: '/admin/orders', label: 'Orders', icon: Package },
-      { href: '/admin/returns', label: 'Returns', icon: RotateCcw },
-      { href: '/admin/reviews', label: 'Reviews', icon: Star },
-    ],
-  },
-  {
-    label: 'Catalog',
-    items: [
-      { href: '/admin/products', label: 'Products', icon: Shirt },
-      { href: '/admin/catalog', label: 'Taxonomy', icon: Layers },
-      { href: '/admin/inventory', label: 'Inventory', icon: Warehouse },
-      { href: '/admin/coupons', label: 'Coupons', icon: Tag },
-    ],
-  },
-  {
-    label: 'Customers',
-    items: [
-      { href: '/admin/users', label: 'Users', icon: Users },
-      { href: '/admin/contact', label: 'Contact', icon: Mail },
-      { href: '/admin/newsletter', label: 'Newsletter', icon: Newspaper },
-    ],
-  },
-];
+import type { AuthUser, Role } from '@/types/auth';
 
 const segmentLabels: Record<string, string> = {
   orders: 'Orders',
@@ -78,6 +42,8 @@ const segmentLabels: Record<string, string> = {
   newsletter: 'Newsletter',
   users: 'Users',
 };
+
+type QueueBadge = { count: number; more: boolean };
 
 function isAdminRole(role: Role | undefined): boolean {
   return role === 'ADMIN' || role === 'SUPER_ADMIN';
@@ -125,18 +91,34 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
   );
 }
 
+function NavBadge({ badge }: { badge: QueueBadge }) {
+  return (
+    <span
+      className={cn(
+        'ml-auto min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold leading-none',
+        badge.count > 0 ? 'bg-[#e5bd79] text-[#18120b]' : 'bg-white/[0.06] text-[#8b867d]',
+      )}
+    >
+      {badge.count}
+      {badge.more ? '+' : ''}
+    </span>
+  );
+}
+
 function NavLinks({
   pathname,
   collapsed,
+  badges,
   onNavigate,
 }: {
   pathname: string;
   collapsed: boolean;
+  badges: Record<string, QueueBadge | undefined>;
   onNavigate?: () => void;
 }) {
   return (
     <nav aria-label="Admin" className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
-      {navGroups.map((group) => (
+      {adminNavGroups.map((group) => (
         <div key={group.label}>
           {!collapsed ? (
             <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-[#6f6a61]">
@@ -149,6 +131,7 @@ function NavLinks({
                 ? pathname === item.href
                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = item.icon;
+              const badge = badges[item.href];
               return (
                 <Link
                   key={item.href}
@@ -177,7 +160,12 @@ function NavLinks({
                     )}
                     strokeWidth={1.6}
                   />
-                  {!collapsed ? item.label : null}
+                  {!collapsed ? (
+                    <>
+                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      {badge ? <NavBadge badge={badge} /> : null}
+                    </>
+                  ) : null}
                 </Link>
               );
             })}
@@ -188,50 +176,202 @@ function NavLinks({
   );
 }
 
-export function AdminShell({ children }: PropsWithChildren) {
+function ProTipCard() {
+  return (
+    <div className="mx-3 mb-2 rounded-xl border border-[#e3bb78]/20 bg-gradient-to-b from-[#e3bb78]/[0.08] to-transparent p-3.5">
+      <span className="flex size-8 items-center justify-center rounded-lg bg-[#e5bd79] text-[#18120b]">
+        <Lightbulb className="size-4" strokeWidth={1.7} />
+      </span>
+      <p className="mt-2.5 text-[12px] font-bold text-white">Pro Tip</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-[#b5b0a8]">
+        Keep your store updated and monitor orders regularly.
+      </p>
+      <Link
+        href="/admin"
+        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#efc677] bg-[#e5bd79] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+      >
+        View analytics
+        <ArrowUpRight className="size-3.5" strokeWidth={2} />
+      </Link>
+    </div>
+  );
+}
+
+function AdminNotifications({
+  queues,
+  open,
+  onToggle,
+  onClose,
+}: {
+  queues: Array<{
+    label: string;
+    hint: string;
+    href: string;
+    icon: typeof Package;
+    badge: QueueBadge | undefined;
+  }>;
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}) {
+  const total = queues.reduce((sum, queue) => sum + (queue.badge?.count ?? 0), 0);
+  const hasMore = queues.some((queue) => queue.badge?.more);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Notifications, ${total}${hasMore ? ' or more' : ''} pending`}
+        onClick={onToggle}
+        className="relative rounded-lg border border-[#37332c] p-2 text-[#d8d4cd] transition-colors hover:border-[#e3bb78]/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+      >
+        <Bell className="size-4" strokeWidth={1.7} />
+        {total > 0 ? (
+          <span
+            aria-hidden
+            className="absolute -right-1.5 -top-1.5 flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white"
+          >
+            {total > 9 ? '9+' : total}
+            {hasMore && total <= 9 ? '+' : ''}
+          </span>
+        ) : null}
+      </button>
+      {open ? (
+        <>
+          <button
+            type="button"
+            aria-label="Close notifications"
+            className="fixed inset-0 z-40 cursor-default"
+            onClick={onClose}
+          />
+          <div
+            role="menu"
+            className="absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-xl border border-[#26231f] bg-[#12110f] shadow-[0_16px_48px_-12px_rgba(0,0,0,.7)]"
+          >
+            <div className="border-b border-[#26231f] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-white">
+                Needs attention
+              </p>
+            </div>
+            <div className="p-1.5">
+              {total === 0 ? (
+                <p className="px-3 py-4 text-center text-sm text-[#b5b0a8]">
+                  All caught up — nothing pending.
+                </p>
+              ) : (
+                queues
+                  .filter((queue) => (queue.badge?.count ?? 0) > 0)
+                  .map((queue) => {
+                    const Icon = queue.icon;
+                    return (
+                      <Link
+                        key={queue.href}
+                        href={queue.href}
+                        role="menuitem"
+                        onClick={onClose}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.05]"
+                      >
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#37332c] bg-[#1a1815] text-[#e3bb78]">
+                          <Icon className="size-3.5" strokeWidth={1.7} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-white">
+                            {queue.label}
+                          </span>
+                          <span className="block text-xs text-[#8b867d]">{queue.hint}</span>
+                        </span>
+                        <NavBadge badge={queue.badge!} />
+                      </Link>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function toBadge(query: {
+  data?: { data: unknown[]; meta: { nextCursor: string | null } };
+}): QueueBadge | undefined {
+  if (!query.data) return undefined;
+  return { count: query.data.data.length, more: Boolean(query.data.meta.nextCursor) };
+}
+
+function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const user = useAppSelector((s) => s.auth.user);
-  const hydrated = useAppSelector((s) => s.auth.hydrated);
   const logout = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const { confirmedOrders, pendingReturns, pendingReviews, newContact } = useAdminQueues();
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (!user) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-      return;
-    }
-    if (!isAdminRole(user.role)) {
-      router.replace('/');
-    }
-  }, [hydrated, user, router, pathname]);
-
-  useEffect(() => {
-    if (!drawerOpen && !menuOpen) return;
+    if (!drawerOpen && !menuOpen && !notifOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setDrawerOpen(false);
         setMenuOpen(false);
+        setNotifOpen(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [drawerOpen, menuOpen]);
+  }, [drawerOpen, menuOpen, notifOpen]);
 
-  if (!hydrated || !user || !isAdminRole(user.role)) {
-    return (
-      <main className="flex min-h-screen flex-1 flex-col items-center justify-center gap-3 bg-[#0a0a0b] py-20">
-        <Loader2 className="size-5 animate-spin text-[#e3bb78]" strokeWidth={1.7} />
-        <p className="text-sm text-[#b5b0a8]">Checking admin access…</p>
-      </main>
-    );
-  }
+  const badges: Record<string, QueueBadge | undefined> = {
+    '/admin/orders': toBadge(confirmedOrders),
+    '/admin/returns': toBadge(pendingReturns),
+    '/admin/reviews': toBadge(pendingReviews),
+    '/admin/contact': toBadge(newContact),
+  };
+
+  const notificationQueues = [
+    {
+      label: 'Confirmed orders',
+      hint: 'Awaiting processing',
+      href: '/admin/orders?status=CONFIRMED',
+      icon: Package,
+      badge: badges['/admin/orders'],
+    },
+    {
+      label: 'Pending returns',
+      hint: 'Needs a decision',
+      href: '/admin/returns?status=PENDING',
+      icon: RotateCcw,
+      badge: badges['/admin/returns'],
+    },
+    {
+      label: 'Pending reviews',
+      hint: 'Moderation queue',
+      href: '/admin/reviews?status=PENDING',
+      icon: Star,
+      badge: badges['/admin/reviews'],
+    },
+    {
+      label: 'New messages',
+      hint: 'Contact inbox',
+      href: '/admin/contact?status=NEW',
+      icon: Mail,
+      badge: badges['/admin/contact'],
+    },
+  ];
 
   const initial = (user.firstName?.[0] ?? user.email[0] ?? 'A').toUpperCase();
-  const displayRole = user.role.replaceAll('_', ' ');
+  const displayName =
+    [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email.split('@')[0];
+  const displayRole = user.role
+    .toLowerCase()
+    .split('_')
+    .map((word) => word[0]?.toUpperCase() + word.slice(1))
+    .join(' ');
 
   const brand = (
     <div
@@ -266,7 +406,13 @@ export function AdminShell({ children }: PropsWithChildren) {
         )}
       >
         {brand}
-        <NavLinks pathname={pathname} collapsed={collapsed} onNavigate={() => setMenuOpen(false)} />
+        <NavLinks
+          pathname={pathname}
+          collapsed={collapsed}
+          badges={badges}
+          onNavigate={() => setMenuOpen(false)}
+        />
+        {!collapsed ? <ProTipCard /> : null}
         <div className="shrink-0 border-t border-[#26231f] p-3">
           <button
             type="button"
@@ -322,7 +468,13 @@ export function AdminShell({ children }: PropsWithChildren) {
                 <X className="size-4" />
               </button>
             </div>
-            <NavLinks pathname={pathname} collapsed={false} onNavigate={() => setDrawerOpen(false)} />
+            <NavLinks
+              pathname={pathname}
+              collapsed={false}
+              badges={badges}
+              onNavigate={() => setDrawerOpen(false)}
+            />
+            <ProTipCard />
           </aside>
         </div>
       ) : null}
@@ -341,14 +493,26 @@ export function AdminShell({ children }: PropsWithChildren) {
 
           <Breadcrumbs pathname={pathname} />
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
+            <AdminQuickSearch className="hidden w-full max-w-xs md:block lg:max-w-sm" />
+
             <Link
               href="/"
-              className="hidden items-center gap-1.5 rounded-lg border border-[#37332c] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#d8d4cd] transition-colors hover:border-[#e3bb78]/60 hover:text-white sm:inline-flex"
+              className="hidden items-center gap-1.5 rounded-lg border border-[#37332c] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#d8d4cd] transition-colors hover:border-[#e3bb78]/60 hover:text-white xl:inline-flex"
             >
               <Store className="size-3.5" strokeWidth={1.7} />
               View store
             </Link>
+
+            <AdminNotifications
+              queues={notificationQueues}
+              open={notifOpen}
+              onToggle={() => {
+                setNotifOpen((value) => !value);
+                setMenuOpen(false);
+              }}
+              onClose={() => setNotifOpen(false)}
+            />
 
             {/* User dropdown */}
             <div className="relative">
@@ -356,11 +520,22 @@ export function AdminShell({ children }: PropsWithChildren) {
                 type="button"
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
-                onClick={() => setMenuOpen((value) => !value)}
+                onClick={() => {
+                  setMenuOpen((value) => !value);
+                  setNotifOpen(false);
+                }}
                 className="flex items-center gap-2 rounded-lg p-1 pr-2 transition-colors hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
               >
                 <span className="flex size-7 items-center justify-center rounded-full border border-[#e3bb78]/40 bg-[#1a1815] text-[11px] font-bold text-[#e3bb78]">
                   {initial}
+                </span>
+                <span className="hidden min-w-0 text-left leading-tight md:block">
+                  <span className="block max-w-[140px] truncate text-[12px] font-semibold text-white">
+                    {displayName}
+                  </span>
+                  <span className="block text-[10px] font-semibold uppercase tracking-[.08em] text-[#8b867d]">
+                    {displayRole}
+                  </span>
                 </span>
                 <ChevronDown
                   className={cn(
@@ -422,10 +597,79 @@ export function AdminShell({ children }: PropsWithChildren) {
           </div>
         </header>
 
-        <main id="main-content" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <main
+          id="main-content"
+          className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 sm:py-8"
+        >
           {children}
         </main>
       </div>
     </div>
   );
+}
+
+export function AdminShell({ children }: PropsWithChildren) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const user = useAppSelector((s) => s.auth.user);
+  const hydrated = useAppSelector((s) => s.auth.hydrated);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!user) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    if (!isAdminRole(user.role)) {
+      router.replace('/');
+    }
+  }, [hydrated, user, router, pathname]);
+
+  const ready = hydrated && Boolean(user) && isAdminRole(user?.role);
+
+  if (hydrated && user && !isAdminRole(user.role)) {
+    return null;
+  }
+
+  if (!ready || !user) {
+    return (
+      <div className="flex min-h-screen bg-[#0a0a0b]">
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[#26231f] bg-[#0d0c0b] lg:flex">
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-[#26231f] px-4">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#e5bd79] text-[12px] font-extrabold text-[#18120b]">
+              E
+            </span>
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-[12px] font-extrabold tracking-[-.01em] text-white">
+                Elevate Apparel
+              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#e0bd7d]">
+                Admin Console
+              </p>
+            </div>
+          </div>
+          <div className="flex-1 space-y-2 p-3">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="h-9 animate-pulse rounded-lg bg-white/[0.04]" />
+            ))}
+          </div>
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center border-b border-[#26231f] bg-[#0a0a0b]/85 px-4 backdrop-blur-md sm:px-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#b5b0a8]">
+              Checking admin access…
+            </p>
+          </header>
+          <main
+            id="main-content"
+            className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 sm:py-8"
+          >
+            <AdminTableSkeleton />
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  return <AdminChrome user={user}>{children}</AdminChrome>;
 }

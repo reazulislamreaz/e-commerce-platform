@@ -4,19 +4,23 @@ import {
   ArrowLeft,
   ArrowRight,
   Headphones,
-  Heart,
   Quote,
   RefreshCw,
   ShieldCheck,
   Star,
   Truck,
 } from 'lucide-react';
-import { formatTaka } from '@/lib/currency';
 import { productCatalog } from '@/features/products';
 import type { CatalogProduct } from '@/features/products/types';
+import { marketingApi } from '@/features/marketing/api';
+import { FALLBACK_BANNERS, pickPrimaryBanner } from '@/features/marketing/banners';
+import type { MarketingBanner } from '@/features/marketing/types';
 import { NewsletterForm } from '@/components/shared/newsletter-form';
+import { ProductCard } from '@/components/shared/product-card';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
+
+const FALLBACK_HERO = FALLBACK_BANNERS.HOME_HERO;
 
 const collections = [
   { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.webp' },
@@ -55,57 +59,27 @@ function SectionHeader({
 function ProductRail({ products }: { products: CatalogProduct[] }) {
   return (
     <div className="mt-3 grid grid-cols-2 gap-x-2.5 gap-y-5 min-[480px]:grid-cols-3 lg:grid-cols-6">
-      {products.map((product) => (
-        <Link key={product.id} href={`/product/${product.slug}`} className="group min-w-0">
-          <div className="relative overflow-hidden rounded-[4px] bg-[#e4e3e1]">
-            <Image
-              src={product.image}
-              alt={product.name}
-              width={304}
-              height={368}
-              quality={85}
-              sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 16vw"
-              className="aspect-[.826] h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            {product.isNew && (
-              <span className="absolute left-2 top-2 border border-[#e3bb78] bg-black/50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#e3bb78]">
-                New
-              </span>
-            )}
-            {product.onSale && product.compareAtPrice && (
-              <span className="absolute left-2 top-2 bg-[#e5bd79] px-1.5 py-0.5 text-[9px] font-bold text-[#18120b]">
-                -
-                {Math.round((1 - product.price / product.compareAtPrice) * 100)}%
-              </span>
-            )}
-            <Heart
-              className="absolute right-2 top-2 size-[17px] stroke-[#111]"
-              strokeWidth={1.5}
-            />
-          </div>
-          <p className="mt-2 truncate text-[11px] font-medium leading-4 text-white">{product.name}</p>
-          <p className="text-[11px] leading-4 text-[#d0cbc4]">{product.color}</p>
-          <p className="mt-1 flex items-baseline gap-2 text-[13px] font-semibold text-[#e5c17d]">
-            {formatTaka(product.price)}
-            {product.compareAtPrice && product.onSale && (
-              <span className="text-[11px] font-normal text-[#8b867d] line-through">
-                {formatTaka(product.compareAtPrice)}
-              </span>
-            )}
-          </p>
-        </Link>
+      {products.map((product, index) => (
+        <ProductCard key={product.id} product={product} priority={index < 2} />
       ))}
     </div>
   );
 }
 
-function Hero() {
+function Hero({ banner }: { banner: MarketingBanner }) {
+  const titleParts = banner.title.trim().split(/\s+/);
+  const lead = titleParts.slice(0, -1).join(' ') || banner.title;
+  const accent = titleParts.length > 1 ? titleParts[titleParts.length - 1] : '';
+  const imageSrc = banner.mobileImageUrl || banner.imageUrl;
+  const ctaHref = banner.ctaHref?.trim() || '/shop';
+  const ctaLabel = banner.ctaLabel?.trim() || 'SHOP NOW';
+
   return (
     <section className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#2d2a27] bg-[#090909]">
       <div className="absolute inset-y-0 right-0 w-full sm:w-[62%]">
         <Image
-          src="/images/home/hero.webp"
-          alt="Model wearing Elevate black t-shirt"
+          src={imageSrc}
+          alt={banner.title}
           fill
           priority
           quality={85}
@@ -128,17 +102,20 @@ function Hero() {
             Discover Your Edge
           </p>
           <h1 className="mt-2 text-[clamp(42px,12vw,64px)] font-extrabold leading-[.93] tracking-[-.055em] text-white">
-            ELEVATE <span className="block text-[#e3bb78]">EVERYDAY</span>
+            {lead}{' '}
+            {accent ? <span className="block text-[#e3bb78]">{accent}</span> : null}
           </h1>
-          <p className="mt-3 max-w-[260px] text-sm font-medium leading-[1.5] text-[#f6f4f2]">
-            Premium quality apparel designed to elevate your style.
-          </p>
+          {banner.subtitle ? (
+            <p className="mt-3 max-w-[260px] text-sm font-medium leading-[1.5] text-[#f6f4f2]">
+              {banner.subtitle}
+            </p>
+          ) : null}
           <div className="mt-5 flex flex-wrap gap-2.5 sm:gap-3">
             <Link
-              href="/shop"
+              href={ctaHref}
               className="border border-[#efc677] bg-[#e5bd79] px-4 py-2.5 text-[11px] font-bold text-[#18120b] sm:px-5"
             >
-              SHOP NOW
+              {ctaLabel}
             </Link>
             <Link
               href="/new-arrivals"
@@ -373,14 +350,16 @@ function Instagram() {
 }
 
 export default async function Home() {
-  const [featured, newArrivals, sale] = await Promise.all([
+  const [featured, newArrivals, sale, banners] = await Promise.all([
     productCatalog.list({ page: 1, pageSize: 6 }),
     productCatalog.newArrivals(),
     productCatalog.onSale(),
+    marketingApi.listPublic('HOME_HERO').catch(() => [] as MarketingBanner[]),
   ]);
+  const heroBanner = pickPrimaryBanner(banners, FALLBACK_HERO);
   return (
     <main id="main-content" className="flex-1 bg-black">
-      <Hero />
+      <Hero banner={heroBanner} />
       <Benefits />
       <CollectionGrid />
       <Featured products={featured.items} />

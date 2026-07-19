@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { productCatalog } from '@/features/products';
+import { dehydrateProductDetail, getCachedProductBySlug } from '@/features/products';
 import { ProductDetailClient } from '@/components/product/product-detail-client';
+import { QueryHydration } from '@/providers/query-hydration';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -11,7 +12,7 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = await productCatalog.getBySlug(slug);
+  const product = await getCachedProductBySlug(slug);
   if (!product) return { title: 'Product' };
   const imageUrl = product.image.startsWith('http')
     ? product.image
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const product = await productCatalog.getBySlug(slug);
+  const { state, product } = await dehydrateProductDetail(slug);
   if (!product) notFound();
 
   const jsonLd = {
@@ -66,12 +67,12 @@ export default async function ProductPage({ params }: Props) {
   };
 
   return (
-    <>
+    <QueryHydration state={state}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ProductDetailClient product={product} related={await productCatalog.related(product)} />
-    </>
+      <ProductDetailClient product={product} />
+    </QueryHydration>
   );
 }

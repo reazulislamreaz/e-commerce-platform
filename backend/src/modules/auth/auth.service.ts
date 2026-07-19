@@ -11,6 +11,7 @@ import { Prisma, type User, UserStatus, VerificationTokenType } from '@/generate
 import * as argon2 from 'argon2';
 import { normalizeBdPhone } from '@/common/utils/bd-phone';
 import { MailService } from '@/modules/mail/mail.service';
+import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
@@ -55,6 +56,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly mail: MailService,
+    private readonly customerMetrics: CustomerMetricsService,
   ) {}
 
   /**
@@ -93,6 +95,13 @@ export class AuthService {
     }
 
     await this.issueEmailVerification(user.id, user.email, user.firstName);
+    await this.customerMetrics.recordActivity(
+      user.id,
+      'ACCOUNT_REGISTERED',
+      'Account created',
+      '/account/settings',
+    );
+    await this.customerMetrics.recomputeForUser(user.id);
     return user;
   }
 
@@ -101,7 +110,17 @@ export class AuthService {
     const now = new Date();
     const token = await this.prisma.verificationToken.findUnique({
       where: { tokenHash: this.hashVerificationToken(rawToken) },
-      include: { user: { select: { id: true, status: true, deletedAt: true } } },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            status: true,
+            deletedAt: true,
+          },
+        },
+      },
     });
     if (
       !token ||
@@ -125,6 +144,11 @@ export class AuthService {
         where: { id: token.userId },
         data: { status: UserStatus.ACTIVE, emailVerifiedAt: now },
       });
+    });
+    await this.mail.sendWelcome({
+      to: token.user.email,
+      firstName: token.user.firstName ?? '',
+      shopUrl: `${this.config.getOrThrow<string>('FRONTEND_ORIGIN')}/shop`,
     });
   }
 

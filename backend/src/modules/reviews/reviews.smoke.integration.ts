@@ -7,11 +7,32 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { PrismaService } from '@/prisma/prisma.service';
-import { Role, UserStatus } from '@/generated/prisma/client';
+import { ReviewStatus, Role, UserStatus } from '@/generated/prisma/client';
+
+async function recomputeAggregates(prisma: PrismaService, productId: string): Promise<void> {
+  const aggregates = await prisma.productReview.aggregate({
+    where: { productId, status: ReviewStatus.PUBLISHED, deletedAt: null },
+    _avg: { rating: true },
+    _count: { _all: true },
+  });
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      reviewCount: aggregates._count._all,
+      ratingAverage:
+        aggregates._count._all === 0 || aggregates._avg.rating == null
+          ? 0
+          : Math.round(aggregates._avg.rating * 100),
+    },
+  });
+}
+
+const SMOKE_AUTHOR = 'Review Smoke';
 
 describe('Review moderation smoke (HTTP)', () => {
   let app: NestExpressApplication;
   let prisma: PrismaService;
+  let smokeProductId: string | null = null;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -35,6 +56,22 @@ describe('Review moderation smoke (HTTP)', () => {
   }, 60_000);
 
   afterAll(async () => {
+    // Remove reviews created by this smoke flow (including leftovers from prior
+    // runs) so repeated executions don't pollute the seeded catalog dataset.
+    if (prisma) {
+      const polluted = await prisma.productReview.findMany({
+        where: { authorName: SMOKE_AUTHOR },
+        select: { productId: true },
+        distinct: ['productId'],
+      });
+      await prisma.productReview.deleteMany({ where: { authorName: SMOKE_AUTHOR } });
+      for (const { productId } of polluted) {
+        await recomputeAggregates(prisma, productId);
+      }
+      if (smokeProductId && !polluted.some((row) => row.productId === smokeProductId)) {
+        await recomputeAggregates(prisma, smokeProductId);
+      }
+    }
     await app?.close();
   });
 
@@ -74,6 +111,7 @@ describe('Review moderation smoke (HTTP)', () => {
       },
     });
     expect(product).toBeTruthy();
+    smokeProductId = product!.id;
     const variant = product!.variants.find((row) =>
       row.inventoryBalances.some((balance) => balance.onHand - balance.reserved > 0),
     );
@@ -117,6 +155,12 @@ describe('Review moderation smoke (HTTP)', () => {
       .post(`/api/v1/admin/orders/${orderId}/status`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'PROCESSING' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/orders/${orderId}/status`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ status: 'PACKED' })
       .expect(200);
 
     await request(app.getHttpServer())

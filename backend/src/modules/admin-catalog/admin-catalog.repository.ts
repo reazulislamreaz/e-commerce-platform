@@ -481,6 +481,7 @@ export class AdminCatalogRepository {
     const activePrice = product.prices[0];
     return {
       ...this.toProductSummary(product),
+      brandId: product.brandId,
       description: product.description,
       primaryColor: product.primaryColor,
       categoryIds: product.categories.map(({ categoryId }) => categoryId),

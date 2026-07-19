@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { playfair } from '@/lib/fonts';
 import { AppProviders } from '@/providers/app-providers';
 import { StorefrontChrome } from '@/components/layouts/storefront-chrome';
+import { FlashMessageHost } from '@/components/common/flash-message';
+import { FacebookPixel } from '@/features/analytics/facebook-pixel';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -60,6 +63,10 @@ export default function RootLayout({
         </a>
         <AppProviders>
           <StorefrontChrome>{children}</StorefrontChrome>
+          <FlashMessageHost />
+          <Suspense fallback={null}>
+            <FacebookPixel />
+          </Suspense>
         </AppProviders>
       </body>
     </html>

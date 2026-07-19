@@ -25,6 +25,7 @@
   --color-surface-2: #141416;
   --color-surface-3: #1d1d21;
   --color-edge: #27272a;
+
   /* Site content container (1400px on large desktop) */
   --container-8xl: 87.5rem;
 }
@@ -70,4 +71,17 @@ input:-webkit-autofill:focus {
 .fb-customerchat iframe,
 .fb_customer_chat_bounce_in {
   display: none !important;
+}
+
+/* Elevate perceived-performance shimmer — GPU transform only */
+@keyframes elevate-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:before\:animate-\[elevate-shimmer_1\.4s_ease-in-out_infinite\]::before {
+    animation: none !important;
+  }
 }

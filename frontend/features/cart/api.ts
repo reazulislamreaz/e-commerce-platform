@@ -73,3 +73,10 @@ export async function mergeServerCart(): Promise<ServerCart> {
   const { data } = await apiClient.post<ApiResponse<ServerCart>>('/cart/merge');
   return unwrapData(data);
 }
+
+export async function setCartRecoveryEmail(email: string): Promise<ServerCart> {
+  const { data } = await apiClient.patch<ApiResponse<ServerCart>>('/cart/recovery-email', {
+    email: email.trim().toLowerCase(),
+  });
+  return unwrapData(data);
+}

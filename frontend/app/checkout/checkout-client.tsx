@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -20,6 +20,8 @@ import {
 } from '@/features/cart/pricing';
 import { accountRepository } from '@/features/account';
 import { useProductsByIds } from '@/features/products';
+import { trackInitiateCheckout, trackPurchase } from '@/features/analytics/facebook-pixel';
+import { setCartRecoveryEmail } from '@/features/cart/api';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(80),
@@ -59,14 +61,26 @@ export function CheckoutClient() {
     () => resolveCartLines(items, products.data ?? []),
     [items, products.data],
   );
+  const checkoutTracked = useRef(false);
 
   const subtotal = cartSubtotal(lines);
   const shipping = shippingForSubtotal(subtotal, shippingWaived);
   const total = Math.max(0, subtotal - discount) + shipping;
 
+  useEffect(() => {
+    if (checkoutTracked.current || lines.length === 0) return;
+    checkoutTracked.current = true;
+    trackInitiateCheckout({
+      content_ids: lines.map(({ item }) => item.productId),
+      num_items: lines.reduce((sum, line) => sum + line.item.quantity, 0),
+      value: total,
+    });
+  }, [lines, total]);
+
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutSchema),
@@ -86,11 +100,7 @@ export function CheckoutClient() {
       return;
     }
     try {
-      const result = await accountRepository.validateCoupon?.(couponCode, subtotal);
-      if (!result) {
-        setCouponError('Could not validate coupon.');
-        return;
-      }
+      const result = await accountRepository.validateCoupon(couponCode, subtotal);
       setCouponError(null);
       setDiscount(result.discount);
       setShippingWaived(result.shippingWaived);
@@ -107,13 +117,24 @@ export function CheckoutClient() {
     }
   };
 
+  const persistGuestRecoveryEmail = () => {
+    if (user) return;
+    const email = getValues('email')?.trim();
+    if (!email) return;
+    void setCartRecoveryEmail(email).catch(() => undefined);
+  };
+
   const onSubmit = handleSubmit(async (values) => {
     if (lines.length === 0) return;
     setSubmitting(true);
     setSubmitError(null);
 
     try {
-      const order = await accountRepository.placeOrderCheckout!(
+      if (!user && values.email) {
+        void setCartRecoveryEmail(values.email).catch(() => undefined);
+      }
+
+      const order = await accountRepository.placeOrderCheckout(
         {
           fullName: values.fullName,
           phone: values.phone,
@@ -133,6 +154,14 @@ export function CheckoutClient() {
         },
         idempotencyKey,
       );
+
+      if (user) {
+        trackPurchase({
+          content_ids: lines.map(({ item }) => item.productId),
+          value: order.total,
+          order_id: order.number,
+        });
+      }
 
       dispatch(cartCleared());
       setIdempotencyKey(crypto.randomUUID());
@@ -159,10 +188,17 @@ export function CheckoutClient() {
     }
   });
 
-  if (!cartHydrated || (items.length > 0 && products.isLoading)) {
+  if (!cartHydrated || (items.length > 0 && products.isLoading && !products.data)) {
     return (
-      <main className="flex flex-1 items-center justify-center bg-black px-5 py-20">
-        <p className="text-sm text-[#b5b0a8]">Loading checkout…</p>
+      <main id="main-content" className="flex-1 bg-black" aria-busy="true">
+        <section className="mx-auto max-w-[1400px] space-y-4 px-5 py-10 sm:px-7">
+          <div className="h-3 w-28 animate-pulse rounded-[4px] bg-[#1a1815]" />
+          <div className="h-9 w-56 animate-pulse rounded-[4px] bg-[#1a1815]" />
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="h-72 animate-pulse rounded-[4px] border border-[#2d2a27] bg-[#111110]" />
+            <div className="h-72 animate-pulse rounded-[4px] border border-[#2d2a27] bg-[#111110]" />
+          </div>
+        </section>
       </main>
     );
   }
@@ -197,7 +233,12 @@ export function CheckoutClient() {
               <FormField label="Full name" error={errors.fullName?.message} {...register('fullName')} />
               <FormField label="Phone" error={errors.phone?.message} {...register('phone')} />
               <div className="sm:col-span-2">
-                <FormField label="Email" type="email" error={errors.email?.message} {...register('email')} />
+                <FormField
+                  label="Email"
+                  type="email"
+                  error={errors.email?.message}
+                  {...register('email', { onBlur: persistGuestRecoveryEmail })}
+                />
               </div>
               <div className="sm:col-span-2">
                 <FormField label="Address line 1" error={errors.line1?.message} {...register('line1')} />

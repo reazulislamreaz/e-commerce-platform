@@ -25,8 +25,9 @@ function LoginFormInner() {
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = handleSubmit(async (input) => {
-    await login.mutateAsync({ ...input, rememberMe });
-    router.push(next);
+    const result = await login.mutateAsync({ ...input, rememberMe });
+    const isAdmin = result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN';
+    router.replace(isAdmin ? '/admin' : next);
   });
 
   // Surface the backend's specific 401 reason (e.g. unverified email, suspended).

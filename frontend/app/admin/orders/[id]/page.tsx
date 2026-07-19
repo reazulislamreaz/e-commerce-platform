@@ -14,8 +14,10 @@ import {
   AdminTextarea,
   StatusPill,
 } from '@/components/admin/admin-ui';
-import { adminApi, useAdminMutation, useAdminOrder } from '@/features/admin';
+import { adminApi, adminKeys, useAdminMutation, useAdminOrder } from '@/features/admin';
 import { formatTaka } from '@/lib/currency';
+
+const ORDER_INVALIDATE = [adminKeys.ordersRoot(), adminKeys.orderRoot()] as const;
 
 function mutationErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
@@ -37,22 +39,27 @@ export default function AdminOrderDetailPage() {
   const statusMutation = useAdminMutation(
     (args: {
       id: string;
-      status: 'PROCESSING' | 'SHIPPED' | 'DELIVERED';
+      status: 'PROCESSING' | 'PACKED' | 'SHIPPED' | 'DELIVERED';
       trackingNumber?: string;
     }) =>
       adminApi.updateOrderStatus(args.id, {
         status: args.status,
         ...(args.trackingNumber ? { trackingNumber: args.trackingNumber } : {}),
       }),
+    [...ORDER_INVALIDATE],
   );
 
-  const cancelMutation = useAdminMutation((args: { id: string; reason: string }) =>
-    adminApi.cancelOrder(args.id, args.reason),
+  const cancelMutation = useAdminMutation(
+    (args: { id: string; reason: string }) => adminApi.cancelOrder(args.id, args.reason),
+    [...ORDER_INVALIDATE],
   );
 
   const busy = statusMutation.isPending || cancelMutation.isPending;
 
-  async function runStatus(status: 'PROCESSING' | 'SHIPPED' | 'DELIVERED', tracking?: string) {
+  async function runStatus(
+    status: 'PROCESSING' | 'PACKED' | 'SHIPPED' | 'DELIVERED',
+    tracking?: string,
+  ) {
     if (!order) return;
     setActionError(null);
     try {
@@ -109,9 +116,11 @@ export default function AdminOrderDetailPage() {
 
   const status = order.status;
   const canProcess = status === 'confirmed';
-  const canShip = status === 'processing';
+  const canPack = status === 'processing';
+  const canShip = status === 'packed';
   const canDeliver = status === 'shipped';
-  const canCancel = status === 'confirmed' || status === 'processing';
+  const canCancel =
+    status === 'confirmed' || status === 'processing' || status === 'packed';
   const address = order.shippingAddress;
 
   return (
@@ -252,7 +261,7 @@ export default function AdminOrderDetailPage() {
         </dl>
       </AdminPanel>
 
-      {(canProcess || canShip || canDeliver || canCancel) && (
+      {(canProcess || canPack || canShip || canDeliver || canCancel) && (
         <AdminPanel title="Fulfillment actions" description="Advance status or cancel before shipment.">
           {actionError ? <AdminError>{actionError}</AdminError> : null}
 
@@ -265,6 +274,17 @@ export default function AdminOrderDetailPage() {
                 onClick={() => void runStatus('PROCESSING')}
               >
                 Process
+              </AdminButton>
+            ) : null}
+
+            {canPack ? (
+              <AdminButton
+                type="button"
+                disabled={busy}
+                loading={statusMutation.isPending}
+                onClick={() => void runStatus('PACKED')}
+              >
+                Mark packed
               </AdminButton>
             ) : null}
 

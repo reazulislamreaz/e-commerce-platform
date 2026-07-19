@@ -6,6 +6,7 @@ import { ReviewForm } from '@/components/account/review-form';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
 import { useAccountReviews, useDeleteReview, type AccountReview } from '@/features/account';
+import { AccountPanelSkeleton } from '@/components/common/skeleton';
 
 export default function ReviewsPage() {
   const user = useAppSelector(selectAuthUser)!;
@@ -20,7 +21,7 @@ export default function ReviewsPage() {
   };
 
   if (loading) {
-    return <p className="text-sm text-[#b5b0a8]">Loading reviews…</p>;
+    return <AccountPanelSkeleton />;
   }
 
   return (

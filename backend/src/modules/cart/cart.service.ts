@@ -7,6 +7,7 @@ import { Prisma } from '@/generated/prisma/client';
 import { poishaToTaka } from '@/common/utils/money';
 import { generateOpaqueToken, sha256Hex } from '@/common/utils/hash';
 import { InventoryService } from '@/modules/inventory/inventory.service';
+import { CartRecoveryService } from '@/modules/cart-recovery/cart-recovery.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { CartRepository, type ActiveVariantRecord, type CartWithItems } from './cart.repository';
 import type { AddCartItemDto } from './dto/add-cart-item.dto';
@@ -25,6 +26,7 @@ export class CartService {
   constructor(
     private readonly cart: CartRepository,
     private readonly inventory: InventoryService,
+    private readonly recovery: CartRecoveryService,
   ) {}
 
   async getCart(user: JwtPayload | undefined, guestToken?: string): Promise<CartResponseDto> {
@@ -128,6 +130,16 @@ export class CartService {
     return { cart: await this.toResponse(updated), guestCookie };
   }
 
+  async setRecoveryEmail(
+    user: JwtPayload | undefined,
+    guestToken: string | undefined,
+    email: string,
+  ): Promise<{ cart: CartResponseDto; guestCookie?: GuestCartCookieResult }> {
+    const { cart: record, guestCookie } = await this.resolveOrCreateCartForWrite(user, guestToken);
+    const updated = await this.cart.setRecoveryEmail(record.id, email.trim().toLowerCase());
+    return { cart: await this.toResponse(updated), guestCookie };
+  }
+
   async resolveCheckoutLines(
     userId: string | null,
     guestToken: string | undefined,
@@ -160,6 +172,7 @@ export class CartService {
     if (userId) {
       const record = await this.cart.findByUserId(userId, tx);
       if (record) {
+        await this.recovery.suppressForCart(record.id, tx, true);
         await this.cart.deleteAllItems(record.id, tx);
         const expiresAt = record.userId ? null : this.guestExpiresAt();
         await this.cart.touchCart(record.id, expiresAt, tx);
@@ -170,6 +183,7 @@ export class CartService {
     if (guestToken) {
       const record = await this.cart.findByGuestTokenHash(sha256Hex(guestToken), tx);
       if (record) {
+        await this.recovery.suppressForCart(record.id, tx, true);
         await this.cart.deleteAllItems(record.id, tx);
         await this.cart.touchCart(record.id, this.guestExpiresAt(), tx);
       }

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ReturnRequestResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -29,6 +29,9 @@ export class ReturnItemResponseDto {
 
   @ApiProperty({ example: 1 })
   quantity!: number;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  exchangeVariantId?: string;
 }
 
 export class ReturnDetailResponseDto extends ReturnRequestResponseDto {

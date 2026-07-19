@@ -37,7 +37,10 @@ describe('Catalog + Inventory integration', () => {
     const product = await catalog.getBySlug('elevate-oversized-tee');
     expect(product.variants).toHaveLength(10);
     expect(product.variants.find((variant) => variant.sku === 'P1-BLA-XXL')?.stock).toBe(2);
-    expect(product.reviews).toHaveLength(2);
+    // Match on the seeded fixture reviews so reviews created by other
+    // integration suites (moderation smoke) cannot break this assertion.
+    const seededAuthors = product.reviews.map((review) => review.author);
+    expect(seededAuthors).toEqual(expect.arrayContaining(['Rahim K.', 'Nadia S.']));
   });
 
   it('finds the out-of-stock seeded product', async () => {

@@ -1,8 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { OrderStatus } from '@/generated/prisma/client';
+import { OrderStatus, PaymentStatus, ReservationStatus } from '@/generated/prisma/client';
 import { STANDARD_SHIPPING_POISHA, takaToPoisha } from '@/common/utils/money';
 import { CartService } from '@/modules/cart/cart.service';
+import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { InventoryService } from '@/modules/inventory/inventory.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
@@ -15,20 +16,37 @@ import { OrdersService } from './orders.service';
 
 describe('OrdersService', () => {
   let service: OrdersService;
+  let prisma: {
+    inventoryReservation: { findMany: jest.Mock };
+    $transaction: jest.Mock;
+  };
+  let inventory: { releaseForOrder: jest.Mock };
+  let promotions: { voidRedemptionForOrder: jest.Mock };
 
   beforeEach(async () => {
+    prisma = {
+      inventoryReservation: { findMany: jest.fn() },
+      $transaction: jest.fn(),
+    };
+    inventory = { releaseForOrder: jest.fn() };
+    promotions = { voidRedemptionForOrder: jest.fn() };
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         OrdersService,
-        { provide: PrismaService, useValue: { $transaction: jest.fn() } },
+        { provide: PrismaService, useValue: prisma },
         { provide: OrdersRepository, useValue: {} },
         { provide: CartService, useValue: {} },
-        { provide: InventoryService, useValue: {} },
-        { provide: PromotionsService, useValue: {} },
+        { provide: InventoryService, useValue: inventory },
+        { provide: PromotionsService, useValue: promotions },
         { provide: IdempotencyService, useValue: {} },
         { provide: OutboxService, useValue: {} },
         { provide: AuditService, useValue: {} },
         { provide: NotificationsService, useValue: { createForUser: jest.fn() } },
+        {
+          provide: CustomerMetricsService,
+          useValue: { recordActivity: jest.fn(), recomputeForUser: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -99,9 +117,15 @@ describe('OrdersService', () => {
       ).not.toThrow();
     });
 
-    it('allows PROCESSING to SHIPPED', () => {
+    it('allows PROCESSING to PACKED', () => {
       expect(() =>
-        service.assertFulfillmentTransition(OrderStatus.PROCESSING, OrderStatus.SHIPPED),
+        service.assertFulfillmentTransition(OrderStatus.PROCESSING, OrderStatus.PACKED),
+      ).not.toThrow();
+    });
+
+    it('allows PACKED to SHIPPED', () => {
+      expect(() =>
+        service.assertFulfillmentTransition(OrderStatus.PACKED, OrderStatus.SHIPPED),
       ).not.toThrow();
     });
 
@@ -109,6 +133,24 @@ describe('OrdersService', () => {
       expect(() =>
         service.assertFulfillmentTransition(OrderStatus.SHIPPED, OrderStatus.DELIVERED),
       ).not.toThrow();
+    });
+
+    it('allows pre-ship cancel branches', () => {
+      expect(() =>
+        service.assertFulfillmentTransition(OrderStatus.CONFIRMED, OrderStatus.CANCELLED),
+      ).not.toThrow();
+      expect(() =>
+        service.assertFulfillmentTransition(OrderStatus.PROCESSING, OrderStatus.CANCELLED),
+      ).not.toThrow();
+      expect(() =>
+        service.assertFulfillmentTransition(OrderStatus.PACKED, OrderStatus.CANCELLED),
+      ).not.toThrow();
+    });
+
+    it('rejects skipping from PROCESSING to SHIPPED', () => {
+      expect(() =>
+        service.assertFulfillmentTransition(OrderStatus.PROCESSING, OrderStatus.SHIPPED),
+      ).toThrow(BadRequestException);
     });
 
     it('rejects skipping from CONFIRMED to SHIPPED', () => {
@@ -127,6 +169,54 @@ describe('OrdersService', () => {
       expect(() =>
         service.assertFulfillmentTransition(OrderStatus.CANCELLED, OrderStatus.PROCESSING),
       ).toThrow(BadRequestException);
+    });
+  });
+
+  describe('releaseExpiredReservationHolds', () => {
+    it('releases inventory and cancels pre-ship orders atomically', async () => {
+      const orderId = '44444444-4444-4444-8444-444444444444';
+      const expiredAt = new Date(Date.now() - 60_000);
+      prisma.inventoryReservation.findMany.mockResolvedValue([{ orderId }]);
+
+      const tx = {
+        inventoryReservation: {
+          findUnique: jest.fn().mockResolvedValue({
+            orderId,
+            status: ReservationStatus.ACTIVE,
+            expiresAt: expiredAt,
+          }),
+        },
+        customerOrder: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: orderId,
+            status: OrderStatus.CONFIRMED,
+            couponCode: 'SAVE10',
+            payment: { id: 'pay-1' },
+          }),
+          update: jest.fn(),
+        },
+        orderStatusHistory: { create: jest.fn() },
+        payment: { update: jest.fn() },
+      };
+
+      prisma.$transaction.mockImplementation(async (fn: (inner: typeof tx) => Promise<boolean>) =>
+        fn(tx),
+      );
+
+      await expect(service.releaseExpiredReservationHolds(10)).resolves.toBe(1);
+
+      expect(inventory.releaseForOrder).toHaveBeenCalledWith(orderId, tx);
+      expect(tx.customerOrder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: orderId },
+          data: expect.objectContaining({ status: OrderStatus.CANCELLED }),
+        }),
+      );
+      expect(tx.payment.update).toHaveBeenCalledWith({
+        where: { id: 'pay-1' },
+        data: { status: PaymentStatus.CANCELLED },
+      });
+      expect(promotions.voidRedemptionForOrder).toHaveBeenCalledWith(orderId, tx);
     });
   });
 });

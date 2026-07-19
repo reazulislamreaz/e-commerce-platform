@@ -2,11 +2,13 @@
 
 import axios from 'axios';
 import { useState, type FormEvent } from 'react';
+import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
   AdminEmpty,
   AdminError,
   AdminInput,
+  AdminPageHeader,
   AdminPanel,
   AdminSelect,
   AdminTable,
@@ -15,6 +17,7 @@ import {
 } from '@/components/admin/admin-ui';
 import {
   adminApi,
+  adminKeys,
   useAdminBrands,
   useAdminCategories,
   useAdminCollections,
@@ -23,6 +26,10 @@ import {
   type AdminCategory,
   type AdminCollection,
 } from '@/features/admin';
+
+const BRAND_INVALIDATE = [adminKeys.brands()] as const;
+const CATEGORY_INVALIDATE = [adminKeys.categories()] as const;
+const COLLECTION_INVALIDATE = [adminKeys.collections()] as const;
 
 function mutationErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
@@ -59,14 +66,20 @@ export default function AdminCatalogPage() {
   const [collectionName, setCollectionName] = useState('');
   const [collectionSlug, setCollectionSlug] = useState('');
 
-  const createBrandMutation = useAdminMutation(adminApi.createBrand);
+  const createBrandMutation = useAdminMutation(adminApi.createBrand, [...BRAND_INVALIDATE]);
   const updateBrandMutation = useAdminMutation(
     (args: { id: string; name: string; slug?: string }) =>
       adminApi.updateBrand(args.id, { name: args.name, ...(args.slug ? { slug: args.slug } : {}) }),
+    [...BRAND_INVALIDATE],
   );
-  const deleteBrandMutation = useAdminMutation((id: string) => adminApi.deleteBrand(id));
+  const deleteBrandMutation = useAdminMutation(
+    (id: string) => adminApi.deleteBrand(id),
+    [...BRAND_INVALIDATE],
+  );
 
-  const createCategoryMutation = useAdminMutation(adminApi.createCategory);
+  const createCategoryMutation = useAdminMutation(adminApi.createCategory, [
+    ...CATEGORY_INVALIDATE,
+  ]);
   const updateCategoryMutation = useAdminMutation(
     (args: { id: string; name: string; slug?: string; parentId?: string | null }) =>
       adminApi.updateCategory(args.id, {
@@ -74,18 +87,28 @@ export default function AdminCatalogPage() {
         ...(args.slug ? { slug: args.slug } : {}),
         parentId: args.parentId || null,
       }),
+    [...CATEGORY_INVALIDATE],
   );
-  const deleteCategoryMutation = useAdminMutation((id: string) => adminApi.deleteCategory(id));
+  const deleteCategoryMutation = useAdminMutation(
+    (id: string) => adminApi.deleteCategory(id),
+    [...CATEGORY_INVALIDATE],
+  );
 
-  const createCollectionMutation = useAdminMutation(adminApi.createCollection);
+  const createCollectionMutation = useAdminMutation(adminApi.createCollection, [
+    ...COLLECTION_INVALIDATE,
+  ]);
   const updateCollectionMutation = useAdminMutation(
     (args: { id: string; name: string; slug?: string }) =>
       adminApi.updateCollection(args.id, {
         name: args.name,
         ...(args.slug ? { slug: args.slug } : {}),
       }),
+    [...COLLECTION_INVALIDATE],
   );
-  const deleteCollectionMutation = useAdminMutation((id: string) => adminApi.deleteCollection(id));
+  const deleteCollectionMutation = useAdminMutation(
+    (id: string) => adminApi.deleteCollection(id),
+    [...COLLECTION_INVALIDATE],
+  );
 
   const busy =
     createBrandMutation.isPending ||
@@ -236,7 +259,11 @@ export default function AdminCatalogPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Taxonomy"
+        description="Brands, categories, and collections that organize the catalog."
+      />
       {actionError ? <AdminError>{actionError}</AdminError> : null}
       {success ? (
         <p className="rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
@@ -317,7 +344,7 @@ export default function AdminCatalogPage() {
       <AdminPanel title="Brands" description="Product manufacturers and labels.">
         {brandsQuery.isError ? <AdminError>Could not load brands.</AdminError> : null}
         {brandsQuery.isLoading ? (
-          <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading brands…</p>
+          <AdminTableSkeleton />
         ) : null}
         {!brandsQuery.isLoading && !brandsQuery.isError && brands.length === 0 ? (
           <AdminEmpty>No brands yet.</AdminEmpty>
@@ -400,7 +427,7 @@ export default function AdminCatalogPage() {
       <AdminPanel title="Categories" description="Hierarchical product taxonomy.">
         {categoriesQuery.isError ? <AdminError>Could not load categories.</AdminError> : null}
         {categoriesQuery.isLoading ? (
-          <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading categories…</p>
+          <AdminTableSkeleton />
         ) : null}
         {!categoriesQuery.isLoading && !categoriesQuery.isError && categories.length === 0 ? (
           <AdminEmpty>No categories yet.</AdminEmpty>
@@ -504,7 +531,7 @@ export default function AdminCatalogPage() {
       <AdminPanel title="Collections" description="Curated groupings for merchandising.">
         {collectionsQuery.isError ? <AdminError>Could not load collections.</AdminError> : null}
         {collectionsQuery.isLoading ? (
-          <p className="py-8 text-center text-sm text-[#b5b0a8]">Loading collections…</p>
+          <AdminTableSkeleton />
         ) : null}
         {!collectionsQuery.isLoading && !collectionsQuery.isError && collections.length === 0 ? (
           <AdminEmpty>No collections yet.</AdminEmpty>

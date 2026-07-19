@@ -34,6 +34,7 @@ import { CartService, GUEST_CART_COOKIE, GUEST_CART_TTL_MS } from './cart.servic
 import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { CartResponseDto } from './dto/cart-response.dto';
+import { UpdateCartRecoveryEmailDto } from './dto/update-cart-recovery-email.dto';
 
 @ApiTags('Cart')
 @Controller('cart')
@@ -136,6 +137,30 @@ export class CartController {
   ) {
     const guestToken = this.readGuestToken(request);
     const result = await this.cart.clearCart(user, guestToken);
+    this.applyGuestCookie(response, result.guestCookie);
+    return result.cart;
+  }
+
+  @Public()
+  @Patch('recovery-email')
+  @ApiOperation({
+    summary: 'Save an email for guest cart recovery',
+    description: 'Stores a validated email on the active cart without exposing it in cart responses.',
+  })
+  @ApiBearerAuth()
+  @ApiCookieAuth(GUEST_CART_COOKIE)
+  @ApiOkResponse({ type: CartResponseDto })
+  async setRecoveryEmail(
+    @OptionalUser() user: JwtPayload | undefined,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+    @Body() dto: UpdateCartRecoveryEmailDto,
+  ) {
+    const result = await this.cart.setRecoveryEmail(
+      user,
+      this.readGuestToken(request),
+      dto.email,
+    );
     this.applyGuestCookie(response, result.guestCookie);
     return result.cart;
   }

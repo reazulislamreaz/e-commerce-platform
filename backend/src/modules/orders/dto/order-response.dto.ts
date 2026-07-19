@@ -12,6 +12,12 @@ export class OrderTimelineStepDto {
 }
 
 export class OrderLineItemDto {
+  @ApiProperty({ format: 'uuid', description: 'Order line id for returns/exchanges' })
+  orderItemId!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  variantId!: string;
+
   @ApiProperty({ format: 'uuid' })
   productId!: string;
 
@@ -86,7 +92,17 @@ export class OrderResponseDto {
   createdAt!: string;
 
   @ApiProperty({
-    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'],
+    enum: [
+      'pending',
+      'confirmed',
+      'processing',
+      'packed',
+      'shipped',
+      'delivered',
+      'cancelled',
+      'returned',
+      'exchanged',
+    ],
     example: 'confirmed',
   })
   status!: string;

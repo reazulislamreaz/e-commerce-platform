@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
   InventoryMovementType,
   Prisma,
   ReservationStatus,
+  StockAlertLevel,
 } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { InventoryRepository } from './inventory.repository';
@@ -17,6 +18,8 @@ export type ReservationAllocation = {
 
 @Injectable()
 export class InventoryService {
+  private readonly logger = new Logger(InventoryService.name);
+
   constructor(
     private readonly inventory: InventoryRepository,
     private readonly prisma: PrismaService,
@@ -47,6 +50,7 @@ export class InventoryService {
     orderId: string,
     lines: ReserveLine[],
     tx: Prisma.TransactionClient,
+    expiresAt?: Date,
   ): Promise<void> {
     const sorted = [...lines].sort((a, b) => a.variantId.localeCompare(b.variantId));
     const allocations: ReservationAllocation[] = [];
@@ -106,6 +110,7 @@ export class InventoryService {
       data: {
         orderId,
         status: ReservationStatus.ACTIVE,
+        expiresAt: expiresAt ?? null,
         items: {
           create: allocations.map((a) => ({
             variantId: a.variantId,
@@ -115,6 +120,11 @@ export class InventoryService {
         },
       },
     });
+
+    await this.refreshStockAlerts(
+      allocations.map((a) => ({ variantId: a.variantId, locationId: a.locationId })),
+      tx,
+    );
   }
 
   async releaseForOrder(orderId: string, tx: Prisma.TransactionClient): Promise<void> {
@@ -161,8 +171,13 @@ export class InventoryService {
 
     await tx.inventoryReservation.update({
       where: { id: reservation.id },
-      data: { status: ReservationStatus.RELEASED },
+      data: { status: ReservationStatus.RELEASED, releasedAt: new Date() },
     });
+
+    await this.refreshStockAlerts(
+      items.map((item) => ({ variantId: item.variantId, locationId: item.locationId })),
+      tx,
+    );
   }
 
   /** On ship: decrement onHand and reserved; append SALE movements; mark reservation consumed. */
@@ -224,6 +239,11 @@ export class InventoryService {
       where: { id: reservation.id },
       data: { status: ReservationStatus.CONSUMED },
     });
+
+    await this.refreshStockAlerts(
+      items.map((item) => ({ variantId: item.variantId, locationId: item.locationId })),
+      tx,
+    );
   }
 
   async restockReturn(
@@ -275,6 +295,237 @@ export class InventoryService {
           balanceAfter: nextOnHand - balance.reserved,
           idempotencyKey: `return:${returnId}:${line.variantId}:${locationId}`,
           note: `Return ${returnId}`,
+        },
+      });
+    }
+
+    await this.refreshStockAlerts(
+      lines.map((line) => ({
+        variantId: line.variantId,
+        locationId: line.locationId ?? location.id,
+      })),
+      tx,
+    );
+  }
+
+  /**
+   * Holds replacement variants when an exchange is approved. Does not create an
+   * order reservation row — post-shipment exchanges track holds via movement keys.
+   */
+  async reserveExchangeReplacements(
+    returnRequestId: string,
+    lines: ReserveLine[],
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    const sorted = [...lines].sort((a, b) => a.variantId.localeCompare(b.variantId));
+    const alertKeys: Array<{ variantId: string; locationId: string }> = [];
+
+    for (const line of sorted) {
+      const balances = await tx.$queryRaw<
+        Array<{ id: string; locationId: string; onHand: number; reserved: number; version: number }>
+      >`
+        SELECT id, "locationId", "onHand", reserved, version
+        FROM inventory_balance
+        WHERE "variantId" = ${line.variantId}::uuid
+          AND "locationId" IN (
+            SELECT id FROM inventory_location WHERE "isActive" = true
+          )
+        ORDER BY "locationId"
+        FOR UPDATE
+      `;
+
+      let remaining = line.quantity;
+      for (const balance of balances) {
+        if (remaining <= 0) break;
+        const available = balance.onHand - balance.reserved;
+        if (available <= 0) continue;
+        const take = Math.min(available, remaining);
+        const nextReserved = balance.reserved + take;
+        await tx.inventoryBalance.update({
+          where: { id: balance.id },
+          data: { reserved: nextReserved, version: { increment: 1 } },
+        });
+        await tx.inventoryMovement.create({
+          data: {
+            variantId: line.variantId,
+            locationId: balance.locationId,
+            type: InventoryMovementType.RESERVE,
+            quantity: take,
+            balanceAfter: balance.onHand - nextReserved,
+            idempotencyKey: `exchange-reserve:${returnRequestId}:${line.variantId}:${balance.locationId}`,
+            note: `Exchange return ${returnRequestId}`,
+          },
+        });
+        alertKeys.push({ variantId: line.variantId, locationId: balance.locationId });
+        remaining -= take;
+      }
+
+      if (remaining > 0) {
+        throw new BadRequestException(
+          `Insufficient stock for exchange variant ${line.variantId}.`,
+        );
+      }
+    }
+
+    if (alertKeys.length > 0) {
+      await this.refreshStockAlerts(alertKeys, tx);
+    }
+  }
+
+  /**
+   * Consumes exchange replacement stock reserved at approval time.
+   */
+  async consumeExchangeReplacements(
+    returnRequestId: string,
+    lines: ReserveLine[],
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    const sorted = [...lines].sort((a, b) => a.variantId.localeCompare(b.variantId));
+    const alertKeys: Array<{ variantId: string; locationId: string }> = [];
+
+    for (const line of sorted) {
+      let remaining = line.quantity;
+      const balances = await tx.$queryRaw<
+        Array<{ id: string; locationId: string; onHand: number; reserved: number }>
+      >`
+        SELECT id, "locationId", "onHand", reserved
+        FROM inventory_balance
+        WHERE "variantId" = ${line.variantId}::uuid
+          AND "locationId" IN (
+            SELECT id FROM inventory_location WHERE "isActive" = true
+          )
+        ORDER BY "locationId"
+        FOR UPDATE
+      `;
+
+      for (const balance of balances) {
+        if (remaining <= 0) break;
+        if (balance.reserved <= 0) continue;
+        const take = Math.min(balance.reserved, remaining);
+        const nextOnHand = balance.onHand - take;
+        const nextReserved = balance.reserved - take;
+        if (nextOnHand < 0 || nextReserved < 0) {
+          throw new BadRequestException('Cannot complete exchange: inventory accounting conflict');
+        }
+        await tx.inventoryBalance.update({
+          where: { id: balance.id },
+          data: {
+            onHand: nextOnHand,
+            reserved: nextReserved,
+            version: { increment: 1 },
+          },
+        });
+        await tx.inventoryMovement.create({
+          data: {
+            variantId: line.variantId,
+            locationId: balance.locationId,
+            type: InventoryMovementType.SALE,
+            quantity: -take,
+            balanceAfter: nextOnHand - nextReserved,
+            idempotencyKey: `exchange-sale:${returnRequestId}:${line.variantId}:${balance.locationId}`,
+            note: `Exchange return ${returnRequestId}`,
+          },
+        });
+        alertKeys.push({ variantId: line.variantId, locationId: balance.locationId });
+        remaining -= take;
+      }
+
+      if (remaining > 0) {
+        throw new BadRequestException('Cannot complete exchange: replacement reservation missing');
+      }
+    }
+
+    if (alertKeys.length > 0) {
+      await this.refreshStockAlerts(alertKeys, tx);
+    }
+  }
+
+  async listStockAlerts(params?: { resolved?: boolean; limit?: number }) {
+    const limit = Math.min(Math.max(params?.limit ?? 50, 1), 100);
+    return this.prisma.stockAlert.findMany({
+      where: {
+        resolvedAt: params?.resolved === true ? { not: null } : null,
+      },
+      include: {
+        balance: {
+          select: {
+            onHand: true,
+            reserved: true,
+            lowStockThreshold: true,
+            variant: { select: { id: true, sku: true, size: true, color: true } },
+            location: { select: { id: true, code: true, name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
+  async refreshStockAlerts(
+    keys: Array<{ variantId: string; locationId: string }>,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<void> {
+    const unique = new Map(
+      keys.map((key) => [`${key.variantId}:${key.locationId}`, key] as const),
+    );
+
+    for (const { variantId, locationId } of unique.values()) {
+      const balance = await tx.inventoryBalance.findUnique({
+        where: { variantId_locationId: { variantId, locationId } },
+      });
+      if (!balance) continue;
+
+      const available = Math.max(0, balance.onHand - balance.reserved);
+      const level: StockAlertLevel | null =
+        available <= 0
+          ? StockAlertLevel.OUT
+          : available <= balance.lowStockThreshold
+            ? StockAlertLevel.LOW
+            : null;
+
+      const openAlerts = await tx.stockAlert.findMany({
+        where: { balanceId: balance.id, resolvedAt: null },
+      });
+
+      if (!level) {
+        if (openAlerts.length > 0) {
+          await tx.stockAlert.updateMany({
+            where: { balanceId: balance.id, resolvedAt: null },
+            data: { resolvedAt: new Date() },
+          });
+        }
+        continue;
+      }
+
+      const matching = openAlerts.find((alert) => alert.level === level);
+      if (matching) {
+        await tx.stockAlert.update({
+          where: { id: matching.id },
+          data: { available, threshold: balance.lowStockThreshold },
+        });
+        for (const stale of openAlerts.filter((alert) => alert.id !== matching.id)) {
+          await tx.stockAlert.update({
+            where: { id: stale.id },
+            data: { resolvedAt: new Date() },
+          });
+        }
+        continue;
+      }
+
+      if (openAlerts.length > 0) {
+        await tx.stockAlert.updateMany({
+          where: { balanceId: balance.id, resolvedAt: null },
+          data: { resolvedAt: new Date() },
+        });
+      }
+
+      await tx.stockAlert.create({
+        data: {
+          balanceId: balance.id,
+          level,
+          available,
+          threshold: balance.lowStockThreshold,
         },
       });
     }
@@ -345,5 +596,10 @@ export class InventoryService {
         note: input.note,
       },
     });
+
+    await this.refreshStockAlerts(
+      [{ variantId: input.variantId, locationId: input.locationId }],
+      tx,
+    );
   }
 }

@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { NotificationType, Prisma } from '@/generated/prisma/client';
+import {
+  NotificationDeliveryStatus,
+  NotificationType,
+  Prisma,
+} from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 export type NotificationRecord = Prisma.NotificationGetPayload<object>;
@@ -45,6 +49,16 @@ export class NotificationsRepository {
     });
   }
 
+  getInAppPreference(
+    userId: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<{ inAppEnabled: boolean } | null> {
+    return tx.userPreference.findUnique({
+      where: { userId },
+      select: { inAppEnabled: true },
+    });
+  }
+
   create(
     data: {
       userId: string;
@@ -58,6 +72,37 @@ export class NotificationsRepository {
     tx: Prisma.TransactionClient = this.prisma,
   ): Promise<NotificationRecord> {
     return tx.notification.create({ data });
+  }
+
+  createInAppDelivery(
+    notificationId: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<void> {
+    return tx.notificationDelivery
+      .create({
+        data: {
+          notificationId,
+          channel: 'in_app',
+          status: NotificationDeliveryStatus.SENT,
+          attemptedAt: new Date(),
+        },
+      })
+      .then(() => undefined);
+  }
+
+  createEmailDelivery(
+    notificationId: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<void> {
+    return tx.notificationDelivery
+      .create({
+        data: {
+          notificationId,
+          channel: 'email',
+          status: NotificationDeliveryStatus.PENDING,
+        },
+      })
+      .then(() => undefined);
   }
 
   markRead(id: string, tx: Prisma.TransactionClient = this.prisma): Promise<NotificationRecord> {

@@ -58,7 +58,7 @@ export class AdminOrdersController {
   @ApiOperation({
     summary: 'Advance order fulfillment status',
     description:
-      'CONFIRMED→PROCESSING|CANCELLED, PROCESSING→SHIPPED|CANCELLED, SHIPPED→DELIVERED. Shipping requires tracking on the order or in the same request.',
+      'CONFIRMED→PROCESSING|CANCELLED, PROCESSING→PACKED|CANCELLED, PACKED→SHIPPED|CANCELLED, SHIPPED→DELIVERED. Shipping requires tracking on the order or in the same request.',
   })
   @ApiOkResponse({ type: OrderResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid transition or missing tracking' })
