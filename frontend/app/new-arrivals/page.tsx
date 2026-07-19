@@ -4,7 +4,8 @@ import { ShopCatalog } from '@/components/shop/shop-catalog';
 import { CatalogPageSkeleton } from '@/components/common/skeleton';
 import { productCatalog } from '@/features/products';
 
-export const revalidate = 60;
+// Request-time render: the API is not reachable during `next build`.
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'New Arrivals',

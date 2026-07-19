@@ -96,6 +96,9 @@ services:
       NODE_ENV: production
       PORT: 3030
       HOSTNAME: 0.0.0.0
+      # Server-side rendering calls the backend over the internal Docker
+      # network; browsers keep using the public NEXT_PUBLIC_API_URL.
+      API_URL_INTERNAL: http://backend:4040/api/v1
     depends_on:
       - backend
     networks: [internal]

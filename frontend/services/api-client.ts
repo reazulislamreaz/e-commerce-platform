@@ -1,8 +1,17 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import type { AppStore } from '@/store/store';
 import { accessTokenRefreshed, signedOut } from '@/store/slices/auth-slice';
+/**
+ * Server-side rendering inside Docker reaches the backend over the internal
+ * network (API_URL_INTERNAL, runtime env); browsers use the public URL, which
+ * is inlined at build time via NEXT_PUBLIC_API_URL.
+ */
+const baseURL =
+  (typeof window === 'undefined' && process.env.API_URL_INTERNAL) ||
+  process.env.NEXT_PUBLIC_API_URL;
+
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });

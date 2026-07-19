@@ -4,7 +4,8 @@ import { dehydrateProductDetail, getCachedProductBySlug } from '@/features/produ
 import { ProductDetailClient } from '@/components/product/product-detail-client';
 import { QueryHydration } from '@/providers/query-hydration';
 
-export const revalidate = 60;
+// Request-time render: the API is not reachable during `next build`.
+export const dynamic = 'force-dynamic';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 

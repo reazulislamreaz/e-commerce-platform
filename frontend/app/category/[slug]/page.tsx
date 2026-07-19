@@ -7,7 +7,8 @@ import { dehydrateProductList } from '@/features/products';
 import { QueryHydration } from '@/providers/query-hydration';
 import { PAGE_SIZE } from '@/features/products/constants';
 
-export const revalidate = 60;
+// Request-time render: the API is not reachable during `next build`.
+export const dynamic = 'force-dynamic';
 
 const collections = {
   men: {
@@ -19,10 +20,6 @@ const collections = {
 } as const;
 
 type CollectionKey = keyof typeof collections;
-
-export function generateStaticParams() {
-  return Object.keys(collections).map((slug) => ({ slug }));
-}
 
 export async function generateMetadata({
   params,

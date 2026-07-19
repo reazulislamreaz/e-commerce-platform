@@ -18,7 +18,9 @@ import type { MarketingBanner } from '@/features/marketing/types';
 import { NewsletterForm } from '@/components/shared/newsletter-form';
 import { ProductCard } from '@/components/shared/product-card';
 
-export const revalidate = 60;
+// Rendered at request time: catalog data comes from the API, which is not
+// reachable during `next build` (images are built without a live backend).
+export const dynamic = 'force-dynamic';
 
 const FALLBACK_HERO = FALLBACK_BANNERS.HOME_HERO;
 const FALLBACK_PROMO = FALLBACK_BANNERS.HOME_PROMO;

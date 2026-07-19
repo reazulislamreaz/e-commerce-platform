@@ -81,7 +81,9 @@ jobs:
       FRONTEND_ORIGIN: http://localhost:3000
       SEED_SUPER_ADMIN_EMAIL: superadmin@example.com
       SEED_SUPER_ADMIN_PASSWORD: SuperAdminPass123
-      SEED_SUPER_ADMIN_PHONE: 01700000000
+      # Quote the phone: YAML treats leading-zero numbers as octal and would
+      # turn 01700000000 into an integer, which then fails BD phone validation.
+      SEED_SUPER_ADMIN_PHONE: '01770807782'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

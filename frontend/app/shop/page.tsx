@@ -9,7 +9,8 @@ import { PAGE_SIZE } from '@/features/products/constants';
 import { marketingApi } from '@/features/marketing/api';
 import { bannerToPageHero, FALLBACK_BANNERS, pickPrimaryBanner } from '@/features/marketing/banners';
 
-export const revalidate = 60;
+// Request-time render: the API is not reachable during `next build`.
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Shop',
