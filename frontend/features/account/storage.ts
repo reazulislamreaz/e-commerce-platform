@@ -1,4 +1,5 @@
 import type { AuthUser } from '@/types/auth';
+import { createClientId } from '@/lib/client-id';
 import { readStorage, writeStorage } from '@/lib/storage';
 
 export type AddressType = 'shipping' | 'billing';
@@ -207,7 +208,7 @@ function seedCoupons(): AccountCoupon[] {
 }
 
 export function createOrderNumber() {
-  return `EA${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+  return `EA${createClientId().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 }
 
 export function applyCoupon(

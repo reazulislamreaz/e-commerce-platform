@@ -26,6 +26,7 @@ import {
 import { useProductsByIds } from '@/features/products';
 import { trackInitiateCheckout, trackPurchase } from '@/features/analytics/facebook-pixel';
 import { setCartRecoveryEmail } from '@/features/cart/api';
+import { createClientId } from '@/lib/client-id';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(80),
@@ -77,7 +78,7 @@ export function CheckoutClient() {
   const [couponPending, setCouponPending] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => createClientId());
   const defaultAddressApplied = useRef(false);
   const lastCouponSubtotal = useRef<number | null>(null);
 
@@ -244,7 +245,7 @@ export function CheckoutClient() {
       }
 
       dispatch(cartCleared());
-      setIdempotencyKey(crypto.randomUUID());
+      setIdempotencyKey(createClientId());
 
       if (user) {
         router.push(`/account/orders/${order.id}?confirmed=1`);

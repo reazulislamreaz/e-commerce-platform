@@ -1,4 +1,5 @@
 import { apiClient } from '@/services/api-client';
+import { createClientId } from '@/lib/client-id';
 import { unwrapData, type ApiResponse } from '@/types/api';
 import type {
   AccountCoupon,
@@ -94,7 +95,7 @@ export const httpAccountRepository: AccountRepository = {
 
   async placeOrderCheckout(input: PlaceOrderInput, idempotencyKey?: string) {
     return postData<CustomerOrder>('/orders', input, {
-      headers: { 'Idempotency-Key': idempotencyKey ?? crypto.randomUUID() },
+      headers: { 'Idempotency-Key': idempotencyKey ?? createClientId() },
     });
   },
 
