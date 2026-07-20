@@ -125,15 +125,24 @@ Variables (Variables tab) — baked into the frontend image at build time:
    `docker-compose.prod.yml`, `nginx/conf.d/default.conf`, and the env template
    to `DEPLOY_PATH`, then runs `docker compose up -d`. Nginx comes up on host
    port 8080 immediately — no certificate step is required.
-2. Bootstrap demo data **once** (optional). The `migrate` one-shot already runs
-   `scripts/migrate-and-seed.sh`. In production it **skips** seeding unless you
-   set `ENABLE_PRODUCTION_SEED=true` in the VPS `.env` (along with
-   `SEED_SUPER_ADMIN_*` and related vars — see `.env.production.example` and
-   [docs/DATABASE_SEED.md](../docs/DATABASE_SEED.md)).
+2. Bootstrap demo data **once** (optional). Deploy no longer auto-seeds.
+   After the stack is healthy, either:
 
-   Prefer enabling that flag for the first roll only, then set it back to
-   `false` so later deploys never re-seed. Alternatively, seed from your laptop
-   over an SSH tunnel:
+   **Option A — profile on the VPS** (set strong `SEED_SUPER_ADMIN_*` and
+   `ENABLE_PRODUCTION_SEED=true` in `.env` for this run only):
+
+   ```bash
+   cd /opt/elevate   # or your DEPLOY_PATH
+   docker compose --env-file .env -f docker-compose.prod.yml --profile seed run --rm seed
+   # then set ENABLE_PRODUCTION_SEED=false again
+   ```
+
+   **Option B — SSH tunnel from your laptop** (see below).
+
+   Prefer enabling the flag only for that one run. Do not leave
+   `ENABLE_PRODUCTION_SEED=true` permanently.
+
+   Tunnel alternative:
 
    **a.** On the VPS, temporarily add a loopback port to the `postgres` service
    in `docker-compose.prod.yml`, then apply it:

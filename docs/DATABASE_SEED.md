@@ -112,11 +112,17 @@ Do not use these passwords in real production. When enabling production seed, se
 
 ### Production Compose (`deploy/docker-compose.prod.yml`)
 
-The `migrate` one-shot runs `scripts/migrate-and-seed.sh`:
+The `migrate` one-shot runs **only** `prisma migrate deploy` so a seed problem
+never blocks rollouts.
 
-- Always migrates
-- Seeds only when `ENABLE_PRODUCTION_SEED=true`
-- Backend waits for migrate to complete successfully — a failed seed blocks rollout
+To seed production once (after migrate has succeeded):
+
+```bash
+# On the VPS, with ENABLE_PRODUCTION_SEED=true and SEED_SUPER_ADMIN_* set:
+docker compose --env-file .env -f docker-compose.prod.yml --profile seed run --rm seed
+```
+
+Then set `ENABLE_PRODUCTION_SEED=false` again.
 
 ## Extending for a new module
 
