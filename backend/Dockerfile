@@ -19,8 +19,14 @@ COPY backend/package.json backend/
 RUN npm ci --workspace=backend --omit=dev && npm cache clean --force
 COPY backend/prisma backend/prisma
 COPY backend/prisma.config.ts backend/prisma.config.ts
+COPY backend/scripts backend/scripts
+# Catalog seed imports the frontend fixture (monorepo-relative path from prisma/).
+COPY frontend/features/products/data.ts frontend/features/products/data.ts
+COPY frontend/features/products/types.ts frontend/features/products/types.ts
 # Prisma Client is generated into src/generated (compiled into dist by nest build).
 COPY --from=build /repo/backend/dist backend/dist
+# Seed needs the generated Prisma client + argon2 at runtime.
+COPY --from=build /repo/backend/src/generated backend/src/generated
 USER node
 WORKDIR /app/backend
 EXPOSE 4000

@@ -39,15 +39,28 @@ services:
       retries: 5
     networks: [internal]
 
-  # One-shot: applies pending Prisma migrations, then exits. The backend waits
-  # for this to complete successfully before starting.
+  # One-shot: applies pending Prisma migrations, then seeds when allowed.
+  # Seeding is skipped in production unless ENABLE_PRODUCTION_SEED=true.
+  # A failed seed fails this service (and blocks backend start).
   migrate:
     image: ${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
     restart: 'no'
     working_dir: /app/backend
-    command: ['npx', 'prisma', 'migrate', 'deploy']
+    command: ['sh', './scripts/migrate-and-seed.sh']
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: ${NODE_ENV:-production}
+      ENABLE_PRODUCTION_SEED: ${ENABLE_PRODUCTION_SEED:-false}
+      SEED_ENABLED: ${SEED_ENABLED:-true}
+      SEED_PROFILE: ${SEED_PROFILE:-full}
+      SEED_COMMERCE_DEMO: ${SEED_COMMERCE_DEMO:-true}
+      SEED_SUPER_ADMIN_EMAIL: ${SEED_SUPER_ADMIN_EMAIL:-}
+      SEED_SUPER_ADMIN_PASSWORD: ${SEED_SUPER_ADMIN_PASSWORD:-}
+      SEED_SUPER_ADMIN_PHONE: ${SEED_SUPER_ADMIN_PHONE:-}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@elevateapparel.demo}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_PHONE: ${SEED_ADMIN_PHONE:-01710000002}
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy

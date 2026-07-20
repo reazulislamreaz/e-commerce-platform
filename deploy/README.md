@@ -125,10 +125,15 @@ Variables (Variables tab) — baked into the frontend image at build time:
    `docker-compose.prod.yml`, `nginx/conf.d/default.conf`, and the env template
    to `DEPLOY_PATH`, then runs `docker compose up -d`. Nginx comes up on host
    port 8080 immediately — no certificate step is required.
-2. Seed the Super Admin + catalog fixtures **once**. The seed script needs dev
-   dependencies (`ts-node`) that the production image omits, so run it from a
-   checkout on your machine against the VPS database over an SSH tunnel.
-   Postgres is internal-only, so expose it to the VPS loopback just for seeding:
+2. Bootstrap demo data **once** (optional). The `migrate` one-shot already runs
+   `scripts/migrate-and-seed.sh`. In production it **skips** seeding unless you
+   set `ENABLE_PRODUCTION_SEED=true` in the VPS `.env` (along with
+   `SEED_SUPER_ADMIN_*` and related vars — see `.env.production.example` and
+   [docs/DATABASE_SEED.md](../docs/DATABASE_SEED.md)).
+
+   Prefer enabling that flag for the first roll only, then set it back to
+   `false` so later deploys never re-seed. Alternatively, seed from your laptop
+   over an SSH tunnel:
 
    **a.** On the VPS, temporarily add a loopback port to the `postgres` service
    in `docker-compose.prod.yml`, then apply it:
@@ -149,8 +154,7 @@ Variables (Variables tab) — baked into the frontend image at build time:
    ssh -L 5432:localhost:5432 <VPS_USER>@<VPS_HOST>   # keep open in one terminal
    ```
 
-   **c.** In another terminal, from the repo `backend/` dir, with
-   `SEED_SUPER_ADMIN_*` set:
+   **c.** In another terminal, from the repo root, with `SEED_SUPER_ADMIN_*` set:
 
    ```bash
    DATABASE_URL='postgresql://ecommerce:<pw>@localhost:5432/ecommerce?schema=public' \

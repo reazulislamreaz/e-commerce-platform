@@ -84,6 +84,14 @@ jobs:
       # Quote the phone: YAML treats leading-zero numbers as octal and would
       # turn 01700000000 into an integer, which then fails BD phone validation.
       SEED_SUPER_ADMIN_PHONE: '01770807782'
+      SEED_ADMIN_EMAIL: admin@elevateapparel.demo
+      SEED_ADMIN_PASSWORD: AdminDemoPass123
+      SEED_ADMIN_PHONE: '01710000002'
+      SEED_DEMO_PASSWORD: CustomerDemoPass123
+      SEED_PROFILE: full
+      SEED_COMMERCE_DEMO: 'true'
+      # Explicitly allow seed in this non-production job (also the default).
+      ENABLE_PRODUCTION_SEED: 'false'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -94,11 +102,9 @@ jobs:
         run: npm ci
       - name: Generate Prisma client
         run: npm run prisma:generate --workspace=backend
-      - name: Migrate test database
-        run: npx prisma migrate deploy
-        working-directory: backend
-      - name: Seed catalog fixtures
-        run: npm run prisma:seed --workspace=backend
+      - name: Migrate and seed test database
+        # Fails the job if either migrations or the seed pipeline fail.
+        run: npm run prisma:migrate-and-seed --workspace=backend
       - name: Run integration and COD smoke tests
         run: npm run test:integration --workspace=backend
 

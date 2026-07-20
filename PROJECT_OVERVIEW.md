@@ -60,8 +60,11 @@ npm ci
 docker compose up -d
 npm run prisma:generate --workspace=backend
 npm run prisma:migrate --workspace=backend
-npm run prisma:seed --workspace=backend   # Super Admin + storefront catalog/opening inventory
+npm run prisma:seed --workspace=backend   # Super Admin, catalog, coupons, full commerce demo
+# Or: npm run prisma:migrate-and-seed --workspace=backend
 ```
+
+See [docs/DATABASE_SEED.md](./docs/DATABASE_SEED.md) for env vars, idempotency rules, and how to extend seeders.
 
 ```bash
 npm run dev:backend
@@ -211,7 +214,7 @@ npm run test:integration --workspace=backend
 npm run format
 ```
 
-GitHub Actions CI (`.github/workflows/ci.yml`) runs a quality job (install, Prisma generate/validate, lint, unit tests, builds) plus an integration job with Postgres/Redis services (`prisma migrate deploy`, seed, `test:integration`). COD/review HTTP smoke lives under `*.smoke.integration.ts`; see [docs/COD_SMOKE_CHECKLIST.md](./docs/COD_SMOKE_CHECKLIST.md).
+GitHub Actions CI (`.github/workflows/ci.yml`) runs a quality job (install, Prisma generate/validate, lint, unit tests, builds) plus an integration job with Postgres/Redis services (`prisma:migrate-and-seed`, then `test:integration`). COD/review HTTP smoke lives under `*.smoke.integration.ts`; see [docs/COD_SMOKE_CHECKLIST.md](./docs/COD_SMOKE_CHECKLIST.md). Database seeding is documented in [docs/DATABASE_SEED.md](./docs/DATABASE_SEED.md).
 
 Backend unit tests use Jest (`*.spec.ts` next to the code under test); `auth.service.spec.ts` is the pattern to follow. Add targeted unit/integration tests with every business feature.
 
