@@ -2,30 +2,29 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutGrid, ShoppingBag, UserRound, type LucideIcon } from 'lucide-react';
+import { Heart, Home, LayoutGrid, ShoppingBag, type LucideIcon } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
-import { selectAuthUser, selectCartCount } from '@/store/selectors';
+import { selectCartCount, selectWishlistCount } from '@/store/selectors';
 import { isActiveNav } from './site-nav';
 
 interface BottomNavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  badge?: boolean;
-  authAware?: boolean;
+  badge?: 'cart' | 'wishlist';
 }
 
 const items: readonly BottomNavItem[] = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Shop', href: '/shop', icon: LayoutGrid },
-  { label: 'Cart', href: '/cart', icon: ShoppingBag, badge: true },
-  { label: 'Account', href: '/account', icon: UserRound, authAware: true },
+  { label: 'Cart', href: '/cart', icon: ShoppingBag, badge: 'cart' },
+  { label: 'Wishlist', href: '/wishlist', icon: Heart, badge: 'wishlist' },
 ];
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const cartCount = useAppSelector(selectCartCount);
-  const user = useAppSelector(selectAuthUser);
+  const wishlistCount = useAppSelector(selectWishlistCount);
 
   return (
     <nav
@@ -34,27 +33,24 @@ export function MobileBottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="mx-auto flex max-w-[1400px] items-stretch justify-around">
-        {items.map(({ label, href, icon: Icon, badge, authAware }) => {
-          const linkHref = authAware && !user ? '/login' : href;
-          const active = authAware
-            ? user
-              ? pathname.startsWith('/account')
-              : pathname === '/login' || pathname === '/register'
-            : isActiveNav(pathname, href);
+        {items.map(({ label, href, icon: Icon, badge }) => {
+          const active = isActiveNav(pathname, href);
+          const count =
+            badge === 'cart' ? cartCount : badge === 'wishlist' ? wishlistCount : 0;
 
           return (
             <li key={label} className="flex-1">
               <Link
-                href={linkHref}
+                href={href}
                 className={`relative flex min-h-11 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-semibold uppercase tracking-[.06em] transition-colors ${
                   active ? 'text-[#e3bb78]' : 'text-[#b5b0a8] hover:text-white'
                 }`}
               >
                 <span className="relative">
                   <Icon className="size-5" strokeWidth={1.7} aria-hidden="true" />
-                  {badge && cartCount > 0 && (
+                  {badge && count > 0 && (
                     <span className="absolute -right-2 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">
-                      {cartCount > 9 ? '9+' : cartCount}
+                      {count > 9 ? '9+' : count}
                     </span>
                   )}
                 </span>

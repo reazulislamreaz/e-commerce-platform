@@ -38,7 +38,10 @@ export function WishlistButton({
     return (
       <button
         type="button"
-        onClick={toggle}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggle();
+        }}
         aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         aria-pressed={wishlisted}
         className={cn(

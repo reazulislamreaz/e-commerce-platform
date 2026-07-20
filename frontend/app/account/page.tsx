@@ -17,7 +17,7 @@ export default function AccountOverviewPage() {
 
   const cards = [
     { label: 'Orders', value: String(orders.length), href: '/account/orders', icon: Package },
-    { label: 'Wishlist', value: String(wishlistCount), href: '/account/wishlist', icon: Heart },
+    { label: 'Wishlist', value: String(wishlistCount), href: '/wishlist', icon: Heart },
     { label: 'Addresses', value: 'Manage', href: '/account/addresses', icon: MapPin },
     {
       label: 'Notifications',

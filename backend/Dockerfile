@@ -29,9 +29,11 @@ COPY frontend/features/products/types.ts frontend/features/products/types.ts
 COPY --from=build /repo/backend/dist backend/dist
 # Seed needs the generated Prisma client + argon2 at runtime.
 COPY --from=build /repo/backend/src/generated backend/src/generated
-# Fail the image build if seed fixture imports drift from files copied above.
 WORKDIR /app/backend
+# Fail the image build if seed fixture imports drift from files copied above.
 RUN npx --no-install tsx -e "import { catalogProducts } from './prisma/seed/data/catalog.ts'; if (!Array.isArray(catalogProducts) || catalogProducts.length < 1) { throw new Error('catalog fixture empty'); } console.log('[Dockerfile] seed catalog fixture ok:', catalogProducts.length);"
+# Fail the image build if Nest emit path drifts from CMD (must be dist/main.js).
+RUN test -f dist/main.js || (echo '[Dockerfile] missing dist/main.js; found:' && find dist -name 'main.js' -print && exit 1)
 USER node
 EXPOSE 4000
 CMD ["node", "dist/main"]

@@ -1,9 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { WishlistGrid } from '@/components/shared/wishlist-grid';
-
-export default function AccountWishlistPage() {
-  return (
-    <WishlistGrid title="Wishlist" showClear emptyHint="Your wishlist is empty." />
-  );
+/** Canonical wishlist route is `/wishlist` (header + mobile bottom nav). */
+export default function AccountWishlistRedirectPage() {
+  redirect('/wishlist');
 }

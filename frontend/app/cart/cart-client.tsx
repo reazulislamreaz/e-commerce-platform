@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Minus, Plus, Trash2 } from 'lucide-react';
+import { flashMessage } from '@/components/common/flash-message';
 import { formatTaka } from '@/lib/currency';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { itemQuantitySet, itemRemoved } from '@/store/slices/cart-slice';
@@ -14,6 +15,10 @@ import {
 } from '@/features/cart/pricing';
 import { useProductsByIds } from '@/features/products';
 import { trackAddToCart } from '@/features/analytics/facebook-pixel';
+
+function syncQtyFailed() {
+  flashMessage('Could not sync bag. Changes saved on this device.');
+}
 
 export function CartClient() {
   const dispatch = useAppDispatch();
@@ -51,6 +56,33 @@ export function CartClient() {
             <aside className="h-40 animate-pulse rounded-[4px] border border-[#2d2a27] bg-[#111110]" />
           </div>
         </section>
+      </main>
+    );
+  }
+
+  if (items.length > 0 && products.isError) {
+    return (
+      <main
+        id="main-content"
+        className="flex flex-1 flex-col items-center justify-center bg-black px-5 py-20 text-center"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+          Shopping Bag
+        </p>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-white">
+          COULD NOT LOAD BAG
+        </h1>
+        <p className="mt-3 max-w-sm text-sm text-[#b5b0a8]" role="alert">
+          We couldn&apos;t load product details for items in your bag. Check your connection and try
+          again.
+        </p>
+        <button
+          type="button"
+          onClick={() => void products.refetch()}
+          className="mt-8 border border-[#efc677] bg-[#e5bd79] px-6 py-3 text-[11px] font-bold uppercase text-[#18120b] hover:bg-[#eec98a]"
+        >
+          Try Again
+        </button>
       </main>
     );
   }
@@ -130,11 +162,7 @@ export function CartClient() {
                           itemRemoved({ productId: item.productId, variantId: item.variantId }),
                         );
                         void import('@/features/cart/api').then(({ removeServerCartItem }) =>
-                          removeServerCartItem(item.variantId).catch(() => {
-                            void import('@/components/common/flash-message').then(({ flashMessage }) =>
-                              flashMessage('Could not sync bag. Changes saved on this device.'),
-                            );
-                          }),
+                          removeServerCartItem(item.variantId).catch(syncQtyFailed),
                         );
                       }}
                       className="p-1 text-[#8b867d] hover:text-red-400"
@@ -156,7 +184,7 @@ export function CartClient() {
                           }),
                         );
                         void import('@/features/cart/api').then(({ setServerCartItemQuantity }) =>
-                          setServerCartItemQuantity(item.variantId, quantity).catch(() => undefined),
+                          setServerCartItemQuantity(item.variantId, quantity).catch(syncQtyFailed),
                         );
                       }}
                       className="p-2 text-white hover:text-[#e3bb78]"
@@ -182,7 +210,7 @@ export function CartClient() {
                           value: product.price,
                         });
                         void import('@/features/cart/api').then(({ setServerCartItemQuantity }) =>
-                          setServerCartItemQuantity(item.variantId, quantity).catch(() => undefined),
+                          setServerCartItemQuantity(item.variantId, quantity).catch(syncQtyFailed),
                         );
                       }}
                       className="p-2 text-white hover:text-[#e3bb78]"

@@ -35,6 +35,23 @@ const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
 ];
 const EMPTY_PRODUCTS: CatalogProduct[] = [];
 
+/** Compact page list: 1 … window … last (avoids rendering every page button). */
+function paginationItems(page: number, totalPages: number): Array<number | 'ellipsis'> {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const items: Array<number | 'ellipsis'> = [1];
+  const start = Math.max(2, page - 1);
+  const end = Math.min(totalPages - 1, page + 1);
+
+  if (start > 2) items.push('ellipsis');
+  for (let n = start; n <= end; n += 1) items.push(n);
+  if (end < totalPages - 1) items.push('ellipsis');
+  items.push(totalPages);
+  return items;
+}
+
 function clearedFilters(
   current: ProductFilters,
   initialFilters?: Partial<ProductFilters>,
@@ -201,20 +218,31 @@ export function ShopCatalog({
             >
               Prev
             </button>
-            {Array.from({ length: paged.totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => pushState({ page: n })}
-                className={`min-w-9 rounded-[4px] border px-2.5 py-2 text-[11px] font-semibold ${
-                  n === paged.page
-                    ? 'border-[#e5bd79] bg-[#e5bd79] text-[#18120b]'
-                    : 'border-[#37332c] text-white hover:border-[#e3bb78]'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
+            {paginationItems(paged.page, paged.totalPages).map((item, index) =>
+              item === 'ellipsis' ? (
+                <span
+                  key={`ellipsis-${index}`}
+                  className="min-w-9 px-1 text-center text-[11px] text-[#8b867d]"
+                  aria-hidden
+                >
+                  …
+                </span>
+              ) : (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => pushState({ page: item })}
+                  aria-current={item === paged.page ? 'page' : undefined}
+                  className={`min-w-9 rounded-[4px] border px-2.5 py-2 text-[11px] font-semibold ${
+                    item === paged.page
+                      ? 'border-[#e5bd79] bg-[#e5bd79] text-[#18120b]'
+                      : 'border-[#37332c] text-white hover:border-[#e3bb78]'
+                  }`}
+                >
+                  {item}
+                </button>
+              ),
+            )}
             <button
               type="button"
               disabled={paged.page >= paged.totalPages}

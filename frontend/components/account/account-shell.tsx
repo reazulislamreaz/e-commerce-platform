@@ -36,7 +36,7 @@ const nav: {
   { href: '/account/password', label: 'Change Password', icon: KeyRound },
   { href: '/account/addresses', label: 'Address Book', icon: MapPin },
   { href: '/account/orders', label: 'Orders', icon: Package },
-  { href: '/account/wishlist', label: 'Wishlist', icon: Heart },
+  { href: '/wishlist', label: 'Wishlist', icon: Heart },
   { href: '/account/notifications', label: 'Notifications', icon: Bell },
   { href: '/account/coupons', label: 'Coupons', icon: CreditCard },
   { href: '/account/reviews', label: 'Reviews', icon: Star },

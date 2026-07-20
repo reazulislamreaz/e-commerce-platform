@@ -18,6 +18,7 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
   const router = useRouter();
   const prefetchProduct = usePrefetchProduct();
   const inputRef = useRef<HTMLInputElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
   const [recentVersion, setRecentVersion] = useState(0);
@@ -30,8 +31,13 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
 
   useEffect(() => {
     if (!open) return;
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const timer = window.setTimeout(() => inputRef.current?.focus(), 50);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      previousFocusRef.current?.focus();
+    };
   }, [open]);
 
   useEffect(() => {
@@ -45,6 +51,13 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
 
   const search = useProductSearch(deferredQuery, open && deferredQuery.trim().length > 0);
   const results = (search.data ?? []).slice(0, SEARCH_DIALOG_LIMIT);
+  const isSearching =
+    deferredQuery.trim().length > 0 && (search.isLoading || search.isFetching) && results.length === 0;
+  const showNoMatches =
+    deferredQuery.trim().length > 0 &&
+    !search.isLoading &&
+    !search.isFetching &&
+    results.length === 0;
 
   const commitSearch = (value: string) => {
     const q = value.trim();
@@ -149,7 +162,23 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
               <p className="mb-3 text-[10px] font-bold uppercase tracking-[.14em] text-[#b5b0a8]">
                 Suggestions
               </p>
-              {results.length === 0 ? (
+              {isSearching ? (
+                <ul className="space-y-2" aria-busy="true" aria-label="Searching">
+                  {Array.from({ length: 3 }, (_, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center gap-3 rounded-[4px] p-2"
+                      aria-hidden
+                    >
+                      <div className="h-12 w-10 animate-pulse rounded-[4px] bg-[#1a1815]" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="h-3 w-[70%] animate-pulse rounded-[4px] bg-[#1a1815]" />
+                        <div className="h-2.5 w-[40%] animate-pulse rounded-[4px] bg-[#1a1815]" />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : showNoMatches ? (
                 <p className="text-sm text-[#b5b0a8]">No matches. Try another keyword.</p>
               ) : (
                 <ul className="space-y-2">

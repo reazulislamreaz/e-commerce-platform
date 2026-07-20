@@ -154,6 +154,29 @@ export function WishlistGrid({
     );
   }
 
+  if (ids.length > 0 && resolved.isError) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+          {title} ({count})
+        </h2>
+        <div
+          className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#b5b0a8]"
+          role="alert"
+        >
+          <p>We couldn&apos;t load your saved items. Check your connection and try again.</p>
+          <button
+            type="button"
+            onClick={() => void resolved.refetch()}
+            className="mt-4 rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-4 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] hover:bg-[#eec98a]"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">

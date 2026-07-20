@@ -32,7 +32,31 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
   const [color, setColor] = useState(p.color);
   const [qty, setQty] = useState(1);
   const [zoom, setZoom] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [addedMsg, setAddedMsg] = useState(false);
+  const [coarsePointer, setCoarsePointer] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia('(pointer: coarse)');
+    const sync = () => setCoarsePointer(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [lightboxOpen]);
 
   useEffect(() => {
     trackViewContent({
@@ -124,9 +148,26 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
           <div>
             <div
-              className="relative overflow-hidden rounded-[4px] bg-[#e4e3e1]"
-              onMouseEnter={() => setZoom(true)}
+              className={`relative overflow-hidden rounded-[4px] bg-[#e4e3e1] ${
+                coarsePointer ? 'cursor-zoom-in' : ''
+              }`}
+              onMouseEnter={() => {
+                if (!coarsePointer) setZoom(true);
+              }}
               onMouseLeave={() => setZoom(false)}
+              onClick={() => {
+                if (coarsePointer) setLightboxOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (!coarsePointer) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setLightboxOpen(true);
+                }
+              }}
+              role={coarsePointer ? 'button' : undefined}
+              tabIndex={coarsePointer ? 0 : undefined}
+              aria-label={coarsePointer ? `Enlarge image of ${p.name}` : undefined}
             >
               <ProductImage
                 src={p.images[activeImage] ?? p.image}
@@ -134,8 +175,8 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                 width={800}
                 height={1000}
                 priority
-                className={`aspect-[.8] h-auto w-full object-cover transition-transform duration-300 ${
-                  zoom ? 'scale-110' : 'scale-100'
+                className={`pointer-events-none aspect-[.8] h-auto w-full object-cover transition-transform duration-300 ${
+                  zoom && !coarsePointer ? 'scale-110' : 'scale-100'
                 }`}
               />
               {discount > 0 && (
@@ -152,6 +193,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                     key={src}
                     type="button"
                     onClick={() => setActiveImage(index)}
+                    aria-pressed={index === activeImage}
                     className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-[4px] border ${
                       index === activeImage ? 'border-[#e5bd79]' : 'border-transparent'
                     }`}
@@ -210,6 +252,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                     type="button"
                     title={option.name}
                     onClick={() => setColor(option.name)}
+                    aria-pressed={color === option.name}
                     className={`size-8 rounded-full border-2 ${
                       color === option.name ? 'border-[#e5bd79]' : 'border-[#37332c]'
                     }`}
@@ -233,6 +276,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                       type="button"
                       disabled={!available}
                       onClick={() => setSize(option)}
+                      aria-pressed={size === option}
                       className={`min-w-11 rounded-[4px] border px-3 py-2 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-30 ${
                         size === option
                           ? 'border-[#e5bd79] bg-[#e5bd79] text-[#18120b]'
@@ -297,6 +341,38 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
       </section>
 
       <ProductBelowFold product={product} />
+
+      {lightboxOpen && (
+        <div className="fixed inset-0 z-[90]">
+          <button
+            type="button"
+            aria-label="Close enlarged image"
+            className="absolute inset-0 bg-black/90"
+            onClick={() => setLightboxOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${p.name} enlarged image`}
+            className="relative mx-auto flex h-full max-w-[1400px] items-center justify-center px-4 py-10"
+          >
+            <ProductImage
+              src={p.images[activeImage] ?? p.image}
+              alt={p.name}
+              width={1200}
+              height={1500}
+              className="max-h-[min(90vh,900px)] w-auto max-w-full object-contain"
+            />
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(false)}
+              className="absolute right-5 top-5 rounded-[4px] border border-[#37332c] bg-[#111110] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-white"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

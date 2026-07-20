@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   ArrowRight,
   Headphones,
   Quote,
@@ -121,15 +120,7 @@ function Hero({ banner }: { banner: MarketingBanner }) {
         )}
       </div>
       <div className="absolute inset-0 bg-linear-to-r from-[#080808] via-[#080808]/90 to-[#080808]/20 sm:inset-y-0 sm:left-0 sm:w-[68%] sm:bg-linear-to-r sm:from-[#080808] sm:via-[#080808]/95 sm:to-transparent" />
-      <ArrowLeft
-        aria-hidden
-        className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-white sm:left-7 sm:size-7"
-      />
-      <ArrowRight
-        aria-hidden
-        className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-white sm:right-6 sm:size-7"
-      />
-      <div className="relative mx-auto flex h-full max-w-[1400px] items-center px-12 sm:px-[10.2%]">
+      <div className="relative mx-auto flex h-full max-w-[1400px] items-center px-5 sm:px-[10.2%]">
         <div className="max-w-[390px]">
           <p className="text-xs font-semibold uppercase tracking-[.11em] text-[#e0bd7d] sm:text-[14px]">
             Discover Your Edge
@@ -380,13 +371,11 @@ function About() {
           </Link>
         </div>
       </div>
-      <div className="relative px-10 py-6 text-center sm:px-14 lg:px-12 lg:py-5">
+      <div className="relative px-5 py-6 text-center sm:px-10 lg:px-12 lg:py-5">
         <h2 className="text-[16px] font-semibold uppercase text-[#dbb87c]">
           What Our Customers Say
         </h2>
         <Quote className="absolute left-4 top-[58px] size-5 fill-[#dfbd7f] text-[#dfbd7f] sm:left-9" />
-        <ArrowLeft className="absolute left-3 top-1/2 size-5 text-white sm:left-8" />
-        <ArrowRight className="absolute right-3 top-1/2 size-5 text-white sm:right-8" />
         <p className="mx-auto mt-4 max-w-[315px] text-xs leading-[1.5] text-[#f0edeb]">
           The quality is outstanding! Super comfortable and a perfect fit. Elevate is my go-to brand
           now.
