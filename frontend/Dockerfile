@@ -2,6 +2,7 @@
 #   docker build -f frontend/Dockerfile -t ecommerce-frontend .
 FROM node:20.19-alpine AS build
 WORKDIR /repo
+ENV HUSKY=0
 COPY package.json package-lock.json ./
 COPY frontend/package.json frontend/
 RUN npm ci --workspace=frontend

@@ -2,6 +2,7 @@
 #   docker build -f backend/Dockerfile -t ecommerce-backend .
 FROM node:20.19-alpine AS build
 WORKDIR /repo
+ENV HUSKY=0
 COPY package.json package-lock.json ./
 COPY backend/package.json backend/
 RUN npm ci --workspace=backend
@@ -13,7 +14,8 @@ RUN npm run prisma:generate --workspace=backend && npm run build --workspace=bac
 
 FROM node:20.19-alpine AS production
 WORKDIR /app
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    HUSKY=0
 COPY package.json package-lock.json ./
 COPY backend/package.json backend/
 RUN npm ci --workspace=backend --omit=dev && npm cache clean --force
