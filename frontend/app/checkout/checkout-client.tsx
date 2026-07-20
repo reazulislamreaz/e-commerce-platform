@@ -8,21 +8,14 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
+import { toast, toastErrorFrom } from '@/lib/toast';
 import { FormField } from '@/components/common/form-field';
 import { formatTaka } from '@/lib/currency';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { cartCleared } from '@/store/slices/cart-slice';
 import { selectAuthUser, selectCartHydrated, selectCartItems } from '@/store/selectors';
-import {
-  cartSubtotal,
-  resolveCartLines,
-  shippingForSubtotal,
-} from '@/features/cart/pricing';
-import {
-  accountRepository,
-  useAccountAddresses,
-  type SavedAddress,
-} from '@/features/account';
+import { cartSubtotal, resolveCartLines, shippingForSubtotal } from '@/features/cart/pricing';
+import { accountRepository, useAccountAddresses, type SavedAddress } from '@/features/account';
 import { useProductsByIds } from '@/features/products';
 import { trackInitiateCheckout, trackPurchase } from '@/features/analytics/facebook-pixel';
 import { setCartRecoveryEmail } from '@/features/cart/api';
@@ -43,7 +36,9 @@ const checkoutSchema = z.object({
 
 type CheckoutInput = z.infer<typeof checkoutSchema>;
 
-function addressFields(address: SavedAddress): Pick<
+function addressFields(
+  address: SavedAddress,
+): Pick<
   CheckoutInput,
   'fullName' | 'phone' | 'line1' | 'line2' | 'city' | 'district' | 'postalCode'
 > {
@@ -82,10 +77,7 @@ export function CheckoutClient() {
   const defaultAddressApplied = useRef(false);
   const lastCouponSubtotal = useRef<number | null>(null);
 
-  const lines = useMemo(
-    () => resolveCartLines(items, products.data ?? []),
-    [items, products.data],
-  );
+  const lines = useMemo(() => resolveCartLines(items, products.data ?? []), [items, products.data]);
   const checkoutTracked = useRef(false);
 
   const subtotal = cartSubtotal(lines);
@@ -151,6 +143,11 @@ export function CheckoutClient() {
       return;
     }
     if (lastCouponSubtotal.current !== subtotal) {
+      if (appliedCode) {
+        toast.info('Coupon removed because your bag total changed.', {
+          dedupeKey: 'checkout:coupon-removed',
+        });
+      }
       setDiscount(0);
       setShippingWaived(false);
       setAppliedCode(undefined);
@@ -172,7 +169,9 @@ export function CheckoutClient() {
 
   const applyCode = async () => {
     if (!user) {
-      setCouponError('Sign in to use coupons.');
+      const message = 'Sign in to use coupons.';
+      setCouponError(message);
+      toast.warning(message, { dedupeKey: 'checkout:coupon-auth' });
       return;
     }
     setCouponPending(true);
@@ -183,6 +182,7 @@ export function CheckoutClient() {
       setShippingWaived(result.shippingWaived);
       setAppliedCode(result.code);
       lastCouponSubtotal.current = subtotal;
+      toast.success(`Coupon ${result.code} applied.`, { dedupeKey: 'checkout:coupon-apply' });
     } catch (error: unknown) {
       const message = axios.isAxiosError(error)
         ? ((error.response?.data as { message?: string } | undefined)?.message ??
@@ -193,6 +193,7 @@ export function CheckoutClient() {
       setShippingWaived(false);
       setAppliedCode(undefined);
       lastCouponSubtotal.current = null;
+      toast.error(message, { dedupeKey: 'checkout:coupon-error' });
     } finally {
       setCouponPending(false);
     }
@@ -246,6 +247,9 @@ export function CheckoutClient() {
 
       dispatch(cartCleared());
       setIdempotencyKey(createClientId());
+      toast.success(`Order #${order.number} placed successfully.`, {
+        dedupeKey: `checkout:order:${order.id}`,
+      });
 
       if (user) {
         router.push(`/account/orders/${order.id}?confirmed=1`);
@@ -266,6 +270,7 @@ export function CheckoutClient() {
           'Could not place your order. Please try again.')
         : 'Could not place your order. Please try again.';
       setSubmitError(message);
+      toastErrorFrom(error, message, 'checkout:order-error');
     } finally {
       setSubmitting(false);
     }
@@ -396,7 +401,11 @@ export function CheckoutClient() {
             )}
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Full name" error={errors.fullName?.message} {...register('fullName')} />
+              <FormField
+                label="Full name"
+                error={errors.fullName?.message}
+                {...register('fullName')}
+              />
               <FormField label="Phone" error={errors.phone?.message} {...register('phone')} />
               <div className="sm:col-span-2">
                 <FormField
@@ -407,13 +416,21 @@ export function CheckoutClient() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <FormField label="Address line 1" error={errors.line1?.message} {...register('line1')} />
+                <FormField
+                  label="Address line 1"
+                  error={errors.line1?.message}
+                  {...register('line1')}
+                />
               </div>
               <div className="sm:col-span-2">
                 <FormField label="Address line 2 (optional)" {...register('line2')} />
               </div>
               <FormField label="City" error={errors.city?.message} {...register('city')} />
-              <FormField label="District" error={errors.district?.message} {...register('district')} />
+              <FormField
+                label="District"
+                error={errors.district?.message}
+                {...register('district')}
+              />
               <FormField
                 label="Postal code"
                 error={errors.postalCode?.message}

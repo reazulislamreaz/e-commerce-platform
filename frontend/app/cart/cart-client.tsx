@@ -3,21 +3,17 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { flashMessage } from '@/components/common/flash-message';
+import { toast } from '@/lib/toast';
 import { formatTaka } from '@/lib/currency';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { itemQuantitySet, itemRemoved } from '@/store/slices/cart-slice';
 import { selectCartHydrated, selectCartItems } from '@/store/selectors';
-import {
-  cartSubtotal,
-  resolveCartLines,
-  shippingForSubtotal,
-} from '@/features/cart/pricing';
+import { cartSubtotal, resolveCartLines, shippingForSubtotal } from '@/features/cart/pricing';
 import { useProductsByIds } from '@/features/products';
 import { trackAddToCart } from '@/features/analytics/facebook-pixel';
 
 function syncQtyFailed() {
-  flashMessage('Could not sync bag. Changes saved on this device.');
+  toast.warning('Could not sync bag. Changes saved on this device.', { dedupeKey: 'cart:sync' });
 }
 
 export function CartClient() {
@@ -136,7 +132,13 @@ export function CartClient() {
                   href={`/product/${product.slug}`}
                   className="relative h-28 w-24 shrink-0 overflow-hidden rounded-[4px] bg-[#e4e3e1]"
                 >
-                  <Image src={product.image} alt={product.name} fill className="object-cover" sizes="96px" />
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    sizes="96px"
+                  />
                 </Link>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
@@ -161,6 +163,9 @@ export function CartClient() {
                         dispatch(
                           itemRemoved({ productId: item.productId, variantId: item.variantId }),
                         );
+                        toast.info(`${product.name} removed from your bag.`, {
+                          dedupeKey: `cart:remove:${item.variantId}`,
+                        });
                         void import('@/features/cart/api').then(({ removeServerCartItem }) =>
                           removeServerCartItem(item.variantId).catch(syncQtyFailed),
                         );

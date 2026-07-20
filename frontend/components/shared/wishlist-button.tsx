@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { wishlistToggled } from '@/store/slices/wishlist-slice';
 import { selectAuthUser, selectIsWishlisted } from '@/store/selectors';
 import { addWishlistProduct, removeWishlistProduct } from '@/features/wishlist/api';
-import { flashMessage } from '@/components/common/flash-message';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 
 export function WishlistButton({
@@ -24,14 +24,20 @@ export function WishlistButton({
   const toggle = () => {
     const nextWishlisted = !wishlisted;
     dispatch(wishlistToggled(productId));
+    if (nextWishlisted) {
+      toast.success('Added to wishlist.', { dedupeKey: `wishlist:add:${productId}` });
+    } else {
+      toast.info('Removed from wishlist.', { dedupeKey: `wishlist:remove:${productId}` });
+    }
     if (!user) return;
-    void (nextWishlisted
-      ? addWishlistProduct(productId)
-      : removeWishlistProduct(productId)
-    ).catch(() => {
-      dispatch(wishlistToggled(productId));
-      flashMessage('Could not update wishlist. Please try again.');
-    });
+    void (nextWishlisted ? addWishlistProduct(productId) : removeWishlistProduct(productId)).catch(
+      () => {
+        dispatch(wishlistToggled(productId));
+        toast.error('Could not update wishlist. Please try again.', {
+          dedupeKey: 'wishlist:sync-error',
+        });
+      },
+    );
   };
 
   if (variant === 'button') {

@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import Link from 'next/link';
-import axios from 'axios';
+import { toast, toastFromError } from '@/lib/toast';
 import { submitContact } from '@/features/contact/api';
 
 export default function ContactClient() {
@@ -27,12 +27,13 @@ export default function ContactClient() {
       });
       setSent(true);
       form.reset();
+      toast.success('Message sent. We will get back to you shortly.', {
+        dedupeKey: 'contact:sent',
+      });
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? ((err.response?.data as { message?: string } | undefined)?.message ??
-          'Could not send your message. Please try again.')
-        : 'Could not send your message. Please try again.';
+      const message = toastFromError(err, 'Could not send your message. Please try again.');
       setError(message);
+      toast.error(message, { dedupeKey: 'contact:error' });
     } finally {
       setSubmitting(false);
     }
@@ -143,7 +144,12 @@ export default function ContactClient() {
                   placeholder="you@email.com"
                 />
               </div>
-              <Field label="Subject" name="subject" required placeholder="Order, fit, partnership…" />
+              <Field
+                label="Subject"
+                name="subject"
+                required
+                placeholder="Order, fit, partnership…"
+              />
               <label className="block">
                 <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[#b5b0a8]">
                   Message

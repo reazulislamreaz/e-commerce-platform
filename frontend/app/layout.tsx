@@ -5,7 +5,6 @@ import './globals.css';
 import { playfair } from '@/lib/fonts';
 import { AppProviders } from '@/providers/app-providers';
 import { StorefrontChrome } from '@/components/layouts/storefront-chrome';
-import { FlashMessageHost } from '@/components/common/flash-message';
 import { FacebookPixel } from '@/features/analytics/facebook-pixel';
 
 const geistSans = Geist({
@@ -63,7 +62,6 @@ export default function RootLayout({
         </a>
         <AppProviders>
           <StorefrontChrome>{children}</StorefrontChrome>
-          <FlashMessageHost />
           <Suspense fallback={null}>
             <FacebookPixel />
           </Suspense>

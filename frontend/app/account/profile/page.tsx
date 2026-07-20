@@ -47,7 +47,11 @@ export default function ProfilePage() {
     <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
       <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">Edit Profile</h2>
       <form onSubmit={onSubmit} className="mt-5 grid max-w-xl gap-4 sm:grid-cols-2">
-        <FormField label="First name" error={errors.firstName?.message} {...register('firstName')} />
+        <FormField
+          label="First name"
+          error={errors.firstName?.message}
+          {...register('firstName')}
+        />
         <FormField label="Last name" error={errors.lastName?.message} {...register('lastName')} />
         <div className="sm:col-span-2">
           <FormField
@@ -69,11 +73,6 @@ export default function ProfilePage() {
             {...register('phone')}
           />
         </div>
-        {updateProfile.isSuccess && (
-          <p className="sm:col-span-2 text-sm text-[#8fbf8f]" role="status">
-            Profile updated.
-          </p>
-        )}
         {serverError && (
           <p role="alert" className="sm:col-span-2 text-sm text-red-300">
             {serverError}

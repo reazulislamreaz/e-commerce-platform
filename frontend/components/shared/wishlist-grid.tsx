@@ -6,7 +6,7 @@ import { ProductCard } from '@/components/shared/product-card';
 import { productCatalog, useProductsByIds, type CatalogProduct } from '@/features/products';
 import { toReduxCartItems, upsertServerCartItem } from '@/features/cart/api';
 import { removeWishlistProduct } from '@/features/wishlist/api';
-import { flashMessage } from '@/components/common/flash-message';
+import { toast } from '@/lib/toast';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { cartHydrated } from '@/store/slices/cart-slice';
 import { wishlistCleared, wishlistRemoved } from '@/store/slices/wishlist-slice';
@@ -36,7 +36,9 @@ function MoveToCartControl({
     dispatch(wishlistRemoved(savedProductId));
     if (user) {
       void removeWishlistProduct(savedProductId).catch(() => {
-        flashMessage('Item moved, but wishlist sync will retry on your next session.');
+        toast.warning('Item moved, but wishlist sync will retry on your next session.', {
+          dedupeKey: 'wishlist:sync',
+        });
       });
     }
   }
@@ -47,9 +49,13 @@ function MoveToCartControl({
       const cart = await upsertServerCartItem(selectedVariantId, 1);
       dispatch(cartHydrated(toReduxCartItems(cart)));
       removeSavedItem();
-      flashMessage(`${product.name} moved to your bag.`);
+      toast.success(`${product.name} moved to your bag.`, {
+        dedupeKey: `wishlist:move:${product.id}`,
+      });
     } catch {
-      flashMessage('Could not move this item to your bag. Please try again.');
+      toast.error('Could not move this item to your bag. Please try again.', {
+        dedupeKey: 'wishlist:move-error',
+      });
     } finally {
       setLoading(false);
     }
@@ -58,7 +64,7 @@ function MoveToCartControl({
   async function prepareMove() {
     if (detail) {
       if (!variantId) {
-        flashMessage('Choose an available size and color.');
+        toast.warning('Choose an available size and color.', { dedupeKey: 'wishlist:variant' });
         return;
       }
       await moveVariant(variantId);
@@ -70,7 +76,7 @@ function MoveToCartControl({
       const resolved = await productCatalog.getBySlug(product.slug);
       const variants = (resolved?.variants ?? []).filter((variant) => variant.stock > 0);
       if (!resolved || variants.length === 0) {
-        flashMessage('This item is currently out of stock.');
+        toast.warning('This item is currently out of stock.', { dedupeKey: 'wishlist:stock' });
         return;
       }
       if (variants.length === 1) {
@@ -80,7 +86,9 @@ function MoveToCartControl({
       setDetail(resolved);
       setVariantId(variants[0].id);
     } catch {
-      flashMessage('Could not load available options. Please try again.');
+      toast.error('Could not load available options. Please try again.', {
+        dedupeKey: 'wishlist:load-error',
+      });
     } finally {
       setLoading(false);
     }
@@ -189,9 +197,12 @@ export function WishlistGrid({
             onClick={() => {
               const previous = [...ids];
               dispatch(wishlistCleared());
+              toast.info('Wishlist cleared.', { dedupeKey: 'wishlist:clear' });
               if (!user) return;
               void Promise.all(previous.map((id) => removeWishlistProduct(id))).catch(() => {
-                flashMessage('Could not clear wishlist on server. Local list cleared.');
+                toast.warning('Could not clear wishlist on server. Local list cleared.', {
+                  dedupeKey: 'wishlist:clear-sync',
+                });
               });
             }}
             className="text-[10px] font-semibold uppercase text-[#b5b0a8] hover:text-[#e3bb78]"

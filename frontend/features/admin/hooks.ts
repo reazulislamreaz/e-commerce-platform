@@ -1,7 +1,9 @@
 'use client';
 
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/lib/toast';
 import { adminApi } from './api';
+import { mutationErrorMessage } from './mutation-error';
 import type {
   AdminProductListParams,
   AdminReviewStatus,
@@ -411,12 +413,31 @@ export function useInvalidateAdmin(scopes: Array<readonly unknown[]> = [adminKey
 export function useAdminMutation<TArgs, TResult>(
   mutationFn: (args: TArgs) => Promise<TResult>,
   invalidateKeys: Array<readonly unknown[]> = [adminKeys.all],
+  toastOptions?: {
+    successMessage?: string | ((result: TResult, args: TArgs) => string);
+    errorFallback?: string;
+    dedupeKey?: string;
+  },
 ) {
   const invalidate = useInvalidateAdmin(invalidateKeys);
   return useMutation({
     mutationFn,
-    onSuccess: () => {
+    onSuccess: (result, args) => {
       void invalidate();
+      if (toastOptions?.successMessage) {
+        const message =
+          typeof toastOptions.successMessage === 'function'
+            ? toastOptions.successMessage(result, args)
+            : toastOptions.successMessage;
+        toast.success(message, { dedupeKey: toastOptions.dedupeKey });
+      }
+    },
+    onError: (error) => {
+      if (toastOptions?.errorFallback) {
+        toast.error(mutationErrorMessage(error, toastOptions.errorFallback), {
+          dedupeKey: toastOptions.dedupeKey ? `${toastOptions.dedupeKey}:error` : undefined,
+        });
+      }
     },
   });
 }

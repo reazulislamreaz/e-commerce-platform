@@ -47,11 +47,21 @@ export default function AdminOrderDetailPage() {
         ...(args.trackingNumber ? { trackingNumber: args.trackingNumber } : {}),
       }),
     [...ORDER_INVALIDATE],
+    {
+      successMessage: (_result, args) => `Order marked as ${args.status.toLowerCase()}.`,
+      errorFallback: 'Could not update order status.',
+      dedupeKey: 'admin:order-status',
+    },
   );
 
   const cancelMutation = useAdminMutation(
     (args: { id: string; reason: string }) => adminApi.cancelOrder(args.id, args.reason),
     [...ORDER_INVALIDATE],
+    {
+      successMessage: 'Order cancelled.',
+      errorFallback: 'Could not cancel order.',
+      dedupeKey: 'admin:order-cancel',
+    },
   );
 
   const busy = statusMutation.isPending || cancelMutation.isPending;
@@ -119,8 +129,7 @@ export default function AdminOrderDetailPage() {
   const canPack = status === 'processing';
   const canShip = status === 'packed';
   const canDeliver = status === 'shipped';
-  const canCancel =
-    status === 'confirmed' || status === 'processing' || status === 'packed';
+  const canCancel = status === 'confirmed' || status === 'processing' || status === 'packed';
   const address = order.shippingAddress;
 
   return (
@@ -162,9 +171,7 @@ export default function AdminOrderDetailPage() {
                 <span
                   aria-hidden
                   className={`flex size-3 shrink-0 items-center justify-center rounded-full border-2 ${
-                    step.done
-                      ? 'border-[#e5bd79] bg-[#e5bd79]'
-                      : 'border-[#37332c] bg-transparent'
+                    step.done ? 'border-[#e5bd79] bg-[#e5bd79]' : 'border-[#37332c] bg-transparent'
                   }`}
                 />
                 {index < order.timeline.length - 1 ? (
@@ -262,7 +269,10 @@ export default function AdminOrderDetailPage() {
       </AdminPanel>
 
       {(canProcess || canPack || canShip || canDeliver || canCancel) && (
-        <AdminPanel title="Fulfillment actions" description="Advance status or cancel before shipment.">
+        <AdminPanel
+          title="Fulfillment actions"
+          description="Advance status or cancel before shipment."
+        >
           {actionError ? <AdminError>{actionError}</AdminError> : null}
 
           <div className="mt-3 flex flex-wrap gap-2">

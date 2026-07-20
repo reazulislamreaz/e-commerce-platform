@@ -15,7 +15,7 @@ import { WishlistButton } from '@/components/shared/wishlist-button';
 import { ProductImage } from '@/components/common/product-image';
 import { useAppDispatch } from '@/store/hooks';
 import { itemAdded } from '@/store/slices/cart-slice';
-import { flashMessage } from '@/components/common/flash-message';
+import { toast } from '@/lib/toast';
 import {
   buildProductOrderWhatsAppHref,
   buildTelHref,
@@ -33,7 +33,6 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
   const [qty, setQty] = useState(1);
   const [zoom, setZoom] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [addedMsg, setAddedMsg] = useState(false);
   const [coarsePointer, setCoarsePointer] = useState(false);
 
   useEffect(() => {
@@ -75,9 +74,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
   const inStock = stock > 0;
 
   const discount =
-    p.compareAtPrice && p.onSale
-      ? Math.round((1 - p.price / p.compareAtPrice) * 100)
-      : 0;
+    p.compareAtPrice && p.onSale ? Math.round((1 - p.price / p.compareAtPrice) * 100) : 0;
 
   const contact = getContactConfig();
   const whatsappOrderHref = buildProductOrderWhatsAppHref(
@@ -91,7 +88,9 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
     void import('@/features/cart/api')
       .then(({ upsertServerCartItem }) => upsertServerCartItem(variantId, quantity))
       .catch(() => {
-        flashMessage('Could not sync bag. Changes saved on this device.');
+        toast.warning('Could not sync bag. Changes saved on this device.', {
+          dedupeKey: 'cart:sync',
+        });
       });
   };
 
@@ -113,8 +112,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
       content_name: p.name,
       value: p.price * qty,
     });
-    setAddedMsg(true);
-    window.setTimeout(() => setAddedMsg(false), 2000);
+    toast.success(`${p.name} added to your bag.`, { dedupeKey: `cart:add:${p.id}` });
   };
 
   const orderNow = () => {
@@ -322,7 +320,6 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
 
             <ProductActionButtons
               inStock={inStock}
-              addedMsg={addedMsg}
               productName={p.name}
               whatsappOrderHref={whatsappOrderHref}
               callOrderHref={callOrderHref}

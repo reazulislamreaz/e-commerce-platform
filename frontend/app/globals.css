@@ -101,8 +101,36 @@ input:-webkit-autofill:focus {
   }
 }
 
+/* Toast notifications — GPU transform + opacity only */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .motion-safe\:before\:animate-\[elevate-shimmer_1\.4s_ease-in-out_infinite\]::before {
+    animation: none !important;
+  }
+
+  .motion-safe\:animate-\[toast-in_220ms_cubic-bezier\(\.21\,1\.02\,\.73\,1\)_both\],
+  .motion-safe\:animate-\[toast-out_180ms_ease-in_both\] {
     animation: none !important;
   }
 }

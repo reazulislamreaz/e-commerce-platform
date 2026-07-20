@@ -7,7 +7,6 @@ const actionBtn =
 
 type ProductActionButtonsProps = {
   inStock: boolean;
-  addedMsg: boolean;
   productName: string;
   whatsappOrderHref: string;
   callOrderHref: string;
@@ -17,7 +16,6 @@ type ProductActionButtonsProps = {
 
 export function ProductActionButtons({
   inStock,
-  addedMsg,
   productName,
   whatsappOrderHref,
   callOrderHref,
@@ -31,7 +29,7 @@ export function ProductActionButtons({
       onClick={onAddToBag}
       className={`${actionBtn} border border-[#37332c] bg-[#111110] text-white hover:border-[#e3bb78] hover:bg-[#1a1815] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
     >
-      {addedMsg ? 'Added to Bag' : 'Add to Bag'}
+      {inStock ? 'Add to Bag' : 'Out of Stock'}
     </button>
   );
 

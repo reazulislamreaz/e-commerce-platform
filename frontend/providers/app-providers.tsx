@@ -9,11 +9,11 @@ import { makeStore } from '@/store/store';
 import { MarketingConsentBridge } from '@/features/analytics/facebook-pixel';
 import { StoreHydrator } from '@/providers/store-hydrator';
 import { RoutePrefetcher } from '@/providers/route-prefetcher';
+import { ToastProvider } from '@/components/common/toast-provider';
 import { CATALOG_GC_MS, CATALOG_STALE_MS } from '@/features/products/query';
 
 const ReactQueryDevtools = dynamic(
-  () =>
-    import('@tanstack/react-query-devtools').then((mod) => mod.ReactQueryDevtools),
+  () => import('@tanstack/react-query-devtools').then((mod) => mod.ReactQueryDevtools),
   { ssr: false },
 );
 
@@ -46,6 +46,7 @@ export function AppProviders({ children }: PropsWithChildren) {
           <RoutePrefetcher />
           <MarketingConsentBridge />
           {children}
+          <ToastProvider />
           {process.env.NODE_ENV === 'development' ? (
             <ReactQueryDevtools initialIsOpen={false} />
           ) : null}

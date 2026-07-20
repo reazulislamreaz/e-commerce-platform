@@ -1,6 +1,6 @@
 'use client';
 
-import axios from 'axios';
+import { toast } from '@/lib/toast';
 import { useMemo, useState, type FormEvent } from 'react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
@@ -25,15 +25,8 @@ import {
   useCouponRedemptions,
 } from '@/features/admin';
 import type { AdminCoupon } from '@/features/admin/types';
+import { mutationErrorMessage } from '@/features/admin/mutation-error';
 import { formatTaka } from '@/lib/currency';
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 function toDatetimeLocalValue(iso?: string): string {
   if (!iso) return '';
@@ -281,20 +274,24 @@ export default function AdminCouponsPage() {
     try {
       if (isEditing && editingId) {
         await updateMutation.mutateAsync({ id: editingId, body });
-        setSuccess(`Coupon ${editingCode} updated.`);
+        const message = `Coupon ${editingCode} updated.`;
+        setSuccess(message);
+        toast.success(message, { dedupeKey: 'admin:coupon-update' });
         resetForm();
       } else {
         await createMutation.mutateAsync(body);
-        setSuccess(`Coupon ${code.trim().toUpperCase()} created.`);
+        const message = `Coupon ${code.trim().toUpperCase()} created.`;
+        setSuccess(message);
+        toast.success(message, { dedupeKey: 'admin:coupon-create' });
         resetForm();
       }
     } catch (error) {
-      setActionError(
-        mutationErrorMessage(
-          error,
-          isEditing ? 'Could not update coupon.' : 'Could not create coupon.',
-        ),
+      const message = mutationErrorMessage(
+        error,
+        isEditing ? 'Could not update coupon.' : 'Could not create coupon.',
       );
+      setActionError(message);
+      toast.error(message, { dedupeKey: 'admin:coupon-error' });
     }
   }
 
@@ -303,9 +300,13 @@ export default function AdminCouponsPage() {
     setSuccess(null);
     try {
       await deactivateMutation.mutateAsync(id);
-      setSuccess(`Coupon ${couponCode} deactivated.`);
+      const message = `Coupon ${couponCode} deactivated.`;
+      setSuccess(message);
+      toast.success(message, { dedupeKey: 'admin:coupon-deactivate' });
     } catch (error) {
-      setActionError(mutationErrorMessage(error, 'Could not deactivate coupon.'));
+      const message = mutationErrorMessage(error, 'Could not deactivate coupon.');
+      setActionError(message);
+      toast.error(message, { dedupeKey: 'admin:coupon-deactivate-error' });
     }
   }
 

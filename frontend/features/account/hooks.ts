@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast, toastErrorFrom } from '@/lib/toast';
 import { productKeys } from '@/features/products';
 import { accountRepository } from './api';
 import type {
@@ -168,11 +169,19 @@ export function useMarkAllNotificationsRead(userId: string | undefined) {
   return useMutation({
     mutationFn: () => accountRepository.markAllNotificationsRead(),
     onSuccess: async () => {
+      toast.success('All notifications marked as read.', { dedupeKey: 'notifications:read-all' });
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: accountKeys.notificationsRoot(userId) }),
         queryClient.invalidateQueries({ queryKey: accountKeys.unreadNotifications(userId) }),
       ]);
+    },
+    onError: (error) => {
+      toastErrorFrom(
+        error,
+        'Could not mark notifications as read.',
+        'notifications:read-all-error',
+      );
     },
   });
 }
@@ -207,6 +216,12 @@ export function useCreateReview(userId: string | undefined) {
           : Promise.resolve(),
         queryClient.invalidateQueries({ queryKey: productKeys.all }),
       ]);
+      toast.success('Review submitted. It will appear after moderation.', {
+        dedupeKey: 'review:create',
+      });
+    },
+    onError: (error) => {
+      toastErrorFrom(error, 'Could not submit review. Please try again.', 'review:create-error');
     },
   });
 }
@@ -225,6 +240,10 @@ export function useUpdateReview(userId: string | undefined) {
           : Promise.resolve(),
         queryClient.invalidateQueries({ queryKey: productKeys.all }),
       ]);
+      toast.success('Review updated.', { dedupeKey: 'review:update' });
+    },
+    onError: (error) => {
+      toastErrorFrom(error, 'Could not update review. Please try again.', 'review:update-error');
     },
   });
 }
@@ -240,6 +259,10 @@ export function useDeleteReview(userId: string | undefined) {
           : Promise.resolve(),
         queryClient.invalidateQueries({ queryKey: productKeys.all }),
       ]);
+      toast.success('Review deleted.', { dedupeKey: 'review:delete' });
+    },
+    onError: (error) => {
+      toastErrorFrom(error, 'Could not delete review. Please try again.', 'review:delete-error');
     },
   });
 }
@@ -261,6 +284,14 @@ export function useCreateReturnRequest(userId: string | undefined) {
       if (userId) {
         await queryClient.invalidateQueries({ queryKey: accountKeys.returns(userId) });
       }
+      toast.success('Return request submitted.', { dedupeKey: 'return:create' });
+    },
+    onError: (error) => {
+      toastErrorFrom(
+        error,
+        'Could not submit return request. Please try again.',
+        'return:create-error',
+      );
     },
   });
 }

@@ -57,11 +57,6 @@ export default function ChangePasswordPage() {
           error={errors.confirmPassword?.message}
           {...register('confirmPassword')}
         />
-        {changePassword.isSuccess && (
-          <p className="text-sm text-[#8fbf8f]" role="status">
-            Password updated. Other devices have been signed out.
-          </p>
-        )}
         {serverError && (
           <p role="alert" className="text-sm text-red-300">
             {serverError}

@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
-import { flashMessage } from '@/components/common/flash-message';
+import { toast, toastErrorFrom } from '@/lib/toast';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
 import {
@@ -101,7 +100,7 @@ export function OrderRequestForm({
   const onSubmit = handleSubmit(async (values) => {
     const order = activeSelectedOrder ?? orders.find((entry) => entry.id === values.orderId);
     if (!order) {
-      flashMessage('Select a valid order.');
+      toast.warning('Select a valid order.', { dedupeKey: 'order-request:order' });
       return;
     }
 
@@ -111,7 +110,9 @@ export function OrderRequestForm({
         return lineId ? !exchangeVariants[lineId] : true;
       });
       if (missingVariant) {
-        flashMessage('Choose a replacement variant for each item.');
+        toast.warning('Choose a replacement variant for each item.', {
+          dedupeKey: 'order-request:variant',
+        });
         return;
       }
     }
@@ -137,13 +138,8 @@ export function OrderRequestForm({
       reset();
       setSelectedOrder(null);
       setExchangeVariants({});
-      flashMessage('Request submitted.');
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? ((err.response?.data as { message?: string } | undefined)?.message ??
-          'Could not submit request. Please try again.')
-        : 'Could not submit request. Please try again.';
-      flashMessage(message);
+      toastErrorFrom(err, 'Could not submit request. Please try again.', 'order-request:error');
     }
   });
 

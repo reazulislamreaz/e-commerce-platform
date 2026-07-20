@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import axios from 'axios';
+import { toast, toastFromError } from '@/lib/toast';
 import { subscribeNewsletter } from '@/features/newsletter/api';
 
 export function NewsletterForm() {
@@ -14,7 +14,9 @@ export function NewsletterForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!email.trim() || !consent) {
-      setError('Please enter your email and confirm marketing consent.');
+      const message = 'Please enter your email and confirm marketing consent.';
+      setError(message);
+      toast.warning(message, { dedupeKey: 'newsletter:consent' });
       return;
     }
     setSubmitting(true);
@@ -22,12 +24,13 @@ export function NewsletterForm() {
     try {
       await subscribeNewsletter(email.trim(), true);
       setDone(true);
+      toast.success("You're on the list. Welcome to Elevate.", {
+        dedupeKey: 'newsletter:subscribed',
+      });
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? ((err.response?.data as { message?: string } | undefined)?.message ??
-          'Could not subscribe. Please try again.')
-        : 'Could not subscribe. Please try again.';
+      const message = toastFromError(err, 'Could not subscribe. Please try again.');
       setError(message);
+      toast.error(message, { dedupeKey: 'newsletter:error' });
     } finally {
       setSubmitting(false);
     }
@@ -73,8 +76,7 @@ export function NewsletterForm() {
           required
         />
         <span>
-          I agree to receive marketing emails from Elevate Apparel. You can unsubscribe at any
-          time.
+          I agree to receive marketing emails from Elevate Apparel. You can unsubscribe at any time.
         </span>
       </label>
       {error && <p className="text-xs text-red-400">{error}</p>}

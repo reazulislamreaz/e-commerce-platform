@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ReviewForm } from '@/components/account/review-form';
+import { toast } from '@/lib/toast';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
 import { useAccountOrder, useAccountReviews } from '@/features/account';
@@ -20,6 +21,15 @@ function OrderDetailInner() {
   const orderQuery = useAccountOrder(user.id, id);
   const order = orderQuery.data;
   const [reviewProductId, setReviewProductId] = useState<string | null>(null);
+  const confirmedToastShown = useRef(false);
+
+  useEffect(() => {
+    if (!confirmed || confirmedToastShown.current) return;
+    confirmedToastShown.current = true;
+    toast.success('Order placed successfully. Thank you for shopping with Elevate Apparel.', {
+      dedupeKey: 'order:confirmed',
+    });
+  }, [confirmed]);
 
   if (orderQuery.isLoading) {
     return <AccountPanelSkeleton />;

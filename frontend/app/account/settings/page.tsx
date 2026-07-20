@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/lib/toast';
 import { useLogout } from '@/features/auth/hooks';
 import { removeStorage } from '@/lib/storage';
 import { getPreferences, updatePreferences } from '@/features/preferences/api';
@@ -27,7 +28,11 @@ export default function SettingsPage() {
         setOrderUpdates(prefs.emailOrderUpdates);
         setInAppEnabled(prefs.inAppEnabled);
       })
-      .catch(() => setError('Could not load preferences.'))
+      .catch(() => {
+        const message = 'Could not load preferences.';
+        setError(message);
+        toast.error(message, { dedupeKey: 'settings:load-error' });
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -44,8 +49,11 @@ export default function SettingsPage() {
       setMarketing(prefs.emailMarketing);
       setOrderUpdates(prefs.emailOrderUpdates);
       setInAppEnabled(prefs.inAppEnabled);
+      toast.success('Preferences saved.', { dedupeKey: 'settings:saved' });
     } catch {
-      setError('Could not save preferences.');
+      const message = 'Could not save preferences.';
+      setError(message);
+      toast.error(message, { dedupeKey: 'settings:save-error' });
     } finally {
       setSaving(false);
     }

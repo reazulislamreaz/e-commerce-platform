@@ -5,15 +5,11 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField } from '@/components/common/form-field';
-import { flashMessage } from '@/components/common/flash-message';
+import { toast } from '@/lib/toast';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
 import { AccountPanelSkeleton } from '@/components/common/skeleton';
-import {
-  accountRepository,
-  useAccountAddresses,
-  type SavedAddress,
-} from '@/features/account';
+import { accountRepository, useAccountAddresses, type SavedAddress } from '@/features/account';
 
 const schema = z.object({
   label: z.string().min(1).max(40),
@@ -31,8 +27,12 @@ type Input = z.infer<typeof schema>;
 
 export default function AddressesPage() {
   const user = useAppSelector(selectAuthUser)!;
-  const { data: addresses, setData: setAddresses, loading, error: loadError } =
-    useAccountAddresses(user.id);
+  const {
+    data: addresses,
+    setData: setAddresses,
+    loading,
+    error: loadError,
+  } = useAccountAddresses(user.id);
   const [mode, setMode] = useState<'closed' | 'create' | 'edit'>('closed');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -95,7 +95,7 @@ export default function AddressesPage() {
             return address;
           }),
         );
-        flashMessage('Address updated.');
+        toast.success('Address updated.', { dedupeKey: 'address:update' });
       } else {
         const created = await accountRepository.createAddress({
           ...values,
@@ -108,11 +108,13 @@ export default function AddressesPage() {
             ? [...addresses.map((a) => ({ ...a, isDefault: false })), created]
             : [...addresses, created],
         );
-        flashMessage('Address saved.');
+        toast.success('Address saved.', { dedupeKey: 'address:create' });
       }
       closeForm();
     } catch {
-      setActionError('Could not save address. Please check the details and try again.');
+      const message = 'Could not save address. Please check the details and try again.';
+      setActionError(message);
+      toast.error(message, { dedupeKey: 'address:save-error' });
     }
   });
 
@@ -127,9 +129,11 @@ export default function AddressesPage() {
           isDefault: address.id === updated.id,
         })),
       );
-      flashMessage('Default address updated.');
+      toast.success('Default address updated.', { dedupeKey: 'address:default' });
     } catch {
-      setActionError('Could not update the default address.');
+      const message = 'Could not update the default address.';
+      setActionError(message);
+      toast.error(message, { dedupeKey: 'address:default-error' });
     } finally {
       setBusyId(null);
     }
@@ -143,9 +147,11 @@ export default function AddressesPage() {
       const remaining = addresses.filter((a) => a.id !== id);
       setAddresses(remaining);
       if (editingId === id) closeForm();
-      flashMessage('Address removed.');
+      toast.success('Address removed.', { dedupeKey: 'address:remove' });
     } catch {
-      setActionError('Could not remove address.');
+      const message = 'Could not remove address.';
+      setActionError(message);
+      toast.error(message, { dedupeKey: 'address:remove-error' });
     } finally {
       setBusyId(null);
     }
@@ -202,7 +208,11 @@ export default function AddressesPage() {
           <FormField label="Full name" error={errors.fullName?.message} {...register('fullName')} />
           <FormField label="Phone" error={errors.phone?.message} {...register('phone')} />
           <div className="sm:col-span-2">
-            <FormField label="Address line 1" error={errors.line1?.message} {...register('line1')} />
+            <FormField
+              label="Address line 1"
+              error={errors.line1?.message}
+              {...register('line1')}
+            />
           </div>
           <div className="sm:col-span-2">
             <FormField label="Address line 2" {...register('line2')} />
