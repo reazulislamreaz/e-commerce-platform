@@ -11,9 +11,28 @@
     "lint": "npm run lint --workspaces",
     "format": "prettier --write .",
     "test:integration": "npm run test:integration --workspace=backend",
-    "test:smoke:cod": "npm run test:integration --workspace=backend -- --testPathPattern=orders.cod.smoke"
+    "test:smoke:cod": "npm run test:integration --workspace=backend -- --testPathPattern=orders.cod.smoke",
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
+  },
+  "lint-staged": {
+    "frontend/**/*.{ts,tsx,js,jsx,mjs}": [
+      "prettier --write",
+      "eslint --fix --max-warnings=0 --config frontend/eslint.config.mjs"
+    ],
+    "backend/{src,test,prisma}/**/*.ts": [
+      "prettier --write",
+      "eslint --fix --max-warnings=0 --config backend/eslint.config.mjs"
+    ],
+    "backend/prisma.config.ts": [
+      "prettier --write",
+      "eslint --fix --max-warnings=0 --config backend/eslint.config.mjs"
+    ],
+    "*.{json,md,yml,yaml,css}": "prettier --write"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.1.0",
     "prettier": "^3.6.2"
   },
   "allowScripts": {
