@@ -5,7 +5,9 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
-    seed: 'ts-node -r dotenv/config prisma/seed.ts',
+    // Production image cannot run raw `ts-node *.ts` (ERR_UNKNOWN_FILE_EXTENSION).
+    // scripts/run-seed.sh uses tsx, which works in local + Docker migrate jobs.
+    seed: 'sh ./scripts/run-seed.sh',
   },
   datasource: {
     url: env('DATABASE_URL'),
