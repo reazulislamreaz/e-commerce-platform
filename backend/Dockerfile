@@ -20,16 +20,19 @@ RUN npm ci --workspace=backend --omit=dev && npm cache clean --force
 COPY backend/prisma backend/prisma
 COPY backend/prisma.config.ts backend/prisma.config.ts
 COPY backend/scripts backend/scripts
-# Catalog seed imports the frontend fixture (types-only + product rows).
-# Keep this set complete — data.ts must not pull files omitted from the image.
+# Catalog seed (tsx at runtime) imports ONLY these frontend fixtures via
+# prisma/seed/data/catalog.ts. Do not add imports in data.ts that pull other
+# frontend modules unless you also COPY them here.
 COPY frontend/features/products/data.ts frontend/features/products/data.ts
 COPY frontend/features/products/types.ts frontend/features/products/types.ts
-COPY frontend/features/products/constants.ts frontend/features/products/constants.ts
 # Prisma Client is generated into src/generated (compiled into dist by nest build).
 COPY --from=build /repo/backend/dist backend/dist
 # Seed needs the generated Prisma client + argon2 at runtime.
 COPY --from=build /repo/backend/src/generated backend/src/generated
-USER node
+# Fail the image build if seed fixture imports drift from files copied above.
 WORKDIR /app/backend
+RUN npx --no-install tsx -e "import { catalogProducts } from './prisma/seed/data/catalog.ts'; if (!Array.isArray(catalogProducts) || catalogProducts.length < 1) { throw new Error('catalog fixture empty'); } console.log('[Dockerfile] seed catalog fixture ok:', catalogProducts.length);"
+USER node
 EXPOSE 4000
 CMD ["node", "dist/main"]
+

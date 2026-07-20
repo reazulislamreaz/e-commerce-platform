@@ -1,6 +1,9 @@
 /**
  * Seed catalog fixture adapter.
- * Re-exports the storefront fixture so Docker/image layout stays explicit:
- * only `data.ts` + `types.ts` (+ `constants.ts` if present) are required in the image.
+ * Re-exports storefront product rows. The production backend image must COPY:
+ *   frontend/features/products/data.ts
+ *   frontend/features/products/types.ts
+ * Keep `data.ts` free of value-imports to other frontend modules (Dockerfile
+ * smoke-checks this path at image build time).
  */
 export { catalogProducts } from '../../../../frontend/features/products/data';
