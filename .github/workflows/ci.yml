@@ -90,8 +90,8 @@ jobs:
       SEED_DEMO_PASSWORD: CustomerDemoPass123
       SEED_PROFILE: full
       SEED_COMMERCE_DEMO: 'true'
-      # Explicitly allow seed in this non-production job (also the default).
-      ENABLE_PRODUCTION_SEED: 'false'
+      # Integration job NODE_ENV=test — seed always runs (not production).
+      ENABLE_PRODUCTION_SEED: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -168,10 +168,10 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          source: 'deploy/docker-compose.prod.yml,deploy/.env.production.example,deploy/nginx/conf.d/default.conf'
+          source: 'deploy/docker-compose.prod.yml,deploy/.env.production.example,deploy/rollout.sh,deploy/nginx'
           target: ${{ secrets.DEPLOY_PATH }}
           strip_components: 1
-      - name: Pull images and roll the stack
+      - name: Pull images and roll out with health checks
         uses: appleboy/ssh-action@v1.2.0
         env:
           IMAGE_TAG: ${{ github.sha }}
@@ -190,9 +190,12 @@ jobs:
               echo "ERROR: .env missing on the VPS. Create it from .env.production.example before deploying." >&2
               exit 1
             fi
+            chmod +x ./rollout.sh
             echo "$DOCKER_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             export IMAGE_TAG
-            docker compose --env-file .env -f docker-compose.prod.yml pull
-            docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
+            # Zero-downtime: pull → migrate → candidates → health → nginx cutover →
+            # recreate primary → restore upstreams. Failed candidates leave the
+            # previous containers serving traffic (no 502 from a blind recreate).
+            ./rollout.sh
             docker image prune -f
             docker logout

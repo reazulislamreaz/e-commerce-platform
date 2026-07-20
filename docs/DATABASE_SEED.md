@@ -26,16 +26,18 @@ Required env (also listed in `backend/.env.example`):
 
 | Condition | Result |
 |-----------|--------|
-| `SEED_ENABLED=false` | Skip all seeding |
-| `NODE_ENV=production` and `ENABLE_PRODUCTION_SEED` ≠ `true` | Skip seeding (migrations still run) |
-| `NODE_ENV=production` and `ENABLE_PRODUCTION_SEED=true` | Seed after migrate |
-| development / test / preview | Seed after migrate (default) |
+| `SEED_ENABLED=false` | Skip seeding (migrations still run) |
+| `NODE_ENV=production` and `ENABLE_PRODUCTION_SEED=false` | Skip seeding |
+| Otherwise (including production with default `ENABLE_PRODUCTION_SEED=true`) | Seed after migrate |
+| Seed throws / non-zero exit | CI / rollout fails |
 
 Optional knobs:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `SEED_PROFILE` | `full` | `full` = all modules; `core` = users + catalog + coupons + banners + stock alerts |
+| `ENABLE_PRODUCTION_SEED` | `true` on deploy | Set `false` to skip seed when `NODE_ENV=production` |
+| `SEED_ENABLED` | `true` | Hard disable seed in any environment |
+| `SEED_PROFILE` | `full` | `full` = all modules; `core` = users + catalog + coupons + banners + alerts |
 | `SEED_COMMERCE_DEMO` | `true` | When `full`, set `false` to skip carts/orders/CRM/etc. |
 | `SEED_ADMIN_EMAIL` / `PASSWORD` / `PHONE` | demo admin | Staff `ADMIN` account |
 | `SEED_DEMO_PASSWORD` | `CustomerDemoPass123` | Shared password for demo customers |
@@ -112,17 +114,27 @@ Do not use these passwords in real production. When enabling production seed, se
 
 ### Production Compose (`deploy/docker-compose.prod.yml`)
 
-The `migrate` one-shot runs **only** `prisma migrate deploy` so a seed problem
-never blocks rollouts.
+The `migrate` one-shot (invoked by `rollout.sh`) runs
+`scripts/migrate-and-seed.sh` against the **same** `DATABASE_URL` as the
+backend (Compose `postgres` service):
 
-To seed production once (after migrate has succeeded):
+1. `prisma migrate deploy`
+2. `prisma db seed` (unless disabled)
+
+Rollout **fails** if either step fails, before app containers are cut over.
+
+Disable seeding on a real production database:
 
 ```bash
-# On the VPS, with ENABLE_PRODUCTION_SEED=true and SEED_SUPER_ADMIN_* set:
-docker compose --env-file .env -f docker-compose.prod.yml --profile seed run --rm seed
+# In VPS .env
+ENABLE_PRODUCTION_SEED=false
+# or
+SEED_ENABLED=false
 ```
 
-Then set `ENABLE_PRODUCTION_SEED=false` again.
+Required when seeding is enabled: `SEED_SUPER_ADMIN_EMAIL`,
+`SEED_SUPER_ADMIN_PASSWORD`, `SEED_SUPER_ADMIN_PHONE` (see
+`.env.production.example`).
 
 ## Extending for a new module
 
@@ -140,5 +152,5 @@ npm run prisma:seed --workspace=backend
 npm run prisma:migrate-and-seed --workspace=backend
 SEED_PROFILE=core npm run prisma:seed --workspace=backend
 SEED_COMMERCE_DEMO=false npm run prisma:seed --workspace=backend
-ENABLE_PRODUCTION_SEED=true NODE_ENV=production npm run prisma:migrate-and-seed --workspace=backend
+ENABLE_PRODUCTION_SEED=false NODE_ENV=production npm run prisma:migrate-and-seed --workspace=backend
 ```

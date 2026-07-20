@@ -41,15 +41,19 @@ function parseProfile(raw: string | undefined): SeedProfile {
 /**
  * Resolves seed behaviour from environment variables.
  *
- * Production is skipped unless `ENABLE_PRODUCTION_SEED=true`.
- * Set `SEED_PROFILE=core` for catalog/admin-only (no demo orders/carts).
- * Set `SEED_COMMERCE_DEMO=false` to keep the full profile identity/catalog
- * pieces without carts/orders/CRM demo graphs.
+ * Seed runs by default (including production) so deploy demos get catalog data.
+ * Disable explicitly with:
+ *   - SEED_ENABLED=false  (any environment)
+ *   - ENABLE_PRODUCTION_SEED=false  (when NODE_ENV=production)
+ *
+ * Set SEED_PROFILE=core for catalog/admin-only (no carts/orders/CRM demo graph).
+ * Set SEED_COMMERCE_DEMO=false to keep full profile identity/catalog without commerce demo rows.
  */
 export function loadSeedConfig(): SeedConfig {
   const nodeEnv = process.env.NODE_ENV?.trim() || 'development';
   const isProduction = nodeEnv === 'production';
-  const enableProductionSeed = process.env.ENABLE_PRODUCTION_SEED === 'true';
+  // Opt-out: unset / any value other than "false" allows seeding in production.
+  const enableProductionSeed = process.env.ENABLE_PRODUCTION_SEED !== 'false';
   const forceSkip = process.env.SEED_ENABLED === 'false';
 
   if (forceSkip) {
@@ -70,7 +74,7 @@ export function loadSeedConfig(): SeedConfig {
     return {
       skip: true,
       skipReason:
-        'NODE_ENV=production and ENABLE_PRODUCTION_SEED is not true — refusing to seed',
+        'NODE_ENV=production and ENABLE_PRODUCTION_SEED=false — refusing to seed',
       nodeEnv,
       isProduction,
       profile: 'core',

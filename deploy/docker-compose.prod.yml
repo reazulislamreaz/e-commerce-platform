@@ -1,13 +1,60 @@
 # Production stack for a single VPS.
 # Images are built in GitHub Actions and pulled from Docker Hub; this file is
-# copied to the VPS by the deploy workflow and run with `docker compose ... up -d`.
+# copied to the VPS by the deploy workflow and run with Docker Compose behind Nginx.
 #
-#   docker compose --env-file .env -f docker-compose.prod.yml up -d
+# Prefer: ./rollout.sh   (zero-downtime pull → migrate → health → cutover → rollback)
+# Manual: docker compose --env-file .env -f docker-compose.prod.yml up -d
 #
 # Required env (see .env.production.example): IMAGE_OWNER (Docker Hub username),
 # IMAGE_TAG, secrets.
 
 name: elevate
+
+x-backend-env: &backend-env
+  NODE_ENV: production
+  PORT: 4040
+  DATABASE_URL: ${DATABASE_URL}
+  REDIS_URL: ${REDIS_URL}
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+  FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+  COOKIE_SECURE: ${COOKIE_SECURE:-false}
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT}
+  SMTP_SECURE: ${SMTP_SECURE}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD}
+  MAIL_FROM: ${MAIL_FROM}
+  CONTACT_INBOX: ${CONTACT_INBOX:-}
+  PRODUCT_UPLOAD_DIR: /app/backend/uploads/products
+  REPORTS_STORAGE_DIR: /app/backend/storage/reports
+  CRM_HIGH_VALUE_THRESHOLD_POISHA: ${CRM_HIGH_VALUE_THRESHOLD_POISHA:-1000000}
+
+x-backend-healthcheck: &backend-healthcheck
+  test:
+    [
+      'CMD',
+      'node',
+      '-e',
+      'Promise.all([fetch("http://127.0.0.1:4040/api/v1/health"),fetch("http://127.0.0.1:4040/api/v1/health/ready")]).then(async([l,r])=>{if(!l.ok||!r.ok)process.exit(1)}).catch(()=>process.exit(1))',
+    ]
+  interval: 5s
+  timeout: 5s
+  retries: 12
+  start_period: 20s
+
+x-frontend-healthcheck: &frontend-healthcheck
+  test:
+    [
+      'CMD',
+      'node',
+      '-e',
+      'fetch("http://127.0.0.1:3030/").then((r)=>process.exit(r.ok||r.status===308||r.status===307?0:1)).catch(()=>process.exit(1))',
+    ]
+  interval: 5s
+  timeout: 5s
+  retries: 12
+  start_period: 20s
 
 services:
   postgres:
@@ -39,29 +86,11 @@ services:
       retries: 5
     networks: [internal]
 
-  # One-shot: applies pending Prisma migrations, then exits. The backend waits
-  # for this to complete successfully before starting.
-  #
-  # Seeding is intentionally NOT part of this job. Production data is seeded
-  # once manually (or via the optional `seed` profile) so a seed failure never
-  # blocks rollouts. See docs/DATABASE_SEED.md.
+  # One-shot: applies Prisma migrations, then seeds the same DATABASE_URL
+  # used by backend (Compose postgres). Invoked by rollout.sh before cutover.
+  # Seed runs unless SEED_ENABLED=false or ENABLE_PRODUCTION_SEED=false.
+  # A failed seed fails this service (and blocks rollout).
   migrate:
-    image: ${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
-    restart: 'no'
-    working_dir: /app/backend
-    command: ['npx', 'prisma', 'migrate', 'deploy']
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks: [internal]
-
-  # Optional one-shot seed. Only starts when explicitly requested:
-  #   docker compose --env-file .env -f docker-compose.prod.yml --profile seed run --rm seed
-  # Requires ENABLE_PRODUCTION_SEED=true and SEED_SUPER_ADMIN_* in .env.
-  seed:
-    profiles: [seed]
     image: ${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
     restart: 'no'
     working_dir: /app/backend
@@ -69,48 +98,29 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       NODE_ENV: ${NODE_ENV:-production}
-      ENABLE_PRODUCTION_SEED: ${ENABLE_PRODUCTION_SEED:-false}
+      # Default true so demo/catalog data is present after deploy; set false for
+      # a real production DB that must not receive seed rows.
+      ENABLE_PRODUCTION_SEED: ${ENABLE_PRODUCTION_SEED:-true}
       SEED_ENABLED: ${SEED_ENABLED:-true}
       SEED_PROFILE: ${SEED_PROFILE:-full}
       SEED_COMMERCE_DEMO: ${SEED_COMMERCE_DEMO:-true}
-      SEED_SUPER_ADMIN_EMAIL: ${SEED_SUPER_ADMIN_EMAIL:-}
-      SEED_SUPER_ADMIN_PASSWORD: ${SEED_SUPER_ADMIN_PASSWORD:-}
-      SEED_SUPER_ADMIN_PHONE: ${SEED_SUPER_ADMIN_PHONE:-}
+      SEED_SUPER_ADMIN_EMAIL: ${SEED_SUPER_ADMIN_EMAIL}
+      SEED_SUPER_ADMIN_PASSWORD: ${SEED_SUPER_ADMIN_PASSWORD}
+      SEED_SUPER_ADMIN_PHONE: ${SEED_SUPER_ADMIN_PHONE}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@elevateapparel.demo}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-AdminDemoPass123}
       SEED_ADMIN_PHONE: ${SEED_ADMIN_PHONE:-01710000002}
-      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-CustomerDemoPass123}
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
     networks: [internal]
 
   backend:
     image: ${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      PORT: 4040
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
-      # Must be false when serving over plain HTTP (IP-only). Set to true only
-      # behind HTTPS, or browsers will not send/store the auth cookies.
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_SECURE: ${SMTP_SECURE}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      MAIL_FROM: ${MAIL_FROM}
-      CONTACT_INBOX: ${CONTACT_INBOX:-}
-      PRODUCT_UPLOAD_DIR: /app/backend/uploads/products
-      REPORTS_STORAGE_DIR: /app/backend/storage/reports
-      CRM_HIGH_VALUE_THRESHOLD_POISHA: ${CRM_HIGH_VALUE_THRESHOLD_POISHA:-1000000}
+      <<: *backend-env
     volumes:
       - product_uploads:/app/backend/uploads/products
       - report_exports:/app/backend/storage/reports
@@ -119,8 +129,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
+    healthcheck: *backend-healthcheck
     networks: [internal]
 
   frontend:
@@ -130,16 +139,47 @@ services:
       NODE_ENV: production
       PORT: 3030
       HOSTNAME: 0.0.0.0
-      # Server-side rendering calls the backend over the internal Docker
-      # network; browsers keep using the public NEXT_PUBLIC_API_URL.
       API_URL_INTERNAL: http://backend:4040/api/v1
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck: *frontend-healthcheck
     networks: [internal]
 
-  # HTTP-only reverse proxy for an IP deployment. Single origin:
-  # /api and /uploads go to the backend, everything else to the frontend.
-  # Host port 8080 is used because the VPS already runs a host nginx on :80/:443.
+  # Candidate app containers for zero-downtime rollout (profile: rollout).
+  # Traffic is switched via nginx/conf.d/upstreams.conf only after they are healthy.
+  backend_next:
+    profiles: [rollout]
+    image: ${IMAGE_OWNER}/elevate-backend:${IMAGE_TAG:-latest}
+    restart: 'no'
+    environment:
+      <<: *backend-env
+    volumes:
+      - product_uploads:/app/backend/uploads/products
+      - report_exports:/app/backend/storage/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck: *backend-healthcheck
+    networks: [internal]
+
+  frontend_next:
+    profiles: [rollout]
+    image: ${IMAGE_OWNER}/elevate-frontend:${IMAGE_TAG:-latest}
+    restart: 'no'
+    environment:
+      NODE_ENV: production
+      PORT: 3030
+      HOSTNAME: 0.0.0.0
+      API_URL_INTERNAL: http://backend_next:4040/api/v1
+    depends_on:
+      backend_next:
+        condition: service_healthy
+    healthcheck: *frontend-healthcheck
+    networks: [internal]
+
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
@@ -148,8 +188,10 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
-      - frontend
-      - backend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     networks: [internal, web]
 
 volumes:

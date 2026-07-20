@@ -18,7 +18,7 @@ VPS pulls those images and runs them with Docker Compose behind Nginx.
 ```
 push to main ─► CI (lint · test · build · integration)
              ─► build-and-push (backend + frontend images ─► Docker Hub)
-             ─► deploy (SSH to VPS ─► docker compose pull + up -d)
+             ─► deploy (SSH ─► ./rollout.sh: pull → migrate → health → cutover)
 ```
 
 - Defined in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
@@ -26,6 +26,11 @@ push to main ─► CI (lint · test · build · integration)
   after `quality` and `integration` pass.
 - Each deploy is pinned to the commit SHA (`IMAGE_TAG`), so rollbacks are just a
   redeploy of an older SHA.
+- **Zero-downtime:** `deploy/rollout.sh` keeps the live backend/frontend serving
+  until candidate containers pass `/api/v1/health` + `/api/v1/health/ready` (and
+  the storefront probe). Nginx switches only after that. If candidates fail,
+  they are removed and the previous containers keep running (no blind
+  `compose up` recreate that causes 502s).
 
 ## Stack (`docker-compose.prod.yml`)
 
@@ -33,12 +38,40 @@ push to main ─► CI (lint · test · build · integration)
 | --------- | --------------------------------------------------- | ---------------------- |
 | postgres  | PostgreSQL 17                                        | `postgres_data` volume |
 | redis     | Redis 7 (BullMQ queues + cache)                     | `redis_data` volume    |
-| migrate   | One-shot `prisma migrate deploy`, runs before backend | —                    |
+| migrate   | One-shot `prisma migrate deploy` (via rollout)      | —                      |
 | backend   | NestJS API on :4040                                 | `product_uploads`, `report_exports` |
 | frontend  | Next.js (standalone) on :3030                       | —                      |
+| backend_next / frontend_next | Rollout candidates (profile `rollout`) | same volumes as primary |
 | nginx     | HTTP reverse proxy, host :8080 -> container :80     | —                      |
 
 Only the containerized Nginx is exposed publicly (host port 8080); everything else talks over the internal Docker network.
+
+## Zero-downtime rollout
+
+Deploy no longer runs a blind `docker compose up -d` (that stops the live
+containers before the new ones are proven healthy, which caused 502s).
+
+CI runs `./rollout.sh` on the VPS instead:
+
+1. **Pull** new images — on failure, abort (live stack untouched)
+2. **Migrate + seed** via one-shot container against the same `DATABASE_URL` as
+   the API — on failure, abort (live stack untouched)
+3. Start **backend_next / frontend_next** beside the live stack
+4. Wait for Docker healthchecks + HTTP probes (`/api/v1/health`, `/api/v1/health/ready`, storefront `/`)
+5. Point Nginx upstreams at the candidates and reload
+6. Recreate primary `backend` / `frontend` on the new image (traffic still on candidates)
+7. Point Nginx back at primary; remove candidates
+
+If step 3–4 fails, candidates are removed and the previous containers keep
+serving. Ports, env vars, and the public Nginx listener (`:8080`) are unchanged.
+
+Manual run on the VPS:
+
+```bash
+cd /opt/elevate
+export IMAGE_TAG=<git-sha>   # must match images on Docker Hub
+./rollout.sh
+```
 
 ---
 
@@ -125,53 +158,12 @@ Variables (Variables tab) — baked into the frontend image at build time:
    `docker-compose.prod.yml`, `nginx/conf.d/default.conf`, and the env template
    to `DEPLOY_PATH`, then runs `docker compose up -d`. Nginx comes up on host
    port 8080 immediately — no certificate step is required.
-2. Bootstrap demo data **once** (optional). Deploy no longer auto-seeds.
-   After the stack is healthy, either:
+2. Ensure seed credentials are in the VPS `.env` (copied from
+   `.env.production.example`). Every deploy runs migrate **and** seed against
+   the Compose Postgres used by the API. Set `ENABLE_PRODUCTION_SEED=false`
+   only if this database must not receive demo rows.
 
-   **Option A — profile on the VPS** (set strong `SEED_SUPER_ADMIN_*` and
-   `ENABLE_PRODUCTION_SEED=true` in `.env` for this run only):
-
-   ```bash
-   cd /opt/elevate   # or your DEPLOY_PATH
-   docker compose --env-file .env -f docker-compose.prod.yml --profile seed run --rm seed
-   # then set ENABLE_PRODUCTION_SEED=false again
-   ```
-
-   **Option B — SSH tunnel from your laptop** (see below).
-
-   Prefer enabling the flag only for that one run. Do not leave
-   `ENABLE_PRODUCTION_SEED=true` permanently.
-
-   Tunnel alternative:
-
-   **a.** On the VPS, temporarily add a loopback port to the `postgres` service
-   in `docker-compose.prod.yml`, then apply it:
-
-   ```yaml
-   postgres:
-     ports:
-       - '127.0.0.1:5432:5432'   # TEMPORARY — remove after seeding
-   ```
-
-   ```bash
-   docker compose --env-file .env -f docker-compose.prod.yml up -d postgres
-   ```
-
-   **b.** From your machine, open a tunnel to that port:
-
-   ```bash
-   ssh -L 5432:localhost:5432 <VPS_USER>@<VPS_HOST>   # keep open in one terminal
-   ```
-
-   **c.** In another terminal, from the repo root, with `SEED_SUPER_ADMIN_*` set:
-
-   ```bash
-   DATABASE_URL='postgresql://ecommerce:<pw>@localhost:5432/ecommerce?schema=public' \
-     npm run prisma:seed --workspace=backend
-   ```
-
-   **d.** Remove the temporary `ports:` block on the VPS and re-run
-   `up -d postgres`.
+   See [docs/DATABASE_SEED.md](../docs/DATABASE_SEED.md).
 
 The site is now live at `http://206.162.244.11:8080` with the API under
 `http://206.162.244.11:8080/api/v1`.
