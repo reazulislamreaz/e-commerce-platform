@@ -109,39 +109,39 @@ Frontend requires `NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1`.
 
 ### Implemented API surface
 
-| Route                        | State       | Notes                                                        |
-| ---------------------------- | ----------- | ------------------------------------------------------------ |
-| `GET /api/v1/health`         | Implemented | Public liveness endpoint                                     |
-| `GET /api/v1/health/ready`   | Implemented | Readiness probe: checks PostgreSQL and Redis, 503 on failure |
-| `POST /api/v1/auth/register` | Implemented | Creates a PENDING_VERIFICATION account and emails a verification link; duplicate email/phone → 409 |
-| `GET /api/v1/auth/verify-email` | Implemented | Consumes the emailed token; sets `emailVerifiedAt` and activates the account |
-| `POST /api/v1/auth/resend-verification` | Implemented | Re-sends the link; always 200 (no account enumeration) |
-| `POST /api/v1/auth/login`    | Implemented | Verified accounts only; creates an auth session; sets HTTP-only refresh cookie. Optional `rememberMe` extends the refresh session to 30 days (default 7) |
-| `POST /api/v1/auth/refresh`  | Implemented | Rotates refresh token; reuse revokes the whole token family; preserves the session's remember-me TTL |
-| `POST /api/v1/auth/logout`   | Implemented | Revokes the current session and all of its refresh tokens    |
-| `POST /api/v1/auth/forgot-password` | Implemented | Emails a single-use reset link (30 min expiry); always 200 (no account enumeration); ACTIVE accounts only |
-| `POST /api/v1/auth/reset-password`  | Implemented | Consumes the reset token, sets the new password, revokes every session |
-| `POST /api/v1/auth/change-password` | Implemented | Authenticated; requires current password; revokes all other sessions |
-| `GET /api/v1/users/me`       | Implemented | Signed-in user profile (any role)                            |
-| `PATCH /api/v1/users/me`     | Implemented | Self-service update of names and BD phone (E.164, unique → 409); email immutable |
-| `POST /api/v1/users/admins`  | Implemented | Super Admin only: create an admin account                    |
-| `GET /api/v1/users`          | Implemented | Cursor-paginated list; admins see customers only             |
-| `GET /api/v1/users/:id`      | Implemented | Admins may read customer accounts only                       |
-| `PATCH /api/v1/users/:id/status` | Implemented | Activate/suspend; suspension revokes all sessions        |
-| `PATCH /api/v1/users/:id/role`   | Implemented | Super Admin only; SUPER_ADMIN never assignable            |
-| `DELETE /api/v1/users/:id`   | Implemented | Soft delete + email anonymization + session revocation       |
-| `GET /api/v1/products`       | Implemented | Public server-side filters, six sort modes, availability, offset pagination |
-| `GET /api/v1/products/facets` | Implemented | Public category/subcategory/brand/size/color/price facets |
-| `GET /api/v1/products/search` | Implemented | Public autocomplete search |
-| `GET /api/v1/products/new-arrivals` | Implemented | Public new-arrival rail |
-| `GET /api/v1/products/on-sale` | Implemented | Public sale rail |
-| `GET /api/v1/products/by-ids` | Implemented | Batch resolver for Redux cart/wishlist/recently-viewed state |
-| `GET /api/v1/products/id/:id` | Implemented | Public product detail by UUID |
-| `GET /api/v1/products/:slug` | Implemented | Public product detail with variants, available stock, and published reviews |
-| `GET /api/v1/products/:slug/related` | Implemented | Related by category or collection |
-| `GET /api/v1/categories` / `GET /api/v1/brands` | Implemented | Public active taxonomy names |
-| `POST/GET/PATCH/DELETE /api/v1/reviews` | Implemented | Owner-scoped reviews; create requires a delivered purchase; creates as `PENDING` |
-| `GET/POST /api/v1/admin/reviews…` | Implemented | Admin list/detail/publish/reject with rating aggregate recompute |
+| Route                                           | State       | Notes                                                                                                                                                    |
+| ----------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/health`                            | Implemented | Public liveness endpoint                                                                                                                                 |
+| `GET /api/v1/health/ready`                      | Implemented | Readiness probe: checks PostgreSQL and Redis, 503 on failure                                                                                             |
+| `POST /api/v1/auth/register`                    | Implemented | Creates a PENDING_VERIFICATION account and emails a verification link; duplicate email/phone → 409                                                       |
+| `GET /api/v1/auth/verify-email`                 | Implemented | Consumes the emailed token; sets `emailVerifiedAt` and activates the account                                                                             |
+| `POST /api/v1/auth/resend-verification`         | Implemented | Re-sends the link; always 200 (no account enumeration)                                                                                                   |
+| `POST /api/v1/auth/login`                       | Implemented | Verified accounts only; creates an auth session; sets HTTP-only refresh cookie. Optional `rememberMe` extends the refresh session to 30 days (default 7) |
+| `POST /api/v1/auth/refresh`                     | Implemented | Rotates refresh token; reuse revokes the whole token family; preserves the session's remember-me TTL                                                     |
+| `POST /api/v1/auth/logout`                      | Implemented | Revokes the current session and all of its refresh tokens                                                                                                |
+| `POST /api/v1/auth/forgot-password`             | Implemented | Emails a single-use reset link (30 min expiry); always 200 (no account enumeration); ACTIVE accounts only                                                |
+| `POST /api/v1/auth/reset-password`              | Implemented | Consumes the reset token, sets the new password, revokes every session                                                                                   |
+| `POST /api/v1/auth/change-password`             | Implemented | Authenticated; requires current password; revokes all other sessions                                                                                     |
+| `GET /api/v1/users/me`                          | Implemented | Signed-in user profile (any role)                                                                                                                        |
+| `PATCH /api/v1/users/me`                        | Implemented | Self-service update of names and BD phone (E.164, unique → 409); email immutable                                                                         |
+| `POST /api/v1/users/admins`                     | Implemented | Super Admin only: create an admin account                                                                                                                |
+| `GET /api/v1/users`                             | Implemented | Cursor-paginated list; admins see customers only                                                                                                         |
+| `GET /api/v1/users/:id`                         | Implemented | Admins may read customer accounts only                                                                                                                   |
+| `PATCH /api/v1/users/:id/status`                | Implemented | Activate/suspend; suspension revokes all sessions                                                                                                        |
+| `PATCH /api/v1/users/:id/role`                  | Implemented | Super Admin only; SUPER_ADMIN never assignable                                                                                                           |
+| `DELETE /api/v1/users/:id`                      | Implemented | Soft delete + email anonymization + session revocation                                                                                                   |
+| `GET /api/v1/products`                          | Implemented | Public server-side filters, six sort modes, availability, offset pagination                                                                              |
+| `GET /api/v1/products/facets`                   | Implemented | Public category/subcategory/brand/size/color/price facets                                                                                                |
+| `GET /api/v1/products/search`                   | Implemented | Public autocomplete search                                                                                                                               |
+| `GET /api/v1/products/new-arrivals`             | Implemented | Public new-arrival rail                                                                                                                                  |
+| `GET /api/v1/products/on-sale`                  | Implemented | Public sale rail                                                                                                                                         |
+| `GET /api/v1/products/by-ids`                   | Implemented | Batch resolver for Redux cart/wishlist/recently-viewed state                                                                                             |
+| `GET /api/v1/products/id/:id`                   | Implemented | Public product detail by UUID                                                                                                                            |
+| `GET /api/v1/products/:slug`                    | Implemented | Public product detail with variants, available stock, and published reviews                                                                              |
+| `GET /api/v1/products/:slug/related`            | Implemented | Related by category or collection                                                                                                                        |
+| `GET /api/v1/categories` / `GET /api/v1/brands` | Implemented | Public active taxonomy names                                                                                                                             |
+| `POST/GET/PATCH/DELETE /api/v1/reviews`         | Implemented | Owner-scoped reviews; create requires a delivered purchase; creates as `PENDING`                                                                         |
+| `GET/POST /api/v1/admin/reviews…`               | Implemented | Admin list/detail/publish/reject with rating aggregate recompute                                                                                         |
 
 The global response interceptor wraps successful results as `{ "success": true, "message", "data", "meta"? }` and the exception filter returns `{ "success": false, "message", "error", "statusCode", "path", "timestamp" }` (validation details under `details`). This is the contract mandated by `CLAUDE.md`; keep new endpoints on it.
 
@@ -200,6 +200,34 @@ The storefront now has a working Elevate Apparel shopping experience on top of t
 - Forms must use React Hook Form and Zod; `features/auth/schemas.ts` is the pattern to follow.
 - Do not pre-create empty Nest module folders. Add `controller` / `service` / `dto` when implementing a feature.
 
+### Premium loading architecture
+
+Premium perceived performance is **mandatory** for all storefront work. Authoritative rules: [CLAUDE.md — Premium Loading Experience (Mandatory)](./CLAUDE.md#premium-loading-experience-mandatory).
+
+**Implemented patterns (extend these — do not bypass):**
+
+| Layer             | Purpose                                       | Location                                                                                                                                                       |
+| ----------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page skeletons    | Layout-matched route transitions (zero CLS)   | `frontend/components/loading/` — `HomePageSkeleton`, `ShopPageSkeleton`, `SalePageSkeleton`, `CatalogSectionSkeleton`, cart/checkout/account/wishlist variants |
+| Base shimmer      | Shared gold skeleton primitive                | `frontend/components/common/skeleton.tsx` (`Skeleton`, `ProductCardSkeleton`, …)                                                                               |
+| Route loading UI  | Instant shell on navigation                   | `frontend/app/**/loading.tsx` (home, shop, sale, category, search, cart, checkout, account, wishlist, product, …)                                              |
+| Progressive SSR   | Hero/static chrome first, catalog streams     | `Suspense` in `app/page.tsx`, `app/shop/page.tsx`, `app/sale/page.tsx`, search/category catalog sections                                                       |
+| SWR / cache       | Stale-while-revalidate lists; no filter flash | TanStack Query in `features/products/hooks.ts` (`placeholderData`, `CATALOG_STALE_MS`); global client in `providers/app-providers.tsx`                         |
+| SSR hydrate       | First paint for remote catalog                | `dehydrateProductList` + `QueryHydration`                                                                                                                      |
+| Prefetch          | Faster repeat nav to shop/sale/category       | `providers/route-prefetcher.tsx`, `components/layouts/prefetch-nav-link.tsx`, `usePrefetchProduct`                                                             |
+| Media             | Natural image reveal                          | `components/common/product-image.tsx` (opacity fade, reserved ground)                                                                                          |
+| Segment errors    | Recover without root crash                    | `frontend/app/{shop,checkout,account}/error.tsx`                                                                                                               |
+| Optimistic client | Cart/wishlist feel instant                    | Redux + server sync + `flashMessage` rollback                                                                                                                  |
+
+**Expected behavior after deploy:**
+
+- **Home** — hero-shaped skeleton immediately; sections fill progressively via Suspense
+- **Shop / Sale** — hero skeleton first, then catalog (not a blank page or wrong layout)
+- **Filter changes** — previous products stay visible with subtle opacity while refetching
+- **Nav to Shop** — faster repeat visits from idle/hover prefetch + Query cache
+
+**New routes:** ship `loading.tsx` + a matching skeleton in the **same change** as the page. Never defer loading UX to a follow-up task.
+
 ## Quality gates
 
 Before handing off a change, run the relevant commands:
@@ -216,6 +244,8 @@ npm run format
 
 GitHub Actions CI (`.github/workflows/ci.yml`) runs a quality job (install, Prisma generate/validate, lint, unit tests, builds) plus an integration job with Postgres/Redis services (`prisma:migrate-and-seed`, then `test:integration`). COD/review HTTP smoke lives under `*.smoke.integration.ts`; see [docs/COD_SMOKE_CHECKLIST.md](./docs/COD_SMOKE_CHECKLIST.md). Database seeding is documented in [docs/DATABASE_SEED.md](./docs/DATABASE_SEED.md).
 
+**Local git hooks:** Husky + lint-staged run Prettier and ESLint on staged files before commit (`npm ci` runs `prepare` to install hooks). See root `package.json` `lint-staged` config.
+
 Backend unit tests use Jest (`*.spec.ts` next to the code under test); `auth.service.spec.ts` is the pattern to follow. Add targeted unit/integration tests with every business feature.
 
 ## Deployment notes
@@ -226,6 +256,6 @@ Both apps have multi-stage Dockerfiles pinned to Node 20 (matching `.nvmrc`) tha
 
 1. Read `CLAUDE.md`, then this overview, before code changes.
 2. Inspect existing files and avoid replacing foundations without a migration plan.
-3. Implement vertically by feature, including schema, DTOs, service, API contract, frontend query hooks, and tests as applicable.
+3. Implement vertically by feature, including schema, DTOs, service, API contract, frontend query hooks, **loading skeletons**, and tests as applicable.
 4. Keep security-sensitive values out of commits and logs.
-5. Update this document whenever architecture, routes, infrastructure, or run commands materially change.
+5. Update this document whenever architecture, routes, infrastructure, loading patterns, or run commands materially change.

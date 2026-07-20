@@ -39,7 +39,8 @@ Before writing code, explicitly consider:
 
 - Separation of concerns and single responsibility
 - Backend integration path (repository/API layer, not hardcoded page logic)
-- Loading, empty, error, and success states
+- Loading, empty, error, and success states — see **Premium Loading Experience (Mandatory)**
+- Perceived performance: skeleton layout fidelity, streaming, SWR caching, prefetch (not optional polish)
 - Performance (Server Components first, minimal client boundaries, no unnecessary re-renders)
 - Security, validation, and type safety
 - Elevate Apparel brand theme compliance
@@ -64,7 +65,7 @@ npm run build --workspace=frontend
 npm run build --workspace=backend
 ```
 
-Also verify: no direct bypass of feature APIs, no new global state without justification, no breaking changes, no secrets committed.
+Also verify: no direct bypass of feature APIs, no new global state without justification, no breaking changes, no secrets committed, and **premium loading** standards met for any touched storefront route (see **Premium Loading Experience (Mandatory)**).
 
 ---
 
@@ -94,35 +95,93 @@ Keep only code that is actively used or intentionally part of the public feature
 
 ## Performance (frontend)
 
+See **Premium Loading Experience (Mandatory)** — loading is a core requirement, not optional polish.
+
 - Prefer Server Components; use `'use client'` only when needed
 - Use dynamic imports, Suspense, and route-based splitting where appropriate
 - Optimize images and fonts; avoid shipping entire catalogs to the client when server filtering/pagination is possible
 - Memoize only when it prevents real re-render cost; avoid premature optimization
 - Use efficient list rendering, event handlers, and TanStack Query cache settings
-- Provide loading skeletons or states where user-facing fetches occur
+
+## Premium Loading Experience (Mandatory)
+
+Treat **perceived performance** as a first-class requirement for every storefront page, component, and data-fetching flow. Users should rarely notice loading — the experience should feel near-instant (reference quality: premium apparel shops such as Fabrilife). This is **not** an optional enhancement.
+
+### Non-negotiable UX rules
+
+- **Never** ship a blank content area while data loads unless technically impossible.
+- **Never** use a generic full-page skeleton when a **page-specific** skeleton exists or should exist.
+- **Never** use bare spinners for primary page content — use **pixel-perfect skeleton screens** that match the final layout (zero CLS).
+- **Always** provide loading, empty, and error states for user-facing fetches.
+- **Keep previous data visible** while refetching (filters, pagination, sort) — subtle opacity only, no full skeleton flash.
+- **Images** fade in naturally (`ProductImage` pattern); reserve aspect ratio / dimensions up front.
+- Loading motion must be **subtle, premium, and on-brand** (gold shimmer via `Skeleton` in `frontend/components/common/skeleton.tsx`).
+
+### Required techniques (use what applies)
+
+| Technique                   | When                                             | Where in this repo                                                                                      |
+| --------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Route `loading.tsx`         | Every App Router segment with async work         | `frontend/app/**/loading.tsx` — must match final page layout                                            |
+| Page skeleton library       | Reuse before inventing                           | `frontend/components/loading/` (`ShopPageSkeleton`, `HomePageSkeleton`, `CatalogSectionSkeleton`, etc.) |
+| Suspense boundaries         | Stream above-the-fold first; defer heavy fetches | Homepage sections, shop/sale hero + catalog, search/category catalog                                    |
+| TanStack Query SWR          | Lists, search, filters, PDP client refetch       | `placeholderData: (prev) => prev`, catalog `staleTime` / `gcTime` in `features/products/query.ts`       |
+| SSR dehydrate + hydrate     | First paint for catalog routes                   | `dehydrateProductList`, `QueryHydration`                                                                |
+| Route prefetch              | Likely next navigation                           | `RoutePrefetcher`, `PrefetchNavLink`, `usePrefetchProduct`                                              |
+| Optimistic / local-first UI | Cart, wishlist, mutations                        | Redux projection + server sync with rollback/`flashMessage`                                             |
+| Segment `error.tsx`         | Recover without root crash                       | `frontend/app/{shop,checkout,account}/error.tsx`                                                        |
+| Dynamic import + skeleton   | Heavy client-only UI (search dialog, etc.)       | `dynamic(..., { loading: () => … })`                                                                    |
+
+### Skeleton fidelity checklist (every new or changed page)
+
+1. Identify the **final rendered layout** (hero, toolbar, sidebar, grid, forms, aside summary).
+2. Add or extend a skeleton in `frontend/components/loading/` with **the same DOM structure and dimensions**.
+3. Wire the route’s `loading.tsx` (and Suspense `fallback` if the page streams sections) to that skeleton — **not** `PageShellSkeleton` unless the page is truly a generic shell.
+4. Verify **no layout shift** when real content replaces the skeleton (CLS).
+5. Verify filter/sort/page changes **do not** blank the product grid when cached data exists.
+
+### Caching and prefetch defaults
+
+- Global Query defaults: `frontend/providers/app-providers.tsx` (`CATALOG_STALE_MS`, `CATALOG_GC_MS`).
+- Seed PDP cache from list/search results: `seedProductDetails` in `features/products/hooks.ts`.
+- Prefetch storefront routes on idle and nav hover — extend `STOREFRONT_ROUTES` / `PrefetchNavLink` when adding high-traffic pages.
+- Use `createClientId()` (`frontend/lib/client-id.ts`) for client ids on non-HTTPS hosts — do not call `crypto.randomUUID()` without a fallback.
+
+### Pages that must maintain premium loading (including but not limited to)
+
+Home, shop, category, sale, new arrivals, search, PDP, cart, checkout, wishlist, account (all sub-routes), auth, track order, order confirmation, contact, and admin surfaces touched by the task.
+
+When adding a **new route**, ship `loading.tsx` + skeleton in the **same PR** as the page — no follow-up “loading pass.”
+
+### Anti-patterns (reject in review)
+
+- One shared skeleton for every route
+- Awaiting all API calls before rendering any static chrome
+- Replacing the entire grid with a skeleton on filter change when `placeholderData` can keep the prior page visible
+- Full-page “Loading…” text for catalog or account surfaces
+- Introducing spinners as the primary loading metaphor for page content
 
 ## Backend readiness (frontend architecture)
 
 The frontend must stay ready for real REST API integration:
 
-| Layer | Rule |
-|-------|------|
-| **API client** | Use `frontend/services/api-client.ts` — never ad-hoc fetch in components |
-| **Products** | Import from `@/features/products` (barrel). Server: sync getters; Client: `hooks.ts` + `productCatalog`. Do **not** import `@/features/products/data` from pages/components |
-| **Account** | Use `accountRepository` from `@/features/account` — swap local for HTTP later; do not call `storage.ts` from UI |
-| **Auth** | Use `features/auth/api.ts` + hooks — wire mutations with loading/error states |
-| **Responses** | Use `types/api.ts` helpers (`unwrapData`, pagination meta types) |
-| **Lists** | Support pagination, filtering, sorting, and search via the repository/API layer — design for cursor pagination |
+| Layer          | Rule                                                                                                                                                                        |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **API client** | Use `frontend/services/api-client.ts` — never ad-hoc fetch in components                                                                                                    |
+| **Products**   | Import from `@/features/products` (barrel). Server: sync getters; Client: `hooks.ts` + `productCatalog`. Do **not** import `@/features/products/data` from pages/components |
+| **Account**    | Use `accountRepository` from `@/features/account` — swap local for HTTP later; do not call `storage.ts` from UI                                                             |
+| **Auth**       | Use `features/auth/api.ts` + hooks — wire mutations with loading/error states                                                                                               |
+| **Responses**  | Use `types/api.ts` helpers (`unwrapData`, pagination meta types)                                                                                                            |
+| **Lists**      | Support pagination, filtering, sorting, and search via the repository/API layer — design for cursor pagination                                                              |
 
 When adding commerce features, implement **vertically**: schema → DTO → service → API → frontend repository/hooks → UI.
 
 ## State management
 
-| Data type | Owner |
-|-----------|--------|
-| Auth session, cart, wishlist, recently viewed | Redux (`frontend/store/`) |
-| Server/API data | TanStack Query (`features/*/hooks.ts`) |
-| Local UI state | Component `useState` |
+| Data type                                     | Owner                                  |
+| --------------------------------------------- | -------------------------------------- |
+| Auth session, cart, wishlist, recently viewed | Redux (`frontend/store/`)              |
+| Server/API data                               | TanStack Query (`features/*/hooks.ts`) |
+| Local UI state                                | Component `useState`                   |
 
 Rules:
 
@@ -155,6 +214,7 @@ Design so the app can support without major refactors:
 
 - **Accessibility:** semantic HTML, labels, focus management, dialog `role="dialog"` + `aria-modal`, descriptive `alt` text
 - **SEO:** per-route `metadata` / `generateMetadata`, Open Graph images, sitemap updates, JSON-LD on product pages where applicable
+- **Loading / UX:** premium skeletons, Suspense streaming, SWR list updates, prefetch — see **Premium Loading Experience (Mandatory)**
 - **Errors:** error boundaries, user-facing error states, no silent failures on submit flows
 - **Validation:** Zod + React Hook Form on forms; DTOs + ValidationPipe on APIs
 - **Security:** no secrets in code; validate and sanitize all input
@@ -216,11 +276,11 @@ Source of truth in code: `frontend/app/globals.css`, `frontend/app/layout.tsx`, 
 
 ## Fonts
 
-| Role | Family | CSS / Tailwind |
-|------|--------|----------------|
-| Primary UI | **Geist Sans** | `--font-geist-sans`, `font-sans` |
-| Editorial / display (sparingly) | **Playfair Display** (500/600/700) | `--font-playfair`, `font-serif` |
-| Mono (code / rare UI) | **Geist Mono** | `--font-geist-mono`, `font-mono` |
+| Role                            | Family                             | CSS / Tailwind                   |
+| ------------------------------- | ---------------------------------- | -------------------------------- |
+| Primary UI                      | **Geist Sans**                     | `--font-geist-sans`, `font-sans` |
+| Editorial / display (sparingly) | **Playfair Display** (500/600/700) | `--font-playfair`, `font-serif`  |
+| Mono (code / rare UI)           | **Geist Mono**                     | `--font-geist-mono`, `font-mono` |
 
 Rules:
 
@@ -231,38 +291,38 @@ Rules:
 
 ## Color tokens (`globals.css`)
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| `--background` / `--color-surface` | `#0a0a0b` | Page background |
-| `--foreground` | `#f4f4f5` | Primary text |
-| `--color-surface-2` | `#141416` | Elevated dark surface |
-| `--color-surface-3` | `#1d1d21` | Higher elevation |
-| `--color-edge` | `#27272a` | Subtle borders |
-| `--color-gold` | `#d4af37` | Classic gold token |
-| `--color-gold-light` | `#e6c860` | Lighter gold |
-| `--color-gold-dark` | `#b8962e` | Darker gold |
-| `--color-ink` | `#111827` | Dark ink (badges / contrast) |
+| Token                              | Hex       | Use                          |
+| ---------------------------------- | --------- | ---------------------------- |
+| `--background` / `--color-surface` | `#0a0a0b` | Page background              |
+| `--foreground`                     | `#f4f4f5` | Primary text                 |
+| `--color-surface-2`                | `#141416` | Elevated dark surface        |
+| `--color-surface-3`                | `#1d1d21` | Higher elevation             |
+| `--color-edge`                     | `#27272a` | Subtle borders               |
+| `--color-gold`                     | `#d4af37` | Classic gold token           |
+| `--color-gold-light`               | `#e6c860` | Lighter gold                 |
+| `--color-gold-dark`                | `#b8962e` | Darker gold                  |
+| `--color-ink`                      | `#111827` | Dark ink (badges / contrast) |
 
 ## In-product accent palette (homepage / auth — match these)
 
 Champagne gold accents used across live UI (keep consistency):
 
-| Role | Hex |
-|------|-----|
-| Gold primary / links / accents | `#e3bb78` |
-| Gold eyebrow / soft accent | `#e0bd7d` |
-| Gold CTA fill | `#e5bd79` / `#e5bd78` |
-| Gold CTA border | `#efc677` |
-| Gold hover | `#eec98a` |
-| Gold on dark outline buttons | `#efce91` / `#d3b06f` |
-| Deep black page / hero | `#090909` / `black` |
-| Card / panel surface | `#111110` |
-| Input surface | `#1a1815` |
-| Border warm dark | `#2d2a27` / `#37332c` / `#292929` |
-| Muted text | `#b5b0a8` / `#8b867d` |
-| Soft light text | `#eee9e1` / `#e9e5de` / `#f1eee9` |
-| Text on gold CTA | `#18120b` |
-| Product card image ground | `#e4e3e1` |
+| Role                           | Hex                               |
+| ------------------------------ | --------------------------------- |
+| Gold primary / links / accents | `#e3bb78`                         |
+| Gold eyebrow / soft accent     | `#e0bd7d`                         |
+| Gold CTA fill                  | `#e5bd79` / `#e5bd78`             |
+| Gold CTA border                | `#efc677`                         |
+| Gold hover                     | `#eec98a`                         |
+| Gold on dark outline buttons   | `#efce91` / `#d3b06f`             |
+| Deep black page / hero         | `#090909` / `black`               |
+| Card / panel surface           | `#111110`                         |
+| Input surface                  | `#1a1815`                         |
+| Border warm dark               | `#2d2a27` / `#37332c` / `#292929` |
+| Muted text                     | `#b5b0a8` / `#8b867d`             |
+| Soft light text                | `#eee9e1` / `#e9e5de` / `#f1eee9` |
+| Text on gold CTA               | `#18120b`                         |
+| Product card image ground      | `#e4e3e1`                         |
 
 ## Layout & components
 
@@ -420,14 +480,17 @@ Use Client Components only when required.
 Use:
 
 - dynamic imports
-- Suspense
+- Suspense with **layout-matched** fallbacks (not generic placeholders)
+- route `loading.tsx` per segment
 - lazy loading
 - metadata API
-- image optimization
+- image optimization and reserved media dimensions
 
-Use TanStack Query for client-side server state.
+Use TanStack Query for client-side server state — **always** consider `placeholderData`, `staleTime`, prefetch, and dehydrate/hydrate for catalog flows.
 
 Avoid unnecessary client fetching.
+
+See **Premium Loading Experience (Mandatory)**.
 
 ---
 
@@ -621,6 +684,7 @@ This is a short summary. The authoritative checklist is **Mandatory Pre-Coding F
 - NestJS conventions
 - Next.js best practices
 - Elevate Apparel brand theme (colors, fonts, dark + gold UI)
+- Premium loading experience (page skeletons, SWR, prefetch, no blank flashes)
 - Strict TypeScript
 - DTO validation
 - Repository pattern

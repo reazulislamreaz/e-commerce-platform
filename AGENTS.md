@@ -10,14 +10,14 @@ Do not skip straight to implementation. Every agent must read the rules, inspect
 
 ## Mandatory pre-coding flow (summary)
 
-| Step | Action |
-|------|--------|
-| 1 | Read `CLAUDE.md` + `PROJECT_OVERVIEW.md` |
-| 2 | Inspect existing modules; search for reusable code and patterns |
-| 3 | Use the correct data layer — `@/features/products`, `@/features/account`, `api-client.ts` — never bypass repositories |
-| 4 | Design for production: loading/error/empty states, backend integration path, performance, a11y, SEO, brand theme |
-| 5 | Implement minimal focused diffs; remove dead code when touched |
-| 6 | Self-review; run lint + build for affected workspaces |
+| Step | Action                                                                                                                                                              |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Read `CLAUDE.md` + `PROJECT_OVERVIEW.md`                                                                                                                            |
+| 2    | Inspect existing modules; search for reusable code and patterns                                                                                                     |
+| 3    | Use the correct data layer — `@/features/products`, `@/features/account`, `api-client.ts` — never bypass repositories                                               |
+| 4    | Design for production: **premium loading** (layout-matched skeletons, SWR, prefetch), loading/error/empty states, backend path, performance, a11y, SEO, brand theme |
+| 5    | Implement minimal focused diffs; remove dead code when touched                                                                                                      |
+| 6    | Self-review; run lint + build; confirm premium loading (skeletons, SWR, no blank flashes) for touched routes                                                        |
 
 Full rules: **Mandatory Pre-Coding Flow** and **Production Readiness Standards** in [CLAUDE.md](./CLAUDE.md).
 
@@ -39,6 +39,29 @@ Full rules: **Mandatory Pre-Coding Flow** and **Production Readiness Standards**
 - Lint and build pass for changed workspaces
 - No duplicate logic, dead code, console logs, or architecture bypasses introduced
 - Storefront UI matches Elevate Apparel dark + gold theme
+- **Premium loading:** new/changed routes have matching `loading.tsx` + skeleton; no blank flashes; list refetches use SWR/opacity — see [CLAUDE.md — Premium Loading Experience](./CLAUDE.md#premium-loading-experience-mandatory)
+
+## Premium loading experience (mandatory)
+
+Perceived performance is a **core requirement**, not optional polish. Every page, component, and fetch flow must feel near-instant.
+
+**Must do:**
+
+- Use **page-specific skeletons** from `frontend/components/loading/` (or add one that matches final layout exactly — zero CLS)
+- Add/update `frontend/app/**/loading.tsx` for every new async route
+- Stream static chrome first; defer heavy fetches with **Suspense** (homepage, shop, sale pattern)
+- Keep prior list data visible on filter/sort/page changes (`placeholderData`, opacity refresh — not full grid skeleton)
+- Prefetch high-traffic routes (`RoutePrefetcher`, `PrefetchNavLink`, `usePrefetchProduct`)
+- Fade in images via `ProductImage`; wire loading/error/empty states
+
+**Must not:**
+
+- Blank primary content while data loads
+- Reuse `PageShellSkeleton` for catalog, home, cart, checkout, or account surfaces
+- Full-page spinners for main content
+- Ship a new page without its loading skeleton in the same change
+
+Full standard: [CLAUDE.md — Premium Loading Experience (Mandatory)](./CLAUDE.md#premium-loading-experience-mandatory). Implementation map: [PROJECT_OVERVIEW.md — Premium loading architecture](./PROJECT_OVERVIEW.md#premium-loading-architecture).
 
 ## Elevate Apparel brand theme (mandatory)
 
