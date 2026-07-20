@@ -3,7 +3,7 @@ import {
   ProductStatus,
   ReviewStatus,
 } from '../../../src/generated/prisma/client';
-import { catalogProducts } from '../../../../frontend/features/products/data';
+import { catalogProducts } from '../data/catalog';
 import type { SeedContext } from '../types';
 import { seedLog } from '../utils/logger';
 import { slugify } from '../utils/slugify';

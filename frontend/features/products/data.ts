@@ -484,5 +484,3 @@ export function searchProducts(query: string, limit = 8): CatalogProduct[] {
     )
     .slice(0, limit);
 }
-
-export { PAGE_SIZE, PRICE_PRESETS, searchSuggestions } from './constants';
