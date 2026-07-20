@@ -8,6 +8,8 @@ import { configureApiClient } from '@/services/api-client';
 import { makeStore } from '@/store/store';
 import { MarketingConsentBridge } from '@/features/analytics/facebook-pixel';
 import { StoreHydrator } from '@/providers/store-hydrator';
+import { RoutePrefetcher } from '@/providers/route-prefetcher';
+import { CATALOG_GC_MS, CATALOG_STALE_MS } from '@/features/products/query';
 
 const ReactQueryDevtools = dynamic(
   () =>
@@ -26,10 +28,12 @@ export function AppProviders({ children }: PropsWithChildren) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60_000,
-            gcTime: 30 * 60_000,
+            staleTime: CATALOG_STALE_MS,
+            gcTime: CATALOG_GC_MS,
             retry: 2,
             refetchOnWindowFocus: false,
+            refetchOnReconnect: true,
+            structuralSharing: true,
           },
         },
       }),
@@ -39,6 +43,7 @@ export function AppProviders({ children }: PropsWithChildren) {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <StoreHydrator>
+          <RoutePrefetcher />
           <MarketingConsentBridge />
           {children}
           {process.env.NODE_ENV === 'development' ? (

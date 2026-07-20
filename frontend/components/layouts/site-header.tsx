@@ -25,6 +25,7 @@ import {
 import { useLogout } from '@/features/auth/hooks';
 import { displayName } from '@/features/account';
 import { isActiveNav, MAIN_NAV } from '@/components/layouts/site-nav';
+import { PrefetchNavLink } from '@/components/layouts/prefetch-nav-link';
 import { MobileHeaderBar } from '@/components/layouts/mobile-header-bar';
 import { MobileNavDrawer } from '@/components/layouts/mobile-nav-drawer';
 
@@ -152,7 +153,7 @@ export function SiteHeader() {
           {MAIN_NAV.map(([name, href]) => {
             const active = isActiveNav(pathname, href);
             return (
-              <Link
+              <PrefetchNavLink
                 key={href}
                 href={href}
                 className={`relative py-[20px] text-[11px] font-semibold tracking-[-.01em] transition-colors ${
@@ -160,7 +161,7 @@ export function SiteHeader() {
                 } ${active ? 'after:absolute after:inset-x-0 after:-bottom-px after:h-[2px] after:bg-[#e4bd7c]' : ''}`}
               >
                 {name}
-              </Link>
+              </PrefetchNavLink>
             );
           })}
         </nav>
@@ -298,7 +299,7 @@ export function SiteHeader() {
       {tabletMenuOpen && (
         <nav className="hidden border-b border-[#292929] px-5 py-3 md:block lg:hidden">
           {MAIN_NAV.map(([name, href]) => (
-            <Link
+            <PrefetchNavLink
               key={href}
               href={href}
               onClick={() => setTabletMenuOpen(false)}
@@ -307,7 +308,7 @@ export function SiteHeader() {
               }`}
             >
               {name}
-            </Link>
+            </PrefetchNavLink>
           ))}
           <Link
             href="/store"

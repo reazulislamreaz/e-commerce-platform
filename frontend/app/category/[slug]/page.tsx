@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { CatalogPageSkeleton } from '@/components/common/skeleton';
+import { CatalogSectionSkeleton } from '@/components/loading';
 import { dehydrateProductList } from '@/features/products';
 import { QueryHydration } from '@/providers/query-hydration';
 import { PAGE_SIZE } from '@/features/products/constants';
@@ -66,7 +66,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   return (
     <main id="main-content" className="flex-1 bg-black">
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
-        <Suspense fallback={<CatalogPageSkeleton />}>
+        <Suspense fallback={<CatalogSectionSkeleton count={8} />}>
           <CategoryCatalog collection={key} />
         </Suspense>
       </section>

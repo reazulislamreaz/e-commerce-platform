@@ -1,5 +1,5 @@
-import { PageShellSkeleton } from '@/components/common/skeleton';
+import { CheckoutPageSkeleton } from '@/components/loading';
 
 export default function CheckoutLoading() {
-  return <PageShellSkeleton />;
+  return <CheckoutPageSkeleton />;
 }

@@ -6,6 +6,7 @@ import { LogOut, MapPin, Package, UserRound, X } from 'lucide-react';
 import type { AuthUser } from '@/types/auth';
 import { displayName } from '@/features/account';
 import { isActiveNav, MAIN_NAV } from './site-nav';
+import { PrefetchNavLink } from './prefetch-nav-link';
 
 type MobileNavDrawerProps = {
   open: boolean;
@@ -85,7 +86,7 @@ export function MobileNavDrawer({
 
         <nav aria-label="Mobile navigation" className="flex-1 overflow-y-auto px-4 py-3">
           {MAIN_NAV.map(([name, href]) => (
-            <Link
+            <PrefetchNavLink
               key={href}
               href={href}
               onClick={onClose}
@@ -94,7 +95,7 @@ export function MobileNavDrawer({
               }`}
             >
               {name}
-            </Link>
+            </PrefetchNavLink>
           ))}
           <Link
             href="/store"

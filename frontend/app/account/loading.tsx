@@ -1,5 +1,5 @@
-import { AccountPanelSkeleton } from '@/components/common/skeleton';
+import { AccountLayoutSkeleton } from '@/components/loading';
 
 export default function AccountLoading() {
-  return <AccountPanelSkeleton />;
+  return <AccountLayoutSkeleton />;
 }

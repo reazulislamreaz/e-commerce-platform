@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { CatalogPageSkeleton } from '@/components/common/skeleton';
+import { CatalogSectionSkeleton } from '@/components/loading';
 import { dehydrateProductList } from '@/features/products';
 import { QueryHydration } from '@/providers/query-hydration';
 import { PAGE_SIZE } from '@/features/products/constants';
@@ -56,7 +56,7 @@ export default async function SearchPage({ searchParams }: Props) {
           {query ? `Results for “${query}”` : 'Search'}
         </h1>
         <div className="mt-8">
-          <Suspense fallback={<CatalogPageSkeleton />}>
+          <Suspense fallback={<CatalogSectionSkeleton count={8} />}>
             <SearchCatalog query={query} />
           </Suspense>
         </div>

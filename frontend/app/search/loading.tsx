@@ -1,5 +1,5 @@
-import { CatalogPageSkeleton } from '@/components/common/skeleton';
+import { SearchPageSkeleton } from '@/components/loading';
 
 export default function SearchLoading() {
-  return <CatalogPageSkeleton />;
+  return <SearchPageSkeleton />;
 }

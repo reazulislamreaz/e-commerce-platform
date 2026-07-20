@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -16,6 +17,13 @@ import { FALLBACK_BANNERS, pickPrimaryBanner } from '@/features/marketing/banner
 import type { MarketingBanner } from '@/features/marketing/types';
 import { NewsletterForm } from '@/components/shared/newsletter-form';
 import { ProductCard } from '@/components/shared/product-card';
+import {
+  HomeFeaturedSectionSkeleton,
+  HomeHeroSkeleton,
+  HomeNewArrivalsSectionSkeleton,
+  HomePromoSkeleton,
+  HomeSalePromoSkeleton,
+} from '@/components/loading';
 
 // Rendered at request time: catalog data comes from the API, which is not
 // reachable during `next build` (images are built without a live backend).
@@ -438,25 +446,53 @@ function Instagram() {
   );
 }
 
-export default async function Home() {
-  const [featured, newArrivals, sale, heroBanners, promoBanners] = await Promise.all([
-    productCatalog.list({ page: 1, pageSize: 6 }),
-    productCatalog.newArrivals(),
-    productCatalog.onSale(),
-    marketingApi.listPublic('HOME_HERO').catch(() => [] as MarketingBanner[]),
-    marketingApi.listPublic('HOME_PROMO').catch(() => [] as MarketingBanner[]),
-  ]);
+async function HomeHeroSection() {
+  const heroBanners = await marketingApi.listPublic('HOME_HERO').catch(() => [] as MarketingBanner[]);
   const heroBanner = pickPrimaryBanner(heroBanners, FALLBACK_HERO);
+  return <Hero banner={heroBanner} />;
+}
+
+async function HomePromoSection() {
+  const promoBanners = await marketingApi.listPublic('HOME_PROMO').catch(() => [] as MarketingBanner[]);
   const promoBanner = pickPrimaryBanner(promoBanners, FALLBACK_PROMO);
+  return <HomePromo banner={promoBanner} />;
+}
+
+async function HomeFeaturedSection() {
+  const featured = await productCatalog.list({ page: 1, pageSize: 6 });
+  return <Featured products={featured.items} />;
+}
+
+async function HomeNewArrivalsSection() {
+  const newArrivals = await productCatalog.newArrivals();
+  return <NewArrivals products={newArrivals.slice(0, 6)} />;
+}
+
+async function HomeSalePromoSection() {
+  const sale = await productCatalog.onSale();
+  return <SalePromo saleCount={sale.length} />;
+}
+
+export default function Home() {
   return (
     <main id="main-content" className="flex-1 bg-black">
-      <Hero banner={heroBanner} />
+      <Suspense fallback={<HomeHeroSkeleton />}>
+        <HomeHeroSection />
+      </Suspense>
       <Benefits />
-      <HomePromo banner={promoBanner} />
+      <Suspense fallback={<HomePromoSkeleton />}>
+        <HomePromoSection />
+      </Suspense>
       <CollectionGrid />
-      <Featured products={featured.items} />
-      <NewArrivals products={newArrivals.slice(0, 6)} />
-      <SalePromo saleCount={sale.length} />
+      <Suspense fallback={<HomeFeaturedSectionSkeleton />}>
+        <HomeFeaturedSection />
+      </Suspense>
+      <Suspense fallback={<HomeNewArrivalsSectionSkeleton />}>
+        <HomeNewArrivalsSection />
+      </Suspense>
+      <Suspense fallback={<HomeSalePromoSkeleton />}>
+        <HomeSalePromoSection />
+      </Suspense>
       <About />
       <Newsletter />
       <Instagram />

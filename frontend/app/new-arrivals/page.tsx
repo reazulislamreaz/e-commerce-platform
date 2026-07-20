@@ -1,10 +1,9 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { ShopCatalog } from '@/components/shop/shop-catalog';
-import { CatalogPageSkeleton } from '@/components/common/skeleton';
+import { CatalogSectionSkeleton } from '@/components/loading';
 import { productCatalog } from '@/features/products';
 
-// Request-time render: the API is not reachable during `next build`.
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
@@ -12,9 +11,12 @@ export const metadata: Metadata = {
   description: 'Fresh Elevate Apparel drops — just landed.',
 };
 
-export default async function NewArrivalsPage() {
+async function NewArrivalsCatalogSection() {
   const products = await productCatalog.newArrivals();
+  return <ShopCatalog products={products} title="Fresh Drops" />;
+}
 
+export default function NewArrivalsPage() {
   return (
     <main id="main-content" className="flex-1 bg-black">
       <section className="border-b border-[#2d2a27] bg-[#111110]">
@@ -36,8 +38,8 @@ export default async function NewArrivalsPage() {
       </section>
 
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
-        <Suspense fallback={<CatalogPageSkeleton />}>
-          <ShopCatalog products={products} title="Fresh Drops" />
+        <Suspense fallback={<CatalogSectionSkeleton count={8} />}>
+          <NewArrivalsCatalogSection />
         </Suspense>
       </section>
     </main>

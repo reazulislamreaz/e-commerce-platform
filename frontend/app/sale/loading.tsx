@@ -1,5 +1,5 @@
-import { CatalogPageSkeleton } from '@/components/common/skeleton';
+import { SalePageSkeleton } from '@/components/loading';
 
 export default function SaleLoading() {
-  return <CatalogPageSkeleton />;
+  return <SalePageSkeleton />;
 }

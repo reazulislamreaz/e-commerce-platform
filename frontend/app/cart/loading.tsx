@@ -1,5 +1,5 @@
-import { PageShellSkeleton } from '@/components/common/skeleton';
+import { CartPageSkeleton } from '@/components/loading';
 
 export default function CartLoading() {
-  return <PageShellSkeleton />;
+  return <CartPageSkeleton />;
 }

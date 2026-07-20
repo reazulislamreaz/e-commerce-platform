@@ -1,5 +1,5 @@
-import { CatalogPageSkeleton } from '@/components/common/skeleton';
+import { ShopPageSkeleton } from '@/components/loading';
 
 export default function ShopLoading() {
-  return <CatalogPageSkeleton />;
+  return <ShopPageSkeleton />;
 }
