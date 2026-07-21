@@ -278,7 +278,6 @@ export default function AdminBannersPage() {
               disabled={busy}
             >
               <option value="HOME_HERO">HOME_HERO</option>
-              <option value="HOME_PROMO">HOME_PROMO</option>
               <option value="SHOP_BANNER">SHOP_BANNER</option>
               <option value="SALE_BANNER">SALE_BANNER</option>
             </AdminSelect>

@@ -15,16 +15,6 @@ const BANNERS = [
     position: 0,
   },
   {
-    key: 'banner:home-promo',
-    placement: BannerPlacement.HOME_PROMO,
-    title: 'NEW SEASON LAYERS',
-    subtitle: 'Heavyweight tees, hoodies, and joggers for the daily uniform.',
-    ctaLabel: 'SHOP NEW',
-    ctaHref: '/shop?sort=newest',
-    imageUrl: '/images/home/instagram-2.webp',
-    position: 0,
-  },
-  {
     key: 'banner:shop',
     placement: BannerPlacement.SHOP_BANNER,
     title: 'SHOP THE DROP',

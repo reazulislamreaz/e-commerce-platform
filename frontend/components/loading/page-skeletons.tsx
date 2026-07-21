@@ -43,22 +43,6 @@ export function HomePageSkeleton() {
         </div>
       </section>
 
-      {/* Promo banner */}
-      <section className="bg-[#FAFAFA]">
-        <div className="relative mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
-          <div className="relative min-h-[180px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-white sm:min-h-[200px]">
-            <div className="relative flex min-h-[180px] flex-col justify-center gap-4 px-5 py-10 sm:min-h-[200px] sm:flex-row sm:items-center sm:justify-between sm:px-8">
-              <div className="max-w-xl space-y-2">
-                <Skeleton className="h-3 w-20 bg-[#e5e7eb]" />
-                <Skeleton className="h-8 w-56 bg-[#e5e7eb]" />
-                <Skeleton className="h-4 w-72 max-w-full bg-[#e5e7eb]" />
-              </div>
-              <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Collection grid */}
       <section className="bg-[#FAFAFA]">
         <div className="mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
@@ -317,25 +301,6 @@ export function HomeHeroSkeleton() {
           <div className="flex gap-2.5 pt-2">
             <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
             <Skeleton className="h-10 w-32 bg-[#e5e7eb]" />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function HomePromoSkeleton() {
-  return (
-    <section className="bg-[#FAFAFA]" aria-hidden>
-      <div className="relative mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
-        <div className="relative min-h-[180px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-white sm:min-h-[200px]">
-          <div className="relative flex min-h-[180px] flex-col justify-center gap-4 px-5 py-10 sm:min-h-[200px] sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div className="max-w-xl space-y-2">
-              <Skeleton className="h-3 w-20 bg-[#e5e7eb]" />
-              <Skeleton className="h-8 w-56 bg-[#e5e7eb]" />
-              <Skeleton className="h-4 w-72 max-w-full bg-[#e5e7eb]" />
-            </div>
-            <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
           </div>
         </div>
       </div>

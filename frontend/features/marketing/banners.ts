@@ -36,8 +36,7 @@ export function bannerToPageHero(
     title: accent ? lead : banner.title,
     titleAccent: accent,
     description:
-      banner.subtitle?.trim() ||
-      'Premium quality apparel designed to elevate your style.',
+      banner.subtitle?.trim() || 'Premium quality apparel designed to elevate your style.',
     image: banner.imageUrl,
     ...(mobileImage ? { mobileImage } : {}),
     imageAlt: banner.title,
@@ -48,7 +47,7 @@ export function bannerToPageHero(
   };
 }
 
-export const FALLBACK_BANNERS: Record<BannerPlacement, MarketingBanner> = {
+export const FALLBACK_BANNERS: Record<Exclude<BannerPlacement, 'HOME_PROMO'>, MarketingBanner> = {
   HOME_HERO: {
     id: 'fallback-home-hero',
     placement: 'HOME_HERO',
@@ -58,19 +57,6 @@ export const FALLBACK_BANNERS: Record<BannerPlacement, MarketingBanner> = {
     ctaLabel: 'SHOP NOW',
     ctaHref: '/shop',
     imageUrl: '/images/home/hero.webp',
-    position: 0,
-    createdAt: '',
-    updatedAt: '',
-  },
-  HOME_PROMO: {
-    id: 'fallback-home-promo',
-    placement: 'HOME_PROMO',
-    status: 'ACTIVE',
-    title: 'NEW SEASON',
-    subtitle: 'Fresh drops every week.',
-    ctaLabel: 'SHOP NEW',
-    ctaHref: '/new-arrivals',
-    imageUrl: '/images/home/collection-new.webp',
     position: 0,
     createdAt: '',
     updatedAt: '',

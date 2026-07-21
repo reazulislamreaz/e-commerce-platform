@@ -13,7 +13,6 @@ export {
   AccountLayoutSkeleton,
   ProductRailSkeleton,
   HomeHeroSkeleton,
-  HomePromoSkeleton,
   HomeFeaturedSectionSkeleton,
   HomeNewArrivalsSectionSkeleton,
   HomeSalePromoSkeleton,

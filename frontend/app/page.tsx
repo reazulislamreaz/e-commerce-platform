@@ -13,7 +13,6 @@ import {
   HomeFeaturedSectionSkeleton,
   HomeHeroSkeleton,
   HomeNewArrivalsSectionSkeleton,
-  HomePromoSkeleton,
   HomeSalePromoSkeleton,
 } from '@/components/loading';
 
@@ -22,7 +21,6 @@ import {
 export const dynamic = 'force-dynamic';
 
 const FALLBACK_HERO = FALLBACK_BANNERS.HOME_HERO;
-const FALLBACK_PROMO = FALLBACK_BANNERS.HOME_PROMO;
 
 const collections = [
   { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.webp' },
@@ -166,7 +164,7 @@ function Benefits() {
     [Headphones, 'CUSTOMER SUPPORT', "We're here to help"],
   ] as const;
   return (
-    <section className="border-b border-[#E5E7EB] bg-[#FAFAFA]">
+    <section className="hidden border-b border-[#E5E7EB] bg-[#FAFAFA] lg:block">
       <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-y-4 px-5 py-8 min-[440px]:grid-cols-2 sm:px-7 lg:grid-cols-4 lg:gap-y-0 lg:py-10">
         {benefits.map(([Icon, title, text], index) => (
           <div
@@ -180,74 +178,6 @@ function Benefits() {
             </div>
           </div>
         ))}
-      </div>
-    </section>
-  );
-}
-
-function HomePromo({ banner }: { banner: MarketingBanner }) {
-  const ctaHref = banner.ctaHref?.trim() || '/new-arrivals';
-  const ctaLabel = banner.ctaLabel?.trim() || 'SHOP NOW';
-  const desktopSrc = banner.imageUrl;
-  const mobileSrc =
-    banner.mobileImageUrl && banner.mobileImageUrl !== banner.imageUrl
-      ? banner.mobileImageUrl
-      : null;
-
-  return (
-    <section className="bg-[#FAFAFA]">
-      <div className="relative mx-auto max-w-[1400px] overflow-hidden px-3 py-10 sm:px-6 sm:py-14">
-        <div className="relative min-h-[180px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:min-h-[200px]">
-          {mobileSrc ? (
-            <>
-              <Image
-                src={mobileSrc}
-                alt=""
-                fill
-                quality={80}
-                sizes="100vw"
-                className="object-cover object-center opacity-30 md:hidden"
-              />
-              <Image
-                src={desktopSrc}
-                alt=""
-                fill
-                quality={80}
-                sizes="100vw"
-                className="hidden object-cover object-center opacity-30 md:block"
-              />
-            </>
-          ) : (
-            <Image
-              src={desktopSrc}
-              alt=""
-              fill
-              quality={80}
-              sizes="100vw"
-              className="object-cover object-center opacity-30"
-            />
-          )}
-          <div className="absolute inset-0 bg-linear-to-r from-[#FAFAFA] via-[#FAFAFA]/90 to-[#FAFAFA]/50" />
-          <div className="relative flex min-h-[180px] flex-col justify-center gap-4 px-5 py-10 sm:min-h-[200px] sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-12">
-            <div className="max-w-xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#C9A227]">
-                Featured
-              </p>
-              <h2 className="mt-1 text-2xl font-extrabold tracking-[-.03em] text-[#111111] sm:text-3xl">
-                {banner.title}
-              </h2>
-              {banner.subtitle ? (
-                <p className="mt-1.5 text-sm text-[#555555]">{banner.subtitle}</p>
-              ) : null}
-            </div>
-            <Link
-              href={ctaHref}
-              className="inline-flex w-fit shrink-0 border border-[#111111] bg-[#111111] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
-            >
-              {ctaLabel}
-            </Link>
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -464,14 +394,6 @@ async function HomeHeroSection() {
   return <Hero banner={heroBanner} />;
 }
 
-async function HomePromoSection() {
-  const promoBanners = await marketingApi
-    .listPublic('HOME_PROMO')
-    .catch(() => [] as MarketingBanner[]);
-  const promoBanner = pickPrimaryBanner(promoBanners, FALLBACK_PROMO);
-  return <HomePromo banner={promoBanner} />;
-}
-
 async function HomeFeaturedSection() {
   const featured = await productCatalog.list({ page: 1, pageSize: 6 });
   return <Featured products={featured.items} />;
@@ -494,9 +416,6 @@ export default function Home() {
         <HomeHeroSection />
       </Suspense>
       <Benefits />
-      <Suspense fallback={<HomePromoSkeleton />}>
-        <HomePromoSection />
-      </Suspense>
       <CollectionGrid />
       <Suspense fallback={<HomeFeaturedSectionSkeleton />}>
         <HomeFeaturedSection />
