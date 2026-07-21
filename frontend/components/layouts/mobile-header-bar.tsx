@@ -25,13 +25,13 @@ export function MobileHeaderBar({
   );
 
   return (
-    <div className="mx-auto flex h-[52px] max-w-[1400px] items-center gap-0.5 px-2 sm:px-4 md:hidden">
+    <div className="relative mx-auto flex h-[52px] max-w-[1400px] items-center px-2 sm:px-4 md:hidden">
       <button
         type="button"
         aria-label={menuOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={menuOpen}
         onClick={onMenuToggle}
-        className={iconButtonClass}
+        className={cn(iconButtonClass, 'z-10')}
       >
         <Menu className="size-5" strokeWidth={1.7} />
       </button>
@@ -39,7 +39,7 @@ export function MobileHeaderBar({
       <Link
         href="/"
         aria-label="Elevate Apparel home"
-        className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden"
+        className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5"
       >
         <BrandLogo
           style="elevate3d"
@@ -53,7 +53,7 @@ export function MobileHeaderBar({
         </span>
       </Link>
 
-      <div className="flex shrink-0 items-center">
+      <div className="z-10 ml-auto flex shrink-0 items-center">
         <button
           type="button"
           aria-label="Search"
