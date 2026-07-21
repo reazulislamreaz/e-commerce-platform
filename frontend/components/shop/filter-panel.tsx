@@ -19,6 +19,7 @@ type Facets = {
 const COLLECTIONS: { value: ProductCollection; label: string }[] = [
   { value: 'men', label: 'Men' },
   { value: 'women', label: 'Women' },
+  { value: 'kids', label: 'Kids' },
   { value: 'unisex', label: 'Unisex' },
 ];
 

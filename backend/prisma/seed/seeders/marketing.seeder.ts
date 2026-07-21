@@ -12,6 +12,7 @@ const BANNERS = [
     ctaLabel: 'SHOP NOW',
     ctaHref: '/shop',
     imageUrl: '/images/home/hero.webp',
+    mobileImageUrl: '/images/home/hero-mobile.jpg',
     position: 0,
   },
   {
@@ -51,6 +52,7 @@ export async function seedMarketing(ctx: SeedContext): Promise<void> {
         ctaLabel: banner.ctaLabel,
         ctaHref: banner.ctaHref,
         imageUrl: banner.imageUrl,
+        mobileImageUrl: 'mobileImageUrl' in banner ? banner.mobileImageUrl : undefined,
         position: banner.position,
       },
       update: {
@@ -61,6 +63,7 @@ export async function seedMarketing(ctx: SeedContext): Promise<void> {
         ctaLabel: banner.ctaLabel,
         ctaHref: banner.ctaHref,
         imageUrl: banner.imageUrl,
+        mobileImageUrl: 'mobileImageUrl' in banner ? banner.mobileImageUrl : undefined,
         position: banner.position,
         deletedAt: null,
       },

@@ -157,7 +157,7 @@ export class CatalogService {
       category: category?.parent?.name ?? category?.name ?? '',
       subcategory: category?.name ?? '',
       brand: product.brand.name,
-      collection: (collection ?? 'unisex') as 'men' | 'women' | 'unisex',
+      collection: (collection ?? 'unisex') as 'men' | 'women' | 'kids' | 'unisex',
       color: product.primaryColor,
       colors: product.colors.map(({ name, hex }) => ({ name, hex })),
       sizes: [...new Set(product.variants.map(({ size }) => size))],

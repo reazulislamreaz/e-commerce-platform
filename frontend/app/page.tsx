@@ -1,12 +1,23 @@
 import { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Headphones, Quote, RefreshCw, ShieldCheck, Star, Truck } from 'lucide-react';
+import { ArrowRight, Headphones, RefreshCw, ShieldCheck, Truck } from 'lucide-react';
 import { productCatalog } from '@/features/products';
 import type { CatalogProduct } from '@/features/products/types';
 import { marketingApi } from '@/features/marketing/api';
-import { FALLBACK_BANNERS, pickPrimaryBanner } from '@/features/marketing/banners';
+import {
+  FALLBACK_BANNERS,
+  pickHeroSlides,
+  pickPrimaryBanner,
+  type HeroSlide,
+} from '@/features/marketing/banners';
 import type { MarketingBanner } from '@/features/marketing/types';
+import { HomeHeroMobileCarousel } from '@/components/home/home-hero-mobile-carousel';
+import {
+  HomeHeroDesktopCarousel,
+  type DesktopHeroSlide,
+} from '@/components/home/home-hero-desktop-carousel';
+import { CustomerReviewsSlider } from '@/components/home/customer-reviews-slider';
 import { NewsletterForm } from '@/components/shared/newsletter-form';
 import { ProductCard } from '@/components/shared/product-card';
 import {
@@ -21,6 +32,38 @@ import {
 export const dynamic = 'force-dynamic';
 
 const FALLBACK_HERO = FALLBACK_BANNERS.HOME_HERO;
+const DESKTOP_HERO_SLIDES: DesktopHeroSlide[] = [
+  {
+    id: 'desktop-men',
+    eyebrow: "MEN'S COLLECTION OVERVIEW",
+    title: "MEN'S COLLECTION",
+    description: 'Tailored fits and elevated essentials crafted for everyday confidence.',
+    href: '/category/men',
+    ctaLabel: 'SHOP MEN',
+    image: '/images/home/collection-men.webp',
+    imageAlt: "Men's collection overview",
+  },
+  {
+    id: 'desktop-women',
+    eyebrow: "WOMEN'S COLLECTION OVERVIEW",
+    title: "WOMEN'S COLLECTION",
+    description: 'Refined silhouettes and premium textures designed for modern movement.',
+    href: '/category/women',
+    ctaLabel: 'SHOP WOMEN',
+    image: '/images/home/collection-women.webp',
+    imageAlt: "Women's collection overview",
+  },
+  {
+    id: 'desktop-kids',
+    eyebrow: "KIDS' COLLECTION OVERVIEW",
+    title: "KIDS' COLLECTION",
+    description: 'Comfort-first pieces with playful energy for every active day.',
+    href: '/category/kids',
+    ctaLabel: 'SHOP KIDS',
+    image: '/images/home/kids-1.webp',
+    imageAlt: "Kids' collection overview",
+  },
+];
 
 const collections = [
   { title: "MEN'S\nCOLLECTION", href: '/category/men', image: 'collection-men.webp' },
@@ -69,7 +112,7 @@ function ProductRail({ products }: { products: CatalogProduct[] }) {
   );
 }
 
-function Hero({ banner }: { banner: MarketingBanner }) {
+function HeroDesktop({ banner }: { banner: MarketingBanner }) {
   const titleParts = banner.title.trim().split(/\s+/);
   const lead = titleParts.slice(0, -1).join(' ') || banner.title;
   const accent = titleParts.length > 1 ? titleParts[titleParts.length - 1] : '';
@@ -82,7 +125,7 @@ function Hero({ banner }: { banner: MarketingBanner }) {
   const ctaLabel = banner.ctaLabel?.trim() || 'SHOP NOW';
 
   return (
-    <section className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA]">
+    <section className="relative hidden h-[80svh] min-h-[420px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA] md:block lg:hidden">
       <div className="absolute inset-y-0 right-0 w-full sm:w-[62%]">
         {mobileSrc ? (
           <>
@@ -153,6 +196,16 @@ function Hero({ banner }: { banner: MarketingBanner }) {
         <span className="size-2.5 rounded-full border border-[#111111]/35" />
       </div>
     </section>
+  );
+}
+
+function Hero({ banner, slides }: { banner: MarketingBanner; slides: HeroSlide[] }) {
+  return (
+    <>
+      <HomeHeroMobileCarousel slides={slides} />
+      <HeroDesktop banner={banner} />
+      <HomeHeroDesktopCarousel slides={DESKTOP_HERO_SLIDES} />
+    </>
   );
 }
 
@@ -310,22 +363,7 @@ function About() {
             </Link>
           </div>
         </div>
-        <div className="relative rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] px-5 py-8 text-center shadow-[0_2px_10px_rgba(0,0,0,0.04)] sm:px-10 lg:px-12 lg:py-8">
-          <h2 className="text-[16px] font-semibold uppercase text-[#111111]">
-            What Our Customers Say
-          </h2>
-          <Quote className="absolute left-4 top-[58px] size-5 fill-[#C9A227] text-[#C9A227] sm:left-9" />
-          <p className="mx-auto mt-4 max-w-[315px] text-xs leading-[1.5] text-[#555555]">
-            The quality is outstanding! Super comfortable and a perfect fit. Elevate is my go-to
-            brand now.
-          </p>
-          <div className="mt-2 flex justify-center gap-1 text-[#C9A227]">
-            {Array.from({ length: 5 }, (_, i) => (
-              <Star key={i} className="size-3 fill-current" />
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-[#111111]">— Shakib H.</p>
-        </div>
+        <CustomerReviewsSlider />
       </div>
     </section>
   );
@@ -391,7 +429,8 @@ async function HomeHeroSection() {
     .listPublic('HOME_HERO')
     .catch(() => [] as MarketingBanner[]);
   const heroBanner = pickPrimaryBanner(heroBanners, FALLBACK_HERO);
-  return <Hero banner={heroBanner} />;
+  const heroSlides = pickHeroSlides(heroBanners.length > 0 ? heroBanners : [FALLBACK_HERO]);
+  return <Hero banner={heroBanner} slides={heroSlides} />;
 }
 
 async function HomeFeaturedSection() {

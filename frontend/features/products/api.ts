@@ -33,7 +33,7 @@ export interface ProductCatalog {
   getByIds(ids: string[]): Promise<CatalogProduct[]>;
   search(query: string, limit?: number): Promise<CatalogProduct[]>;
   related(product: CatalogProduct, limit?: number): Promise<CatalogProduct[]>;
-  byCollection(collection: 'men' | 'women'): Promise<CatalogProduct[]>;
+  byCollection(collection: 'men' | 'women' | 'kids'): Promise<CatalogProduct[]>;
   newArrivals(): Promise<CatalogProduct[]>;
   onSale(): Promise<CatalogProduct[]>;
   facets(): Promise<ProductFacets>;
@@ -128,9 +128,7 @@ function queryParams(params: {
     minPrice: filters?.minPrice ?? undefined,
     maxPrice: filters?.maxPrice ?? undefined,
     availability:
-      filters?.availability && filters.availability !== 'all'
-        ? filters.availability
-        : undefined,
+      filters?.availability && filters.availability !== 'all' ? filters.availability : undefined,
     discount: filters?.discount || undefined,
     minRating: filters?.minRating ?? undefined,
     query: filters?.query?.trim() || undefined,
@@ -196,10 +194,9 @@ export const httpProductCatalog: ProductCatalog = {
     ).items;
   },
   async newArrivals() {
-    const { data } = await apiClient.get<ApiResponse<CatalogProduct[]>>(
-      '/products/new-arrivals',
-      { params: { limit: 100 } },
-    );
+    const { data } = await apiClient.get<ApiResponse<CatalogProduct[]>>('/products/new-arrivals', {
+      params: { limit: 100 },
+    });
     return data.data;
   },
   async onSale() {

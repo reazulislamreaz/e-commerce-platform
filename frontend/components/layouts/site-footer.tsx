@@ -1,6 +1,27 @@
 import Link from 'next/link';
 import { Facebook, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide-react';
 import { BrandLogo } from '@/components/shared/brand-logo';
+import { TikTokIcon, WhatsAppIcon } from '@/components/shared/contact-widget/icons';
+import { getSocialLinks, type SocialPlatform } from '@/lib/social-links';
+
+function SocialIcon({ platform, className }: { platform: SocialPlatform; className?: string }) {
+  switch (platform) {
+    case 'facebook':
+      return <Facebook className={className} strokeWidth={1.75} />;
+    case 'whatsapp':
+      return <WhatsAppIcon className={className} />;
+    case 'instagram':
+      return <Instagram className={className} strokeWidth={1.75} />;
+    case 'youtube':
+      return <Youtube className={className} strokeWidth={1.75} />;
+    case 'tiktok':
+      return <TikTokIcon className={className} />;
+    default:
+      return null;
+  }
+}
+
+const socialLinks = getSocialLinks();
 
 const columns = [
   [
@@ -9,6 +30,7 @@ const columns = [
       ['All Products', '/shop'],
       ['Men', '/category/men'],
       ['Women', '/category/women'],
+      ['Kids', '/category/kids'],
       ['New Arrivals', '/new-arrivals'],
       ['Sale', '/sale'],
     ],
@@ -46,34 +68,19 @@ export function SiteFooter() {
             <br />
             Elevate your life.
           </p>
-          <div className="mt-4 flex items-center gap-4 text-[#e8e1d8]">
-            <a
-              href="https://www.facebook.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Facebook"
-              className="transition-colors hover:text-[#C9A227]"
-            >
-              <Facebook className="size-4" />
-            </a>
-            <a
-              href="https://www.instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="transition-colors hover:text-[#C9A227]"
-            >
-              <Instagram className="size-4" />
-            </a>
-            <a
-              href="https://www.youtube.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="YouTube"
-              className="transition-colors hover:text-[#C9A227]"
-            >
-              <Youtube className="size-4" />
-            </a>
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 text-[#e8e1d8]">
+            {socialLinks.map((link) => (
+              <a
+                key={link.id}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={link.label}
+                className="transition-colors hover:text-[#C9A227]"
+              >
+                <SocialIcon platform={link.id} className="size-4" />
+              </a>
+            ))}
           </div>
           <p className="mt-6 text-[10px] text-[#d4d0ca] lg:mt-auto">
             © 2024 Elevate Apparel. All Rights Reserved.

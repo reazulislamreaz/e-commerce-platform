@@ -6,6 +6,7 @@ import { Star } from 'lucide-react';
 import type { CatalogProduct } from '@/features/products/types';
 import { normalizeProduct } from '@/features/products/types';
 import { useProductsByIds, useRelatedProducts } from '@/features/products';
+import { ProductWriteReview } from '@/components/product/product-write-review';
 import { ProductCard } from '@/components/shared/product-card';
 import { ProductGridSkeleton } from '@/components/common/skeleton';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -99,11 +100,12 @@ export function ProductBelowFold({ product }: { product: CatalogProduct }) {
         <EasyReturnsExchange />
       </div>
 
-      {p.reviews.length > 0 && (
-        <section className="mx-auto max-w-[1400px] border-t border-[#E5E7EB] px-5 pt-8 sm:px-7">
-          <h2 className="text-base font-bold uppercase tracking-tight text-[#111111]">
-            Reviews & Ratings
-          </h2>
+      <section className="mx-auto max-w-[1400px] border-t border-[#E5E7EB] px-5 py-8 sm:px-7">
+        <h2 className="text-base font-bold uppercase tracking-tight text-[#111111]">
+          Reviews & Ratings
+        </h2>
+
+        {p.reviews.length > 0 ? (
           <div className="mt-5 space-y-4">
             {p.reviews.map((review) => (
               <article
@@ -116,7 +118,6 @@ export function ProductBelowFold({ product }: { product: CatalogProduct }) {
                       <Star key={i} className="size-3 fill-[#C9A227]" strokeWidth={0} />
                     ))}
                   </span>
-                  <h3 className="text-sm font-semibold text-[#111111]">{review.title}</h3>
                   {review.verified && (
                     <span className="text-[10px] uppercase tracking-wide text-green-700">
                       Verified
@@ -130,8 +131,16 @@ export function ProductBelowFold({ product }: { product: CatalogProduct }) {
               </article>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="mt-3 text-sm text-[#555555]">
+            No reviews yet. Be the first to share your thoughts.
+          </p>
+        )}
+
+        <div className="mt-6">
+          <ProductWriteReview productId={p.id} productName={p.name} />
+        </div>
+      </section>
 
       <ProductRail
         title="You May Also Like"

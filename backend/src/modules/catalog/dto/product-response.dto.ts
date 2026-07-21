@@ -76,8 +76,8 @@ export class ProductResponseDto {
   @ApiProperty()
   brand!: string;
 
-  @ApiProperty({ enum: ['men', 'women', 'unisex'] })
-  collection!: 'men' | 'women' | 'unisex';
+  @ApiProperty({ enum: ['men', 'women', 'kids', 'unisex'] })
+  collection!: 'men' | 'women' | 'kids' | 'unisex';
 
   @ApiProperty()
   color!: string;

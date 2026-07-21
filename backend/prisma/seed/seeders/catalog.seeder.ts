@@ -28,9 +28,9 @@ export async function seedCatalog(ctx: SeedContext): Promise<void> {
   });
   ctx.locationId = location.id;
 
-  const collectionNames = { men: 'Men', women: 'Women', unisex: 'Unisex' } as const;
+  const collectionNames = { men: 'Men', women: 'Women', kids: 'Kids', unisex: 'Unisex' } as const;
   const collectionIds = new Map<string, string>();
-  for (const [position, key] of (['men', 'women', 'unisex'] as const).entries()) {
+  for (const [position, key] of (['men', 'women', 'kids', 'unisex'] as const).entries()) {
     const collection = await prisma.catalogCollection.upsert({
       where: { slug: key },
       create: { slug: key, name: collectionNames[key], position },

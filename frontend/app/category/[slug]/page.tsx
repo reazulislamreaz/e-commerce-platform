@@ -17,6 +17,9 @@ const collections = {
   women: {
     title: "Women's Pieces",
   },
+  kids: {
+    title: "Kids' Pieces",
+  },
 } as const;
 
 type CollectionKey = keyof typeof collections;
@@ -29,7 +32,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const key = slug as CollectionKey;
   if (!(key in collections)) return { title: 'Collection' };
-  const label = key === 'men' ? "Men's" : "Women's";
+  const label = key === 'men' ? "Men's" : key === 'women' ? "Women's" : "Kids'";
   return {
     title: `${label} Collection`,
     description: `Shop Elevate Apparel ${label.toLowerCase()} collection.`,

@@ -14,6 +14,7 @@ const STOREFRONT_ROUTES = [
   '/new-arrivals',
   '/category/men',
   '/category/women',
+  '/category/kids',
 ] as const;
 
 /**

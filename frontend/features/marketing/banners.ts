@@ -1,5 +1,63 @@
 import type { BannerPlacement, MarketingBanner } from './types';
 
+export type HeroSlide = {
+  id: string;
+  src: string;
+  alt: string;
+};
+
+/** Primary portrait hero for the mobile carousel (first slide). */
+export const MOBILE_HERO_IMAGE = '/images/home/hero-mobile.jpg';
+
+export const FALLBACK_HERO_SLIDES: HeroSlide[] = [
+  { id: 'fallback-hero-1', src: MOBILE_HERO_IMAGE, alt: 'Elevate Apparel hero' },
+  { id: 'fallback-hero-2', src: '/images/home/collection-women.webp', alt: "Men's collection" },
+  { id: 'fallback-hero-3', src: '/images/home/collection-new.webp', alt: 'New arrivals' },
+];
+
+export function bannerToHeroSlide(
+  banner: MarketingBanner,
+  options?: { preferMobileDefault?: boolean },
+): HeroSlide {
+  const src =
+    banner.mobileImageUrl && banner.mobileImageUrl !== banner.imageUrl
+      ? banner.mobileImageUrl
+      : options?.preferMobileDefault
+        ? MOBILE_HERO_IMAGE
+        : banner.imageUrl;
+
+  return {
+    id: banner.id,
+    src,
+    alt: banner.title,
+  };
+}
+
+export function pickHeroSlides(banners: MarketingBanner[], limit = 3): HeroSlide[] {
+  const slides: HeroSlide[] = [];
+  const usedSrcs = new Set<string>();
+
+  for (const [index, banner] of banners.slice(0, limit).entries()) {
+    const slide = bannerToHeroSlide(banner, { preferMobileDefault: index === 0 });
+    if (!usedSrcs.has(slide.src)) {
+      slides.push(slide);
+      usedSrcs.add(slide.src);
+    }
+  }
+
+  for (const fallback of FALLBACK_HERO_SLIDES) {
+    if (slides.length >= limit) {
+      break;
+    }
+    if (!usedSrcs.has(fallback.src)) {
+      slides.push(fallback);
+      usedSrcs.add(fallback.src);
+    }
+  }
+
+  return slides.slice(0, limit);
+}
+
 export function pickPrimaryBanner(
   banners: MarketingBanner[],
   fallback: MarketingBanner,
@@ -57,6 +115,7 @@ export const FALLBACK_BANNERS: Record<Exclude<BannerPlacement, 'HOME_PROMO'>, Ma
     ctaLabel: 'SHOP NOW',
     ctaHref: '/shop',
     imageUrl: '/images/home/hero.webp',
+    mobileImageUrl: '/images/home/hero-mobile.jpg',
     position: 0,
     createdAt: '',
     updatedAt: '',

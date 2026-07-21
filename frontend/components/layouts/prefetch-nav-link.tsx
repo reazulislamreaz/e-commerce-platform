@@ -12,6 +12,7 @@ const PREFETCH_PATHS = new Set([
   '/new-arrivals',
   '/category/men',
   '/category/women',
+  '/category/kids',
 ]);
 
 /** Next.js Link with idle catalog/route prefetch on hover/focus for storefront nav. */
@@ -23,7 +24,7 @@ export function PrefetchNavLink({
 }: ComponentProps<typeof Link>) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const path = typeof href === 'string' ? href : href.pathname ?? '';
+  const path = typeof href === 'string' ? href : (href.pathname ?? '');
 
   return (
     <Link

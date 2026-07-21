@@ -13,8 +13,16 @@ export function HomePageSkeleton() {
   return (
     <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       {/* Hero */}
-      <section className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA]">
-        <Skeleton className="absolute inset-y-0 right-0 w-full rounded-none sm:w-[62%]" />
+      <section className="relative h-[52svh] min-h-[280px] max-h-[480px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA] md:hidden">
+        <Skeleton className="absolute inset-0 rounded-none bg-[#e5e7eb]" />
+        <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
+          {Array.from({ length: 3 }, (_, i) => (
+            <Skeleton key={i} className="size-2 rounded-full bg-[#e5e7eb]" />
+          ))}
+        </div>
+      </section>
+      <section className="relative hidden h-[80svh] min-h-[420px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA] md:block">
+        <Skeleton className="absolute inset-y-0 right-0 w-full rounded-none bg-[#e5e7eb] sm:w-[62%]" />
         <div className="relative mx-auto flex h-full max-w-[1400px] items-center px-5 sm:px-[10.2%]">
           <div className="max-w-[390px] space-y-3">
             <Skeleton className="h-3 w-36 bg-[#e5e7eb]" />
@@ -288,23 +296,36 @@ export function ProductRailSkeleton({ count = 6 }: { count?: number }) {
 
 export function HomeHeroSkeleton() {
   return (
-    <section
-      className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA]"
-      aria-hidden
-    >
-      <Skeleton className="absolute inset-y-0 right-0 w-full rounded-none bg-[#e5e7eb] sm:w-[62%]" />
-      <div className="relative mx-auto flex h-full max-w-[1400px] items-center px-5 sm:px-[10.2%]">
-        <div className="max-w-[390px] space-y-3">
-          <Skeleton className="h-3 w-36 bg-[#e5e7eb]" />
-          <Skeleton className="h-14 w-[min(100%,340px)] bg-[#e5e7eb] sm:h-16" />
-          <Skeleton className="h-4 w-[min(100%,260px)] bg-[#e5e7eb]" />
-          <div className="flex gap-2.5 pt-2">
-            <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
-            <Skeleton className="h-10 w-32 bg-[#e5e7eb]" />
+    <>
+      <section
+        className="relative h-[52svh] min-h-[280px] max-h-[480px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA] md:hidden"
+        aria-hidden
+      >
+        <Skeleton className="absolute inset-0 rounded-none bg-[#e5e7eb]" />
+        <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
+          {Array.from({ length: 3 }, (_, i) => (
+            <Skeleton key={i} className="size-2 rounded-full bg-[#e5e7eb]" />
+          ))}
+        </div>
+      </section>
+      <section
+        className="relative hidden h-[80svh] min-h-[420px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA] md:block"
+        aria-hidden
+      >
+        <Skeleton className="absolute inset-y-0 right-0 w-full rounded-none bg-[#e5e7eb] sm:w-[62%]" />
+        <div className="relative mx-auto flex h-full max-w-[1400px] items-center px-5 sm:px-[10.2%]">
+          <div className="max-w-[390px] space-y-3">
+            <Skeleton className="h-3 w-36 bg-[#e5e7eb]" />
+            <Skeleton className="h-14 w-[min(100%,340px)] bg-[#e5e7eb] sm:h-16" />
+            <Skeleton className="h-4 w-[min(100%,260px)] bg-[#e5e7eb]" />
+            <div className="flex gap-2.5 pt-2">
+              <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
+              <Skeleton className="h-10 w-32 bg-[#e5e7eb]" />
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
 

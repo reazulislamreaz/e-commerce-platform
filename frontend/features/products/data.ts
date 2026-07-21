@@ -39,7 +39,11 @@ export const catalogProducts: CatalogProduct[] = [
     ],
     sizes: teeSizes,
     image: '/images/home/product-1.webp',
-    images: ['/images/home/product-1.webp', '/images/home/instagram-1.webp', '/images/home/instagram-8.webp'],
+    images: [
+      '/images/home/product-1.webp',
+      '/images/home/instagram-1.webp',
+      '/images/home/instagram-8.webp',
+    ],
     description:
       'Relaxed oversized fit in heavyweight cotton. Clean Elevate branding, soft hand-feel, built for everyday rotation.',
     variants: variantsFor('p1', teeSizes, [
@@ -89,11 +93,17 @@ export const catalogProducts: CatalogProduct[] = [
     sizes: teeSizes,
     image: '/images/home/product-2.webp',
     images: ['/images/home/product-2.webp', '/images/home/product-4.webp'],
-    description: 'A wardrobe staple — midweight cotton, clean crew neck, effortless everyday silhouette.',
-    variants: variantsFor('p2', teeSizes, [
-      { name: 'Off White', hex: '#f3efe8' },
-      { name: 'Black', hex: '#111111' },
-    ], 18),
+    description:
+      'A wardrobe staple — midweight cotton, clean crew neck, effortless everyday silhouette.',
+    variants: variantsFor(
+      'p2',
+      teeSizes,
+      [
+        { name: 'Off White', hex: '#f3efe8' },
+        { name: 'Black', hex: '#111111' },
+      ],
+      18,
+    ),
     inStock: true,
     rating: 4.5,
     reviewCount: 41,
@@ -128,11 +138,17 @@ export const catalogProducts: CatalogProduct[] = [
     sizes: teeSizes,
     image: '/images/home/product-3.webp',
     images: ['/images/home/product-3.webp', '/images/home/instagram-7.webp'],
-    description: 'Heavyweight fleece hoodie with a structured hood and brushed interior for all-day comfort.',
-    variants: variantsFor('p3', teeSizes, [
-      { name: 'Black', hex: '#111111' },
-      { name: 'Navy', hex: '#1a2332' },
-    ], 8),
+    description:
+      'Heavyweight fleece hoodie with a structured hood and brushed interior for all-day comfort.',
+    variants: variantsFor(
+      'p3',
+      teeSizes,
+      [
+        { name: 'Black', hex: '#111111' },
+        { name: 'Navy', hex: '#1a2332' },
+      ],
+      8,
+    ),
     inStock: true,
     rating: 4.8,
     reviewCount: 63,
@@ -196,10 +212,15 @@ export const catalogProducts: CatalogProduct[] = [
     image: '/images/home/product-5.webp',
     images: ['/images/home/product-5.webp', '/images/home/instagram-5.webp'],
     description: 'Tapered jogger with elastic cuff, zip pockets, and a soft brushed interior.',
-    variants: variantsFor('p5', bottomSizes, [
-      { name: 'Black', hex: '#111111' },
-      { name: 'Charcoal', hex: '#3a3a3a' },
-    ], 10),
+    variants: variantsFor(
+      'p5',
+      bottomSizes,
+      [
+        { name: 'Black', hex: '#111111' },
+        { name: 'Charcoal', hex: '#3a3a3a' },
+      ],
+      10,
+    ),
     inStock: true,
     rating: 4.6,
     reviewCount: 34,
@@ -233,11 +254,17 @@ export const catalogProducts: CatalogProduct[] = [
     sizes: teeSizes,
     image: '/images/home/product-6.webp',
     images: ['/images/home/product-6.webp', '/images/home/instagram-6.webp'],
-    description: 'Soft-touch fleece hoodie tailored for a flattering feminine fit without sacrificing comfort.',
-    variants: variantsFor('p6', teeSizes, [
-      { name: 'Cream', hex: '#f0e6d8' },
-      { name: 'Ivory', hex: '#f7f2ea' },
-    ], 9),
+    description:
+      'Soft-touch fleece hoodie tailored for a flattering feminine fit without sacrificing comfort.',
+    variants: variantsFor(
+      'p6',
+      teeSizes,
+      [
+        { name: 'Cream', hex: '#f0e6d8' },
+        { name: 'Ivory', hex: '#f7f2ea' },
+      ],
+      9,
+    ),
     inStock: true,
     rating: 4.9,
     reviewCount: 22,
@@ -272,11 +299,17 @@ export const catalogProducts: CatalogProduct[] = [
     sizes: teeSizes,
     image: '/images/home/instagram-2.webp',
     images: ['/images/home/instagram-2.webp', '/images/home/product-1.webp'],
-    description: 'Everyday crew in charcoal — breathable cotton with a refined, slightly structured shoulder.',
-    variants: variantsFor('p7', teeSizes, [
-      { name: 'Charcoal', hex: '#3a3a3a' },
-      { name: 'Black', hex: '#111111' },
-    ], 15),
+    description:
+      'Everyday crew in charcoal — breathable cotton with a refined, slightly structured shoulder.',
+    variants: variantsFor(
+      'p7',
+      teeSizes,
+      [
+        { name: 'Charcoal', hex: '#3a3a3a' },
+        { name: 'Black', hex: '#111111' },
+      ],
+      15,
+    ),
     inStock: true,
     rating: 4.4,
     reviewCount: 17,
@@ -301,10 +334,15 @@ export const catalogProducts: CatalogProduct[] = [
     image: '/images/home/instagram-7.webp',
     images: ['/images/home/instagram-7.webp', '/images/home/product-6.webp'],
     description: 'Ultra-soft lounge hoodie designed for weekends, travel, and slow mornings.',
-    variants: variantsFor('p8', teeSizes, [
-      { name: 'Ivory', hex: '#f7f2ea' },
-      { name: 'Sand', hex: '#c4b59a' },
-    ], 6),
+    variants: variantsFor(
+      'p8',
+      teeSizes,
+      [
+        { name: 'Ivory', hex: '#f7f2ea' },
+        { name: 'Sand', hex: '#c4b59a' },
+      ],
+      6,
+    ),
     inStock: true,
     rating: 4.7,
     reviewCount: 11,
@@ -384,7 +422,8 @@ export const catalogProducts: CatalogProduct[] = [
     sizes: ['XS', 'S', 'M', 'L'],
     image: '/images/home/instagram-6.webp',
     images: ['/images/home/instagram-6.webp', '/images/home/product-6.webp'],
-    description: 'Cropped studio hoodie with ribbed hem — light layering for movement and street style.',
+    description:
+      'Cropped studio hoodie with ribbed hem — light layering for movement and street style.',
     variants: variantsFor(
       'p11',
       ['XS', 'S', 'M', 'L'],
@@ -418,10 +457,15 @@ export const catalogProducts: CatalogProduct[] = [
     image: '/images/home/instagram-8.webp',
     images: ['/images/home/instagram-8.webp', '/images/home/product-1.webp'],
     description: 'Heritage Elevate mark on premium cotton — a signature piece for the collection.',
-    variants: variantsFor('p12', teeSizes, [
-      { name: 'Black', hex: '#111111' },
-      { name: 'Off White', hex: '#f3efe8' },
-    ], 11),
+    variants: variantsFor(
+      'p12',
+      teeSizes,
+      [
+        { name: 'Black', hex: '#111111' },
+        { name: 'Off White', hex: '#f3efe8' },
+      ],
+      11,
+    ),
     inStock: true,
     rating: 4.8,
     reviewCount: 52,
@@ -439,13 +483,115 @@ export const catalogProducts: CatalogProduct[] = [
     isNew: true,
     onSale: true,
   },
+  {
+    id: 'p13',
+    name: 'Kids Play Tee',
+    slug: 'kids-play-tee',
+    price: 790,
+    compareAtPrice: 990,
+    category: 'T-Shirts',
+    subcategory: 'Kids Essentials',
+    brand: 'Elevate Apparel',
+    collection: 'kids',
+    color: 'Sky Blue',
+    colors: [
+      { name: 'Sky Blue', hex: '#9cc7e8' },
+      { name: 'White', hex: '#f7f7f7' },
+    ],
+    sizes: ['4Y', '6Y', '8Y', '10Y', '12Y'],
+    image: '/images/home/kids-1.webp',
+    images: ['/images/home/kids-1.webp', '/images/home/kids-2.webp'],
+    description: 'Soft breathable cotton tee for all-day play and school-ready comfort.',
+    variants: variantsFor(
+      'p13',
+      ['4Y', '6Y', '8Y', '10Y', '12Y'],
+      [
+        { name: 'Sky Blue', hex: '#9cc7e8' },
+        { name: 'White', hex: '#f7f7f7' },
+      ],
+      14,
+    ),
+    inStock: true,
+    rating: 4.5,
+    reviewCount: 12,
+    reviews: [],
+    isNew: true,
+    onSale: true,
+  },
+  {
+    id: 'p14',
+    name: 'Kids Everyday Hoodie',
+    slug: 'kids-everyday-hoodie',
+    price: 1290,
+    category: 'Hoodies',
+    subcategory: 'Kids Layers',
+    brand: 'Elevate Apparel',
+    collection: 'kids',
+    color: 'Navy',
+    colors: [
+      { name: 'Navy', hex: '#223150' },
+      { name: 'Grey', hex: '#a0a6b1' },
+    ],
+    sizes: ['4Y', '6Y', '8Y', '10Y', '12Y'],
+    image: '/images/home/kids-2.webp',
+    images: ['/images/home/kids-2.webp', '/images/home/kids-3.webp'],
+    description: 'Warm brushed-fleece hoodie made for active days and easy layering.',
+    variants: variantsFor(
+      'p14',
+      ['4Y', '6Y', '8Y', '10Y', '12Y'],
+      [
+        { name: 'Navy', hex: '#223150' },
+        { name: 'Grey', hex: '#a0a6b1' },
+      ],
+      10,
+    ),
+    inStock: true,
+    rating: 4.7,
+    reviewCount: 9,
+    reviews: [],
+    isNew: true,
+  },
+  {
+    id: 'p15',
+    name: 'Kids Flex Jogger',
+    slug: 'kids-flex-jogger',
+    price: 1090,
+    compareAtPrice: 1390,
+    category: 'Bottoms',
+    subcategory: 'Kids Joggers',
+    brand: 'Elevate Apparel',
+    collection: 'kids',
+    color: 'Charcoal',
+    colors: [
+      { name: 'Charcoal', hex: '#4a4a4a' },
+      { name: 'Olive', hex: '#5d624d' },
+    ],
+    sizes: ['4Y', '6Y', '8Y', '10Y', '12Y'],
+    image: '/images/home/kids-3.webp',
+    images: ['/images/home/kids-3.webp', '/images/home/kids-1.webp'],
+    description: 'Stretch-friendly jogger with soft waistband and cuffed hems for movement.',
+    variants: variantsFor(
+      'p15',
+      ['4Y', '6Y', '8Y', '10Y', '12Y'],
+      [
+        { name: 'Charcoal', hex: '#4a4a4a' },
+        { name: 'Olive', hex: '#5d624d' },
+      ],
+      11,
+    ),
+    inStock: true,
+    rating: 4.6,
+    reviewCount: 7,
+    reviews: [],
+    onSale: true,
+  },
 ];
 
 export function getAllProducts(): CatalogProduct[] {
   return catalogProducts;
 }
 
-export function getProductsByCollection(collection: 'men' | 'women'): CatalogProduct[] {
+export function getProductsByCollection(collection: 'men' | 'women' | 'kids'): CatalogProduct[] {
   return catalogProducts.filter((p) => p.collection === collection || p.collection === 'unisex');
 }
 

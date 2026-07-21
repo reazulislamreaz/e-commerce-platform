@@ -1,4 +1,4 @@
-export type ProductCollection = 'men' | 'women' | 'unisex';
+export type ProductCollection = 'men' | 'women' | 'kids' | 'unisex';
 
 export interface ProductColorOption {
   name: string;
@@ -69,15 +69,12 @@ export interface ProductFilters {
 }
 
 export type ProductSort =
-  | 'featured'
-  | 'newest'
-  | 'price-asc'
-  | 'price-desc'
-  | 'rating'
-  | 'discount';
+  'featured' | 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'discount';
 
 /** Normalize optional catalog fields for filtering / PDP. */
-export function normalizeProduct(product: CatalogProduct): Required<
+export function normalizeProduct(
+  product: CatalogProduct,
+): Required<
   Pick<
     CatalogProduct,
     | 'subcategory'

@@ -3,6 +3,7 @@ export const MAIN_NAV = [
   ['SHOP', '/shop'],
   ['MEN', '/category/men'],
   ['WOMEN', '/category/women'],
+  ['KIDS', '/category/kids'],
   ['NEW ARRIVALS', '/new-arrivals'],
   ['SALE', '/sale'],
   ['ABOUT US', '/about'],
