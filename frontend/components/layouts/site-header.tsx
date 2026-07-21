@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Heart,
@@ -24,6 +23,7 @@ import { isActiveNav, MAIN_NAV } from '@/components/layouts/site-nav';
 import { PrefetchNavLink } from '@/components/layouts/prefetch-nav-link';
 import { MobileHeaderBar } from '@/components/layouts/mobile-header-bar';
 import { MobileNavDrawer } from '@/components/layouts/mobile-nav-drawer';
+import { BrandLogo } from '@/components/shared/brand-logo';
 import { cn } from '@/lib/utils';
 
 const SearchDialog = dynamic(
@@ -132,14 +132,7 @@ export function SiteHeader() {
       {/* Desktop header */}
       <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#E5E7EB] px-4 sm:px-7 lg:flex">
         <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">
-          <Image
-            src="/images/brand/elevate-apparel-logo.webp"
-            alt="Elevate Apparel"
-            width={1248}
-            height={179}
-            priority
-            className="h-7 w-auto object-contain sm:h-[37px]"
-          />
+          <BrandLogo on="light" priority heightClassName="h-7 sm:h-[37px]" />
         </Link>
         <nav aria-label="Main navigation" className="mx-auto flex items-center gap-[27px]">
           {MAIN_NAV.map(([name, href]) => {
@@ -209,14 +202,7 @@ export function SiteHeader() {
       {/* Tablet header */}
       <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#E5E7EB] px-4 sm:px-7 md:flex lg:hidden">
         <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">
-          <Image
-            src="/images/brand/elevate-apparel-logo.webp"
-            alt="Elevate Apparel"
-            width={1248}
-            height={179}
-            priority
-            className="h-7 w-auto object-contain sm:h-[37px]"
-          />
+          <BrandLogo on="light" priority heightClassName="h-7 sm:h-[37px]" />
         </Link>
         <div className="ml-auto flex items-center gap-3 pl-3 sm:gap-5 sm:pl-5">
           <button

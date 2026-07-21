@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, BadgeCheck, Sparkles, Truck } from 'lucide-react';
+import { BrandLogo } from '@/components/shared/brand-logo';
 
 function ArtPanel() {
   return (
@@ -70,14 +71,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               BACK
             </Link>
             <Link href="/" aria-label="Elevate Apparel home">
-              <Image
-                src="/images/brand/elevate-apparel-logo.webp"
-                alt="Elevate Apparel"
-                width={1248}
-                height={179}
-                quality={90}
-                className="h-6 w-auto object-contain"
-              />
+              <BrandLogo on="light" heightClassName="h-6" />
             </Link>
           </div>
           <div className="flex flex-1 flex-col justify-center py-8">{children}</div>

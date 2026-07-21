@@ -326,6 +326,22 @@ Do **not** introduce additional primary colors. Do **not** revive the old dark p
 
 Helpers: import `DS`, `btnPrimary`, `btnSecondary`, `cardShell` from `frontend/lib/design-system.ts`.
 
+## Logo (mandatory)
+
+Use the shared `BrandLogo` component (`frontend/components/shared/brand-logo.tsx`) everywhere — do not inline ad-hoc logo images or gold “E” boxes.
+
+| Variant prop     | Asset                                | Use on                                         |
+| ---------------- | ------------------------------------ | ---------------------------------------------- |
+| `on="light"`     | transparent dark ink + gold wordmark | Navbar, auth, admin, light pages               |
+| `on="dark"`      | transparent white + gold wordmark    | Footer, dark heroes/banners, dark email chrome |
+| `variant="mark"` | transparent monogram only            | Compact chrome (e.g. collapsed admin sidebar)  |
+
+Rules:
+
+- Transparent background only — never place the logo inside a fixed black/white rectangle
+- Keep proportions via `object-contain` + height utilities (`h-6` / `h-7` / `h-8`); never stretch
+- One branding system — do not invent alternate logo styles
+
 ## Buttons (mandatory)
 
 **Primary**

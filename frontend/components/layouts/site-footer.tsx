@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { Facebook, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide-react';
+import { BrandLogo } from '@/components/shared/brand-logo';
 
 const columns = [
   [
@@ -40,13 +40,7 @@ export function SiteFooter() {
     <footer className="border-t border-[#2d2a27] bg-[#090909] text-white">
       <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-5 py-8 text-xs sm:grid-cols-2 sm:px-7 lg:grid-cols-[1.5fr_.85fr_1.2fr_1fr_1.15fr] lg:gap-6 lg:py-9">
         <div className="flex flex-col">
-          <Image
-            src="/images/brand/elevate-apparel-logo.webp"
-            alt="Elevate Apparel"
-            width={1248}
-            height={179}
-            className="h-8 w-auto self-start object-contain"
-          />
+          <BrandLogo on="dark" heightClassName="h-8 self-start" />
           <p className="mt-3 leading-5 text-[#eeeae4]">
             Elevate your style.
             <br />

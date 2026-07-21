@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Heart, Menu, Search } from 'lucide-react';
+import { BrandLogo } from '@/components/shared/brand-logo';
 import { cn } from '@/lib/utils';
 
 type MobileHeaderBarProps = {
@@ -46,14 +46,7 @@ export function MobileHeaderBar({
         aria-label="Elevate Apparel home"
         className="absolute left-1/2 top-1/2 max-w-[140px] -translate-x-1/2 -translate-y-1/2 sm:max-w-[160px]"
       >
-        <Image
-          src="/images/brand/elevate-apparel-logo.webp"
-          alt="Elevate Apparel"
-          width={1248}
-          height={179}
-          priority
-          className="h-7 w-auto max-w-full object-contain"
-        />
+        <BrandLogo on="light" priority heightClassName="h-7" />
       </Link>
 
       <div className="ml-auto flex shrink-0 items-center">

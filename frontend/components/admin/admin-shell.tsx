@@ -27,6 +27,7 @@ import { useAdminQueues } from '@/features/admin';
 import { adminNavGroups } from '@/components/admin/admin-nav';
 import { AdminQuickSearch } from '@/components/admin/admin-quick-search';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
+import { BrandLogo } from '@/components/shared/brand-logo';
 import { cn } from '@/lib/utils';
 import type { AuthUser, Role } from '@/types/auth';
 
@@ -374,26 +375,25 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
     .join(' ');
 
   const brand = (
-    <div
+    <Link
+      href="/admin"
       className={cn(
-        'flex h-14 shrink-0 items-center gap-2 border-b border-[#E5E7EB] px-4',
+        'flex h-14 shrink-0 items-center gap-2.5 border-b border-[#E5E7EB] px-4 transition-colors hover:bg-[#FAFAFA]',
         collapsed && 'justify-center px-0',
       )}
+      aria-label="Elevate Apparel admin home"
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#C9A227] text-[12px] font-extrabold text-[#111111]">
-        E
-      </span>
-      {!collapsed ? (
-        <div className="min-w-0 leading-tight">
-          <p className="truncate text-[12px] font-extrabold tracking-[-.01em] text-[#111111]">
-            Elevate Apparel
-          </p>
-          <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
+      {collapsed ? (
+        <BrandLogo on="light" variant="mark" heightClassName="h-7 w-7" />
+      ) : (
+        <div className="min-w-0">
+          <BrandLogo on="light" heightClassName="h-6" />
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
             Admin Console
           </p>
         </div>
-      ) : null}
-    </div>
+      )}
+    </Link>
   );
 
   return (
@@ -451,11 +451,9 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
             className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-[#E5E7EB] bg-[#FFFFFF] shadow-2xl"
           >
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4">
-              <div className="flex items-center gap-2">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-[#C9A227] text-[12px] font-extrabold text-[#111111]">
-                  E
-                </span>
-                <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
+              <div className="min-w-0">
+                <BrandLogo on="light" heightClassName="h-6" />
+                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
                   Admin Console
                 </p>
               </div>
@@ -635,15 +633,10 @@ export function AdminShell({ children }: PropsWithChildren) {
     return (
       <div className="flex min-h-screen bg-[#FAFAFA]">
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[#E5E7EB] bg-[#FFFFFF] lg:flex">
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-[#E5E7EB] px-4">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#C9A227] text-[12px] font-extrabold text-[#111111]">
-              E
-            </span>
-            <div className="min-w-0 leading-tight">
-              <p className="truncate text-[12px] font-extrabold tracking-[-.01em] text-[#111111]">
-                Elevate Apparel
-              </p>
-              <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
+          <div className="flex h-14 shrink-0 items-center border-b border-[#E5E7EB] px-4">
+            <div className="min-w-0">
+              <BrandLogo on="light" heightClassName="h-6" />
+              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
                 Admin Console
               </p>
             </div>

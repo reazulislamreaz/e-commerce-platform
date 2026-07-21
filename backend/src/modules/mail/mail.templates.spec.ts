@@ -110,7 +110,8 @@ describe('transactional email templates', () => {
     ],
   ])('renders %s through email-shell without raw HTML injection', (_label, render) => {
     const rendered = render();
-    expect(rendered.html).toContain('ELEVATE APPAREL');
+    expect(rendered.html).toContain('alt="Elevate Apparel"');
+    expect(rendered.html).toContain('elevate-apparel-logo-on-dark.png');
     expect(rendered.html).not.toContain('<x>');
     expect(rendered.html).toContain(escapeHtml('<x>'));
   });

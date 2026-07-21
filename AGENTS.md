@@ -82,6 +82,7 @@ Quick reference:
 - **Navbar:** sticky `#FAFAFA`, soft shadow, gold active/hover
 - **Footer (storefront only):** stays dark — black bg, white text, gold headings (approved exception)
 - **Tokens:** `frontend/app/globals.css`, `frontend/lib/design-system.ts` (`DS`, `btnPrimary`, `btnSecondary`, `cardShell`)
+- **Logo:** `BrandLogo` (`on="light"` | `on="dark"`, optional `variant="mark"`) — transparent only; never in a fixed black/white box
 - **Layout:** max width `1400px`; sharp small radii (`rounded-[4px]`); uppercase compact CTAs
 
 Do not invent new palettes, font stacks, or dark-default themes. Do not revive old dark hex values (`#0a0a0b`, `#e3bb78`, etc.). Match homepage, auth, header, and admin-shell patterns.

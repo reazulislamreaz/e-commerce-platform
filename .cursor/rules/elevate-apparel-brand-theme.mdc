@@ -39,6 +39,7 @@ Do **not** use the old dark palette (`#0a0a0b`, `#111110`, `#1a1815`, `#e3bb78`,
 
 - Navbar: sticky `#FAFAFA`, soft shadow, text/icons `#111111`, active/hover gold
 - Footer (storefront only): stays **dark** — black bg, white text, gold headings
+- Logo: use `BrandLogo` only — `on="light"` on light chrome, `on="dark"` on footer/dark sections; never inside a fixed black/white box
 
 ## UI patterns
 
