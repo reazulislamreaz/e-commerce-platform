@@ -23,6 +23,7 @@ function createPrismaMock() {
     user: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       update: jest.fn(),
     } satisfies MockedModel,
     authSession: {
@@ -88,6 +89,7 @@ describe('AuthService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     prisma = createPrismaMock();
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -113,6 +115,7 @@ describe('AuthService', () => {
 
   describe('register', () => {
     it('creates a PENDING_VERIFICATION user with a normalized E.164 phone and sends the link', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
       prisma.user.create.mockResolvedValue({ ...baseUser, id: 'new-user' });
       prisma.verificationToken.create.mockResolvedValue({ id: 'vt-1' });
 
@@ -133,28 +136,91 @@ describe('AuthService', () => {
       expect(email.verifyUrl).not.toContain(tokenArgs.data.tokenHash);
     });
 
-    it('maps a duplicate email to a clear 409', async () => {
-      prisma.user.create.mockRejectedValue(
-        new Prisma.PrismaClientKnownRequestError('unique', {
-          code: 'P2002',
-          clientVersion: 'test',
-          meta: { target: ['email'] },
-        }),
+    it('re-sends verification when the email is pending and does not change the password', async () => {
+      prisma.user.findUnique.mockImplementation(
+        ({ where }: { where: { email?: string; phone?: string } }) => {
+          if (where.email) {
+            return Promise.resolve({
+              id: 'pending-1',
+              status: UserStatus.PENDING_VERIFICATION,
+              deletedAt: null,
+            });
+          }
+          return Promise.resolve(null);
+        },
       );
-      await expect(service.register(registerInput)).rejects.toThrow('Email is already registered');
+      prisma.user.findUniqueOrThrow.mockResolvedValue({
+        ...baseUser,
+        id: 'pending-1',
+        email: registerInput.email,
+        status: UserStatus.PENDING_VERIFICATION,
+      });
+      prisma.verificationToken.create.mockResolvedValue({ id: 'vt-2' });
+
+      const result = await service.register(registerInput);
+
+      expect(result.id).toBe('pending-1');
+      expect(prisma.user.create).not.toHaveBeenCalled();
+      expect(argon2.hash).not.toHaveBeenCalled();
+      expect(mail.sendEmailVerification).toHaveBeenCalled();
+    });
+
+    it('maps a duplicate active email to a clear 409', async () => {
+      prisma.user.findUnique.mockImplementation(
+        ({ where }: { where: { email?: string; phone?: string } }) => {
+          if (where.email) {
+            return Promise.resolve({
+              id: 'existing',
+              status: UserStatus.ACTIVE,
+              deletedAt: null,
+            });
+          }
+          return Promise.resolve(null);
+        },
+      );
+      await expect(service.register(registerInput)).rejects.toThrow(
+        'An account with this email already exists. Please sign in or reset your password.',
+      );
+      expect(prisma.user.create).not.toHaveBeenCalled();
     });
 
     it('maps a duplicate phone to a clear 409', async () => {
+      prisma.user.findUnique.mockImplementation(
+        ({ where }: { where: { email?: string; phone?: string } }) => {
+          if (where.phone) {
+            return Promise.resolve({
+              id: 'existing',
+              email: 'other@example.com',
+              deletedAt: null,
+            });
+          }
+          return Promise.resolve(null);
+        },
+      );
+      await expect(service.register(registerInput)).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.register(registerInput)).rejects.toThrow(
+        'This mobile number is already registered. Please sign in or use a different number.',
+      );
+    });
+
+    it('maps a raced P2002 phone conflict using adapter meta shapes', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
       prisma.user.create.mockRejectedValue(
         new Prisma.PrismaClientKnownRequestError('unique', {
           code: 'P2002',
           clientVersion: 'test',
-          meta: { target: ['phone'] },
+          meta: {
+            driverAdapterError: {
+              cause: {
+                originalMessage: 'duplicate key value violates unique constraint "User_phone_key"',
+                constraint: { index: 'User_phone_key' },
+              },
+            },
+          },
         }),
       );
-      await expect(service.register(registerInput)).rejects.toBeInstanceOf(ConflictException);
       await expect(service.register(registerInput)).rejects.toThrow(
-        'Phone number is already registered',
+        'This mobile number is already registered. Please sign in or use a different number.',
       );
     });
   });
@@ -387,9 +453,9 @@ describe('AuthService', () => {
         ...resetToken,
         type: VerificationTokenType.EMAIL_VERIFICATION,
       });
-      await expect(service.resetPassword('wrong-type', 'NewStrongPassw0rd!')).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.resetPassword('wrong-type', 'NewStrongPassw0rd!'),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('rejects tokens of suspended users', async () => {
@@ -428,7 +494,12 @@ describe('AuthService', () => {
       prisma.authSession.updateMany.mockResolvedValue({ count: 1 });
       prisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
 
-      await service.changePassword(baseUser.id, 'session-1', 'CurrentPassw0rd!', 'NewStrongPassw0rd!');
+      await service.changePassword(
+        baseUser.id,
+        'session-1',
+        'CurrentPassw0rd!',
+        'NewStrongPassw0rd!',
+      );
 
       expect(prisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { passwordHash: 'hashed' } }),

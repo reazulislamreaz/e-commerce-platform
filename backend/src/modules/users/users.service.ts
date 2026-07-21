@@ -7,6 +7,7 @@ import {
 import { Prisma, Role, UserStatus } from '@/generated/prisma/client';
 import * as argon2 from 'argon2';
 import { normalizeBdPhone } from '@/common/utils/bd-phone';
+import { uniqueConflictIncludes } from '@/common/utils/prisma-unique-conflict';
 import { AuthService } from '@/modules/auth/auth.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -14,6 +15,11 @@ import type { CreateAdminDto } from './dto/create-admin.dto';
 import type { ListUsersQueryDto } from './dto/list-users.query.dto';
 import type { UpdateMeDto } from './dto/update-me.dto';
 import { canAssignRole, canManage } from './role-policy';
+
+const EMAIL_ALREADY_REGISTERED =
+  'An account with this email already exists. Please sign in or reset your password.';
+const PHONE_ALREADY_REGISTERED =
+  'This mobile number is already registered. Please sign in or use a different number.';
 
 const userSelect = {
   id: true,
@@ -55,11 +61,10 @@ export class UsersService {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        const target = (error.meta?.target as string[] | undefined) ?? [];
         throw new ConflictException(
-          target.includes('phone')
-            ? 'Phone number is already registered'
-            : 'Email is already registered',
+          uniqueConflictIncludes(error, 'phone')
+            ? PHONE_ALREADY_REGISTERED
+            : EMAIL_ALREADY_REGISTERED,
         );
       }
       throw error;
@@ -88,7 +93,7 @@ export class UsersService {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')
-        throw new ConflictException('Phone number is already registered');
+        throw new ConflictException(PHONE_ALREADY_REGISTERED);
       throw error;
     }
   }
@@ -164,7 +169,7 @@ export class UsersService {
     return updated;
   }
 
-  /** Soft delete. The email is anonymized so the address can register again. */
+  /** Soft delete. Email and phone are anonymized so both can register again. */
   async softDelete(actor: JwtPayload, id: string): Promise<void> {
     const target = await this.assertManageable(actor, id);
     await this.prisma.user.update({
@@ -173,6 +178,7 @@ export class UsersService {
         deletedAt: new Date(),
         status: UserStatus.SUSPENDED,
         email: `deleted+${target.id}@deleted.invalid`,
+        phone: `deleted+${target.id}`,
       },
     });
     await this.auth.revokeAllUserSessions(target.id);

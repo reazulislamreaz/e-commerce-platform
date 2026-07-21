@@ -3,12 +3,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
 import { MailCheck } from 'lucide-react';
 import { FormField } from '@/components/common/form-field';
 import { GoogleLoginButton } from '@/features/auth/components/google-login-button';
 import { useRegister, useResendVerification } from '@/features/auth/hooks';
 import { registerSchema, type RegisterInput } from '@/features/auth/schemas';
+import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
 
 function CheckInbox({ email }: { email: string }) {
   const resend = useResendVerification();
@@ -59,18 +59,22 @@ export function RegisterForm() {
   } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
 
   const onSubmit = handleSubmit(async (input) => {
-    await registerMutation.mutateAsync(input);
-    setSubmittedEmail(input.email);
+    try {
+      await registerMutation.mutateAsync(input);
+      setSubmittedEmail(input.email);
+    } catch {
+      // Inline alert below shows a user-facing message.
+    }
   });
 
   if (submittedEmail) return <CheckInbox email={submittedEmail} />;
 
   const serverError =
     registerMutation.isError &&
-    (axios.isAxiosError<{ message?: string }>(registerMutation.error) &&
-    registerMutation.error.response?.status === 409
-      ? (registerMutation.error.response.data.message ?? 'This account is already registered.')
-      : 'Something went wrong. Please try again.');
+    getUserFacingErrorMessage(
+      registerMutation.error,
+      'Could not create your account. Please check your details and try again.',
+    );
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">

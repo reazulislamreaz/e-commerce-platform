@@ -2,10 +2,10 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
 import { useUpdateProfile } from '@/features/auth/hooks';
 import { profileSchema, type ProfileInput } from '@/features/auth/schemas';
+import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
 import { useAppSelector } from '@/store/hooks';
 
 export default function ProfilePage() {
@@ -38,10 +38,10 @@ export default function ProfilePage() {
 
   const serverError =
     updateProfile.isError &&
-    (axios.isAxiosError<{ message?: string }>(updateProfile.error) &&
-    updateProfile.error.response?.status === 409
-      ? (updateProfile.error.response.data.message ?? 'Phone number is already registered.')
-      : 'Something went wrong. Please try again.');
+    getUserFacingErrorMessage(
+      updateProfile.error,
+      'Could not update your profile. Please try again.',
+    );
 
   return (
     <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">

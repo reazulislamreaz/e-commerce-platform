@@ -59,9 +59,6 @@ export function useLogin() {
       await mergeGuestCommerceState(dispatch);
       toast.success('Signed in successfully.', { dedupeKey: 'auth:login' });
     },
-    onError: (error) => {
-      toastErrorFrom(error, 'Could not sign in. Please try again.', 'auth:login-error');
-    },
   });
 }
 
@@ -70,9 +67,6 @@ export function useRegister() {
     mutationFn: register,
     onSuccess: () => {
       toast.success('Account created. Check your email to verify.', { dedupeKey: 'auth:register' });
-    },
-    onError: (error) => {
-      toastErrorFrom(error, 'Could not create account. Please try again.', 'auth:register-error');
     },
   });
 }

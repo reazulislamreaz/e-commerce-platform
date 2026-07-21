@@ -178,7 +178,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Missing, expired, or reused refresh token' })
   async refresh(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const token = request.cookies?.[REFRESH_COOKIE] as string | undefined;
-    if (!token) throw new UnauthorizedException('Refresh token is required');
+    if (!token) throw new UnauthorizedException('Your session expired. Please sign in again.');
     const result = await this.auth.refresh(token);
     this.setRefreshCookie(response, result.refreshToken, result.rememberMe);
     return { accessToken: result.accessToken };
