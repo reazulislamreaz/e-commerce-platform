@@ -2,10 +2,10 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
 import { useChangePassword } from '@/features/auth/hooks';
 import { changePasswordSchema, type ChangePasswordInput } from '@/features/auth/schemas';
+import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
 
 export default function ChangePasswordPage() {
   const changePassword = useChangePassword();
@@ -25,10 +25,7 @@ export default function ChangePasswordPage() {
 
   const serverError =
     changePassword.isError &&
-    (axios.isAxiosError<{ message?: string }>(changePassword.error) &&
-    changePassword.error.response?.status === 400
-      ? (changePassword.error.response.data.message ?? 'Current password is incorrect.')
-      : 'Something went wrong. Please try again.');
+    getUserFacingErrorMessage(changePassword.error, USER_FACING_ERRORS.GENERIC);
 
   return (
     <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">

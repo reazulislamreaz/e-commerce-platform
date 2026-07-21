@@ -5,10 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
 import { useResetPassword } from '@/features/auth/hooks';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/features/auth/schemas';
+import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
 
 function ResetPasswordForm() {
   const token = useSearchParams().get('token');
@@ -26,8 +26,7 @@ function ResetPasswordForm() {
           role="alert"
           className="rounded-[4px] border border-red-900/60 bg-red-950/50 px-3.5 py-3 text-sm text-red-300"
         >
-          This reset link is missing its token. Open the link from your email, or request a new
-          one.
+          This reset link is incomplete. Open the link from your email, or request a new one.
         </p>
         <Link
           href="/forgot-password"
@@ -43,8 +42,8 @@ function ResetPasswordForm() {
     return (
       <div className="mt-6 space-y-4">
         <p className="rounded-[4px] border border-[#2d4a2d] bg-[#102010] px-3.5 py-3 text-sm text-[#8fbf8f]">
-          Your password has been updated and all sessions were signed out. You can now sign in
-          with your new password.
+          Your password has been updated and all sessions were signed out. You can now sign in with
+          your new password.
         </p>
         <Link
           href="/login"
@@ -58,10 +57,7 @@ function ResetPasswordForm() {
 
   const serverError =
     resetPassword.isError &&
-    (axios.isAxiosError<{ message?: string }>(resetPassword.error) &&
-    resetPassword.error.response?.status === 400
-      ? (resetPassword.error.response.data.message ?? 'Reset link is invalid or has expired.')
-      : 'Something went wrong. Please try again.');
+    getUserFacingErrorMessage(resetPassword.error, USER_FACING_ERRORS.GENERIC);
 
   const onSubmit = handleSubmit(async (input) => {
     await resetPassword.mutateAsync({ token, password: input.password }).catch(() => undefined);

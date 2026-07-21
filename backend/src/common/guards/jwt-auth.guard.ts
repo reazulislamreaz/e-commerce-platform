@@ -1,6 +1,7 @@
-import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, HttpException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
+import { USER_FACING } from '../messages/user-facing-errors';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
@@ -31,7 +32,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getClass(),
     ]);
     if (isPublic) return (user ?? undefined) as TUser;
-    if (err || !user) throw err ?? new UnauthorizedException();
+    if (err instanceof HttpException) throw err;
+    if (err || !user) throw new UnauthorizedException(USER_FACING.PLEASE_LOG_IN);
     return user;
   }
 }

@@ -1,11 +1,11 @@
 'use client';
 
-import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { FormField } from '@/components/common/form-field';
 import { useCreateReview, useUpdateReview, type AccountReview } from '@/features/account';
+import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
 
 const reviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
@@ -57,9 +57,10 @@ export function ReviewForm({
 
   const errorMessage =
     mutation.error &&
-    (axios.isAxiosError<{ message?: string }>(mutation.error)
-      ? (mutation.error.response?.data.message ?? 'Could not save your review.')
-      : 'Could not save your review.');
+    getUserFacingErrorMessage(
+      mutation.error,
+      "We couldn't save your review right now. Please try again in a moment.",
+    );
 
   return (
     <form

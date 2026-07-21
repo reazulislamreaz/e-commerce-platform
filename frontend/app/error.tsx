@@ -16,7 +16,7 @@ export default function Error({
       <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">Error</p>
       <h1 className="mt-2 text-2xl font-extrabold text-white">Page unavailable</h1>
       <p className="mt-3 max-w-md text-sm text-[#b5b0a8]">
-        Something went wrong loading this page.
+        We couldn&apos;t load this page right now. Please try again in a moment.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <button

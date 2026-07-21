@@ -197,7 +197,10 @@ export const localAccountRepository: LocalAccountRepository = {
   async validateCoupon(code, subtotal) {
     const result = applyCoupon(code, subtotal, getCoupons(''));
     if (result.error || !result.coupon) {
-      throw new Error(result.error ?? 'Invalid coupon');
+      throw new Error(
+        result.error ??
+          'This coupon code is invalid or has expired. Please check the code and try again.',
+      );
     }
     return {
       code: result.coupon.code,

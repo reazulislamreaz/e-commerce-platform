@@ -1,9 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@/generated/prisma/client';
+import { USER_FACING } from '@/common/messages/user-facing-errors';
 import { poishaToTaka } from '@/common/utils/money';
 import { generateOpaqueToken, sha256Hex } from '@/common/utils/hash';
 import { InventoryService } from '@/modules/inventory/inventory.service';
@@ -42,7 +39,7 @@ export class CartService {
   ): Promise<{ cart: CartResponseDto; guestCookie?: GuestCartCookieResult }> {
     const variant = await this.requireActiveVariant(dto.variantId);
     const stock = await this.stockForVariant(variant.id);
-    if (stock <= 0) throw new BadRequestException('Variant is out of stock');
+    if (stock <= 0) throw new BadRequestException(USER_FACING.OUT_OF_STOCK);
 
     const { cart: record, guestCookie } = await this.resolveOrCreateCartForWrite(user, guestToken);
     const existing = record.items.find((item) => item.variantId === dto.variantId);
@@ -69,7 +66,10 @@ export class CartService {
     quantity: number,
   ): Promise<{ cart: CartResponseDto; guestCookie?: GuestCartCookieResult }> {
     if (quantity === 0) {
-      const { cart: record, guestCookie } = await this.resolveExistingCartForWrite(user, guestToken);
+      const { cart: record, guestCookie } = await this.resolveExistingCartForWrite(
+        user,
+        guestToken,
+      );
       if (!record) return { cart: this.emptyCart(), guestCookie };
 
       const existing = record.items.find((item) => item.variantId === variantId);
@@ -83,7 +83,7 @@ export class CartService {
 
     const variant = await this.requireActiveVariant(variantId);
     const stock = await this.stockForVariant(variant.id);
-    if (stock <= 0) throw new BadRequestException('Variant is out of stock');
+    if (stock <= 0) throw new BadRequestException(USER_FACING.OUT_OF_STOCK);
 
     const { cart: record, guestCookie } = await this.resolveOrCreateCartForWrite(user, guestToken);
     const capped = this.capQuantity(quantity, stock);
@@ -155,7 +155,7 @@ export class CartService {
     const actor = userId ? ({ sub: userId } as JwtPayload) : undefined;
     const record = await this.resolveCartForRead(actor, guestToken);
     if (!record || record.items.length === 0) {
-      throw new BadRequestException('Cart is empty');
+      throw new BadRequestException(USER_FACING.CART_EMPTY);
     }
 
     return record.items.map((item) => ({
@@ -209,7 +209,11 @@ export class CartService {
     for (const guestItem of guestCart.items) {
       const available = stockMap.get(guestItem.variantId) ?? 0;
       const userItem = userCart.items.find((item) => item.variantId === guestItem.variantId);
-      const merged = this.mergeLineQuantities(userItem?.quantity ?? 0, guestItem.quantity, available);
+      const merged = this.mergeLineQuantities(
+        userItem?.quantity ?? 0,
+        guestItem.quantity,
+        available,
+      );
 
       if (merged <= 0) {
         if (userItem) await this.cart.deleteItem(userCart.id, guestItem.variantId);

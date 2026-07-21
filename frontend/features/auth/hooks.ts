@@ -78,7 +78,11 @@ export function useVerifyEmail() {
       toast.success('Email verified. You can sign in now.', { dedupeKey: 'auth:verify' });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not verify email. Please try again.', 'auth:verify-error');
+      toastErrorFrom(
+        error,
+        "We couldn't verify your email right now. Please try again in a moment.",
+        'auth:verify-error',
+      );
     },
   });
 }
@@ -92,7 +96,7 @@ export function useResendVerification() {
     onError: (error) => {
       toastErrorFrom(
         error,
-        'Could not resend verification email. Please try again.',
+        "We couldn't resend the verification email. Please try again in a moment.",
         'auth:resend-error',
       );
     },
@@ -107,7 +111,11 @@ export function useLogout() {
       toast.info('Signed out.', { dedupeKey: 'auth:logout' });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not sign out. Please try again.', 'auth:logout-error');
+      toastErrorFrom(
+        error,
+        "We couldn't sign you out right now. Please try again.",
+        'auth:logout-error',
+      );
     },
     onSettled: () => dispatch(signedOut()),
   });
@@ -120,7 +128,11 @@ export function useForgotPassword() {
       toast.success('Password reset link sent. Check your email.', { dedupeKey: 'auth:forgot' });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not send reset link. Please try again.', 'auth:forgot-error');
+      toastErrorFrom(
+        error,
+        "We couldn't send a reset link right now. Please try again in a moment.",
+        'auth:forgot-error',
+      );
     },
   });
 }
@@ -132,7 +144,11 @@ export function useResetPassword() {
       toast.success('Password updated. You can sign in now.', { dedupeKey: 'auth:reset' });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not reset password. Please try again.', 'auth:reset-error');
+      toastErrorFrom(
+        error,
+        "We couldn't reset your password right now. Please try again in a moment.",
+        'auth:reset-error',
+      );
     },
   });
 }
@@ -146,7 +162,11 @@ export function useChangePassword() {
       });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not update password. Please try again.', 'auth:password-error');
+      toastErrorFrom(
+        error,
+        "We couldn't update your password right now. Please try again in a moment.",
+        'auth:password-error',
+      );
     },
   });
 }
@@ -166,7 +186,11 @@ export function useUpdateProfile() {
       toast.success('Profile updated.', { dedupeKey: 'auth:profile' });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not update profile. Please try again.', 'auth:profile-error');
+      toastErrorFrom(
+        error,
+        "We couldn't update your profile right now. Please try again in a moment.",
+        'auth:profile-error',
+      );
     },
   });
 }

@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
@@ -18,6 +17,7 @@ import {
   AdminTh,
   StatusPill,
 } from '@/components/admin/admin-ui';
+import { mutationErrorMessage } from '@/features/admin';
 import { marketingApi } from '@/features/marketing/api';
 import type {
   BannerPlacement,
@@ -29,14 +29,6 @@ import type {
 const bannerKeys = {
   all: ['admin', 'banners'] as const,
 };
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 function toDatetimeLocalValue(iso?: string | null): string {
   if (!iso) return '';
@@ -92,8 +84,7 @@ export default function AdminBannersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: bannerKeys.all }),
   });
 
-  const busy =
-    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+  const busy = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
   const banners = bannersQuery.data ?? [];
   const isEditing = editingId !== null;
 
@@ -162,7 +153,10 @@ export default function AdminBannersPage() {
       }
     } catch (error) {
       setActionError(
-        mutationErrorMessage(error, isEditing ? 'Could not update banner.' : 'Could not create banner.'),
+        mutationErrorMessage(
+          error,
+          isEditing ? 'Could not update banner.' : 'Could not create banner.',
+        ),
       );
     }
   }
@@ -181,10 +175,7 @@ export default function AdminBannersPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Banners"
-        description="Manage storefront hero and promo placements."
-      />
+      <AdminPageHeader title="Banners" description="Manage storefront hero and promo placements." />
 
       <AdminPanel title="All banners" description="Active, scheduled, and draft creatives.">
         {bannersQuery.isError ? <AdminError>Could not load banners.</AdminError> : null}
@@ -229,9 +220,7 @@ export default function AdminBannersPage() {
                   </AdminTd>
                   <AdminTd>
                     <span className="text-xs text-[#b5b0a8]">
-                      {banner.startsAt
-                        ? new Date(banner.startsAt).toLocaleDateString()
-                        : 'Open'}
+                      {banner.startsAt ? new Date(banner.startsAt).toLocaleDateString() : 'Open'}
                       {banner.endsAt
                         ? ` – ${new Date(banner.endsAt).toLocaleDateString()}`
                         : ' – open'}
@@ -319,7 +308,9 @@ export default function AdminBannersPage() {
             </span>
             <AdminInput
               value={form.title}
-              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, title: event.target.value }))
+              }
               disabled={busy}
             />
           </label>

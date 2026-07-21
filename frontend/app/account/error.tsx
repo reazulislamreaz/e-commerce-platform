@@ -13,12 +13,10 @@ export default function Error({
       id="main-content"
       className="flex flex-1 flex-col items-center justify-center bg-black px-5 py-20 text-center"
     >
-      <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
-        Account
-      </p>
+      <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">Account</p>
       <h1 className="mt-2 text-2xl font-extrabold text-white">Account unavailable</h1>
       <p className="mt-3 max-w-md text-sm text-[#b5b0a8]">
-        Something went wrong loading your account. Try again or return to the shop.
+        We couldn&apos;t load your account right now. Please try again, or return to the shop.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <button

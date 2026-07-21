@@ -179,7 +179,7 @@ export function useMarkAllNotificationsRead(userId: string | undefined) {
     onError: (error) => {
       toastErrorFrom(
         error,
-        'Could not mark notifications as read.',
+        "We couldn't mark your notifications as read. Please try again.",
         'notifications:read-all-error',
       );
     },
@@ -221,7 +221,11 @@ export function useCreateReview(userId: string | undefined) {
       });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not submit review. Please try again.', 'review:create-error');
+      toastErrorFrom(
+        error,
+        "We couldn't submit your review right now. Please try again in a moment.",
+        'review:create-error',
+      );
     },
   });
 }
@@ -243,7 +247,11 @@ export function useUpdateReview(userId: string | undefined) {
       toast.success('Review updated.', { dedupeKey: 'review:update' });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not update review. Please try again.', 'review:update-error');
+      toastErrorFrom(
+        error,
+        "We couldn't update your review right now. Please try again in a moment.",
+        'review:update-error',
+      );
     },
   });
 }
@@ -262,7 +270,11 @@ export function useDeleteReview(userId: string | undefined) {
       toast.success('Review deleted.', { dedupeKey: 'review:delete' });
     },
     onError: (error) => {
-      toastErrorFrom(error, 'Could not delete review. Please try again.', 'review:delete-error');
+      toastErrorFrom(
+        error,
+        "We couldn't delete your review right now. Please try again in a moment.",
+        'review:delete-error',
+      );
     },
   });
 }
@@ -289,7 +301,7 @@ export function useCreateReturnRequest(userId: string | undefined) {
     onError: (error) => {
       toastErrorFrom(
         error,
-        'Could not submit return request. Please try again.',
+        "We couldn't submit your return request right now. Please try again in a moment.",
         'return:create-error',
       );
     },

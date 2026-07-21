@@ -18,7 +18,7 @@ export default function Error({
       </p>
       <h1 className="mt-2 text-2xl font-extrabold text-white">Checkout unavailable</h1>
       <p className="mt-3 max-w-md text-sm text-[#b5b0a8]">
-        Something went wrong loading checkout. Your bag is still saved — try again.
+        We couldn&apos;t load checkout right now. Your bag is still saved — please try again.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <button

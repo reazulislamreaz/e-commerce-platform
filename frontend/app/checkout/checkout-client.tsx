@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
-import { toast, toastErrorFrom } from '@/lib/toast';
+import { toast, toastErrorFrom, toastFromError } from '@/lib/toast';
+import { USER_FACING_ERRORS } from '@/lib/user-facing-error';
 import { FormField } from '@/components/common/form-field';
 import { formatTaka } from '@/lib/currency';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -169,7 +169,7 @@ export function CheckoutClient() {
 
   const applyCode = async () => {
     if (!user) {
-      const message = 'Sign in to use coupons.';
+      const message = 'Please log in to use a coupon code.';
       setCouponError(message);
       toast.warning(message, { dedupeKey: 'checkout:coupon-auth' });
       return;
@@ -184,10 +184,10 @@ export function CheckoutClient() {
       lastCouponSubtotal.current = subtotal;
       toast.success(`Coupon ${result.code} applied.`, { dedupeKey: 'checkout:coupon-apply' });
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? ((error.response?.data as { message?: string } | undefined)?.message ??
-          'Invalid or expired coupon code.')
-        : 'Invalid or expired coupon code.';
+      const message = toastFromError(
+        error,
+        'This coupon code is invalid or has expired. Please check the code and try again.',
+      );
       setCouponError(message);
       setDiscount(0);
       setShippingWaived(false);
@@ -265,10 +265,7 @@ export function CheckoutClient() {
       if (values.email) params.set('email', values.email);
       router.push(`/order-confirmation?${params.toString()}`);
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? ((error.response?.data as { message?: string } | undefined)?.message ??
-          'Could not place your order. Please try again.')
-        : 'Could not place your order. Please try again.';
+      const message = toastFromError(error, USER_FACING_ERRORS.ORDER_FAILED);
       setSubmitError(message);
       toastErrorFrom(error, message, 'checkout:order-error');
     } finally {

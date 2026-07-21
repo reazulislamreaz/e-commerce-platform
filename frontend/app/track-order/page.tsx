@@ -2,9 +2,9 @@
 
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
 import { useTrackedOrder } from '@/features/account';
+import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
 
 function TrackOrderInner() {
   const params = useSearchParams();
@@ -19,10 +19,10 @@ function TrackOrderInner() {
   const loading = trackQuery.isFetching && !trackQuery.data;
   const order = trackQuery.data;
   const error = trackQuery.isError
-    ? axios.isAxiosError(trackQuery.error)
-      ? ((trackQuery.error.response?.data as { message?: string } | undefined)?.message ??
-        'Order not found. Check the number and email used at checkout.')
-      : 'Order not found. Check the number and email used at checkout.'
+    ? getUserFacingErrorMessage(
+        trackQuery.error,
+        "We couldn't find that order. Please check the order number and email used at checkout.",
+      )
     : null;
 
   const onSubmit = (e: React.FormEvent) => {

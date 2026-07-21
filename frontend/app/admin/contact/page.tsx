@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState, type FormEvent } from 'react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
@@ -20,6 +19,7 @@ import {
 import {
   adminApi,
   adminKeys,
+  mutationErrorMessage,
   useAdminContact,
   useAdminMutation,
   type ContactMessage,
@@ -35,14 +35,6 @@ const STATUS_OPTIONS: { value: ContactStatus | ''; label: string }[] = [
 ];
 
 const EDIT_STATUSES: ContactStatus[] = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'SPAM'];
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 function normalizeContactStatus(status: string): ContactStatus {
   const upper = status.toUpperCase() as ContactStatus;
@@ -126,10 +118,7 @@ function ContactListBody({ status }: { status: string }) {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Contact"
-        description="Messages from the storefront contact form."
-      />
+      <AdminPageHeader title="Contact" description="Messages from the storefront contact form." />
       <AdminPanel title="Inbox" description="Filter messages by status.">
         <form onSubmit={applyFilters} className="mb-5 flex flex-wrap items-end gap-3">
           <label className="block min-w-[180px] flex-1 space-y-1.5">
@@ -165,9 +154,7 @@ function ContactListBody({ status }: { status: string }) {
           </p>
         ) : null}
 
-        {showInitialLoading ? (
-          <AdminTableSkeleton />
-        ) : null}
+        {showInitialLoading ? <AdminTableSkeleton /> : null}
 
         {!showInitialLoading && !query.isError && rows.length === 0 ? (
           <AdminEmpty>No contact messages.</AdminEmpty>
@@ -293,9 +280,7 @@ function ContactListInner() {
 
 export default function AdminContactPage() {
   return (
-    <Suspense
-      fallback={<AdminTableSkeleton />}
-    >
+    <Suspense fallback={<AdminTableSkeleton />}>
       <ContactListInner />
     </Suspense>
   );

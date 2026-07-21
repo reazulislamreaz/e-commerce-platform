@@ -16,7 +16,8 @@ export default function Error({
       <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">Shop</p>
       <h1 className="mt-2 text-2xl font-extrabold text-white">Catalog unavailable</h1>
       <p className="mt-3 max-w-md text-sm text-[#b5b0a8]">
-        Something went wrong loading products. You can try again or return home.
+        We couldn&apos;t load products right now. Please try again, or return home and browse from
+        there.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <button

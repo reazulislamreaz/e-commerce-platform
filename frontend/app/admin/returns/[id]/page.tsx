@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -12,17 +11,15 @@ import {
   AdminTextarea,
   StatusPill,
 } from '@/components/admin/admin-ui';
-import { adminApi, adminKeys, useAdminMutation, useAdminReturn } from '@/features/admin';
+import {
+  mutationErrorMessage,
+  adminApi,
+  adminKeys,
+  useAdminMutation,
+  useAdminReturn,
+} from '@/features/admin';
 
 const RETURN_INVALIDATE = [adminKeys.returnsRoot(), adminKeys.returnRoot()] as const;
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 export default function AdminReturnDetailPage() {
   const { id } = useParams<{ id: string }>();

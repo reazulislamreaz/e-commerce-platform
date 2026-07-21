@@ -1,24 +1,20 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import {
-  PromotionRewardType,
-  PromotionStatus,
-} from '@/generated/prisma/client';
+import { PromotionRewardType, PromotionStatus } from '@/generated/prisma/client';
 import { takaToPoisha } from '@/common/utils/money';
 import { AuditService } from '@/modules/platform/audit.service';
 import { PrismaService } from '@/prisma/prisma.service';
-import {
-  PromotionsRepository,
-  type CouponWithPromotion,
-} from './promotions.repository';
+import { PromotionsRepository, type CouponWithPromotion } from './promotions.repository';
 import { PromotionsService } from './promotions.service';
 
 const userId = '11111111-1111-4111-8111-111111111111';
 
-function buildCoupon(overrides: {
-  coupon?: Partial<CouponWithPromotion>;
-  promotion?: Partial<CouponWithPromotion['promotion']>;
-} = {}): CouponWithPromotion {
+function buildCoupon(
+  overrides: {
+    coupon?: Partial<CouponWithPromotion>;
+    promotion?: Partial<CouponWithPromotion['promotion']>;
+  } = {},
+): CouponWithPromotion {
   const promotion: CouponWithPromotion['promotion'] = {
     id: '22222222-2222-4222-8222-222222222222',
     name: 'Test promotion',
@@ -95,11 +91,7 @@ describe('PromotionsService', () => {
       }),
     );
 
-    const quote = await service.quoteCoupon(
-      'freeship',
-      takaToPoisha(500),
-      userId,
-    );
+    const quote = await service.quoteCoupon('freeship', takaToPoisha(500), userId);
 
     expect(quote).toEqual({
       couponId: '33333333-3333-4333-8333-333333333333',
@@ -113,11 +105,7 @@ describe('PromotionsService', () => {
   it('quotes ELEVATE10 as 10% of the subtotal in taka', async () => {
     repository.findCouponByCode.mockResolvedValue(buildCoupon());
 
-    const quote = await service.quoteCoupon(
-      'elevate10',
-      takaToPoisha(2000),
-      userId,
-    );
+    const quote = await service.quoteCoupon('elevate10', takaToPoisha(2000), userId);
 
     expect(quote.discountPoisha).toBe(200_00n);
     expect(quote.shippingWaived).toBe(false);
@@ -127,12 +115,8 @@ describe('PromotionsService', () => {
   it('rejects coupons below the minimum order', async () => {
     repository.findCouponByCode.mockResolvedValue(buildCoupon());
 
-    await expect(
-      service.quoteCoupon('ELEVATE10', takaToPoisha(1000), userId),
-    ).rejects.toThrow(
-      new BadRequestException(
-        'Minimum order of ৳1500 required for this coupon.',
-      ),
+    await expect(service.quoteCoupon('ELEVATE10', takaToPoisha(1000), userId)).rejects.toThrow(
+      new BadRequestException('Minimum order of ৳1500 required for this coupon.'),
     );
   });
 
@@ -145,17 +129,21 @@ describe('PromotionsService', () => {
       }),
     );
 
-    await expect(
-      service.quoteCoupon('ELEVATE10', takaToPoisha(2000), userId),
-    ).rejects.toThrow(new BadRequestException('Invalid or expired coupon code.'));
+    await expect(service.quoteCoupon('ELEVATE10', takaToPoisha(2000), userId)).rejects.toThrow(
+      new BadRequestException(
+        'This coupon code is invalid or has expired. Please check the code and try again.',
+      ),
+    );
   });
 
   it('rejects coupons already used by the user', async () => {
     repository.findCouponByCode.mockResolvedValue(buildCoupon());
     repository.countUserRedemptions.mockResolvedValue(1);
 
-    await expect(
-      service.quoteCoupon('ELEVATE10', takaToPoisha(2000), userId),
-    ).rejects.toThrow(new BadRequestException('Invalid or expired coupon code.'));
+    await expect(service.quoteCoupon('ELEVATE10', takaToPoisha(2000), userId)).rejects.toThrow(
+      new BadRequestException(
+        'This coupon code is invalid or has expired. Please check the code and try again.',
+      ),
+    );
   });
 });

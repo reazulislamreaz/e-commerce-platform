@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   NotificationType,
   OrderStatus,
@@ -14,6 +9,7 @@ import {
 } from '@/generated/prisma/client';
 import { normalizeBdPhone } from '@/common/utils/bd-phone';
 import { generateOrderNumber } from '@/common/utils/hash';
+import { USER_FACING } from '@/common/messages/user-facing-errors';
 import { poishaToTaka, STANDARD_SHIPPING_POISHA } from '@/common/utils/money';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { CartService } from '@/modules/cart/cart.service';
@@ -100,11 +96,7 @@ export class OrdersService {
     shippingWaived: boolean;
   }): CheckoutTotals {
     const shippingPoisha =
-      input.subtotalPoisha > 0n
-        ? input.shippingWaived
-          ? 0n
-          : STANDARD_SHIPPING_POISHA
-        : 0n;
+      input.subtotalPoisha > 0n ? (input.shippingWaived ? 0n : STANDARD_SHIPPING_POISHA) : 0n;
     const discountPoisha = input.discountPoisha;
     const totalPoisha = input.subtotalPoisha - discountPoisha + shippingPoisha;
 
@@ -122,7 +114,9 @@ export class OrdersService {
       throw new BadRequestException(`Order is already ${mapStatusToApi(from)}`);
     }
     if (TERMINAL_STATUSES.has(from)) {
-      throw new BadRequestException(`Cannot transition from terminal status ${mapStatusToApi(from)}`);
+      throw new BadRequestException(
+        `Cannot transition from terminal status ${mapStatusToApi(from)}`,
+      );
     }
     const allowed = FULFILLMENT_TRANSITIONS[from] ?? [];
     if (!allowed.includes(to)) {
@@ -146,12 +140,12 @@ export class OrdersService {
     const variantById = new Map(variants.map((variant) => [variant.id, variant]));
 
     if (variants.length !== new Set(variantIds).size) {
-      throw new BadRequestException('One or more items are unavailable');
+      throw new BadRequestException(USER_FACING.ITEMS_UNAVAILABLE);
     }
 
     const pricedLines = lines.map((line) => {
       const variant = variantById.get(line.variantId);
-      if (!variant) throw new BadRequestException('One or more items are unavailable');
+      if (!variant) throw new BadRequestException(USER_FACING.ITEMS_UNAVAILABLE);
       return { variant, quantity: line.quantity };
     });
 
@@ -161,19 +155,14 @@ export class OrdersService {
     );
 
     if (dto.couponCode && !userId) {
-      throw new BadRequestException('Sign in to apply coupons');
+      throw new BadRequestException(USER_FACING.COUPON_REQUIRES_LOGIN);
     }
 
     const phone = normalizeBdPhone(dto.phone) ?? dto.phone.trim();
     const email = dto.email.trim().toLowerCase();
 
     return this.prisma.$transaction(async (tx) => {
-      const claim = await this.idempotency.claim(
-        IDEMPOTENCY_SCOPE_CREATE,
-        idempotencyKey,
-        dto,
-        tx,
-      );
+      const claim = await this.idempotency.claim(IDEMPOTENCY_SCOPE_CREATE, idempotencyKey, dto, tx);
       if (claim.kind === 'replay') {
         return {
           kind: 'replay' as const,
@@ -672,7 +661,11 @@ export class OrdersService {
     });
   }
 
-  async cancel(actor: JwtPayload, orderId: string, dto: AdminCancelOrderDto): Promise<OrderResponseDto> {
+  async cancel(
+    actor: JwtPayload,
+    orderId: string,
+    dto: AdminCancelOrderDto,
+  ): Promise<OrderResponseDto> {
     return this.updateStatus(actor, orderId, {
       status: OrderStatus.CANCELLED,
       note: dto.reason,
@@ -903,7 +896,7 @@ export class OrdersService {
       data: page.map((order) => this.toOrderResponse(order)),
       meta: {
         limit,
-        nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+        nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
       },
     };
   }

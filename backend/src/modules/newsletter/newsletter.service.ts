@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { ConsentAction, ConsentPurpose, NewsletterStatus } from '@/generated/prisma/client';
 import { generateOpaqueToken, sha256Hex } from '@/common/utils/hash';
+import { USER_FACING } from '@/common/messages/user-facing-errors';
 import { AuditService } from '@/modules/platform/audit.service';
 import { OUTBOX_EVENT, OutboxService } from '@/modules/platform/outbox.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
@@ -33,7 +34,7 @@ export class NewsletterService {
     meta: { ip?: string; userAgent?: string },
   ): Promise<NewsletterSubscribeResponseDto> {
     if (dto.consent !== true) {
-      throw new BadRequestException('Consent is required to subscribe');
+      throw new BadRequestException(USER_FACING.CONSENT_REQUIRED);
     }
 
     const token = generateOpaqueToken();
@@ -106,7 +107,10 @@ export class NewsletterService {
     return this.newsletter.listAdmin(query).then((rows) => this.toCursorPage(rows, query.limit));
   }
 
-  async adminUnsubscribe(actor: JwtPayload, id: string): Promise<NewsletterSubscriptionResponseDto> {
+  async adminUnsubscribe(
+    actor: JwtPayload,
+    id: string,
+  ): Promise<NewsletterSubscriptionResponseDto> {
     const current = await this.newsletter.findById(id);
     if (!current) throw new NotFoundException('Newsletter subscription not found');
 
@@ -151,7 +155,7 @@ export class NewsletterService {
       data: page.map(toResponse),
       meta: {
         limit,
-        nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+        nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
       },
     };
   }

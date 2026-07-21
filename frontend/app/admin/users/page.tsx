@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import type { PropsWithChildren } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -27,6 +26,7 @@ import {
   type AdminRole,
   type UserStatus,
 } from '@/features/admin';
+import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
 
@@ -43,9 +43,7 @@ const createAdminSchema = z.object({
 type CreateAdminValues = z.infer<typeof createAdminSchema>;
 
 function errorMessage(error: unknown) {
-  return axios.isAxiosError<{ message?: string }>(error)
-    ? (error.response?.data.message ?? 'The request could not be completed.')
-    : 'The request could not be completed.';
+  return getUserFacingErrorMessage(error, 'The request could not be completed. Please try again.');
 }
 
 export default function AdminUsersPage() {
@@ -77,10 +75,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Users"
-        description="Manage customer access and account lifecycle."
-      />
+      <AdminPageHeader title="Users" description="Manage customer access and account lifecycle." />
       <AdminPanel title="All users" description="Update roles, status, and account access.">
         {users.isError ? <AdminError>Could not load users.</AdminError> : null}
         {statusMutation.isError || roleMutation.isError || deleteMutation.isError ? (

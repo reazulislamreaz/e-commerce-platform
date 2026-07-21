@@ -12,7 +12,7 @@ export function IsAccountPassword(): PropertyDecorator {
     MinLength(12),
     MaxLength(128),
     Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-      message: 'password must contain a lowercase letter, an uppercase letter, and a digit',
+      message: 'Password must include an uppercase letter, a lowercase letter, and a digit.',
     }),
   );
 }

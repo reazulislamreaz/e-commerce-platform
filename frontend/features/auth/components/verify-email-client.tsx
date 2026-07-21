@@ -2,9 +2,9 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import axios from 'axios';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useVerifyEmail } from '@/features/auth/hooks';
+import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
 
 export function VerifyEmailClient() {
   const token = useSearchParams().get('token');
@@ -16,18 +16,15 @@ export function VerifyEmailClient() {
   }, [token, mutate]);
 
   if (!token || verify.isError) {
-    const message =
-      token &&
-      axios.isAxiosError<{ message?: string }>(verify.error) &&
-      verify.error.response?.status === 400
-        ? (verify.error.response.data.message ?? 'Verification link is invalid or has expired.')
-        : 'Verification link is invalid or has expired.';
+    const message = token
+      ? getUserFacingErrorMessage(verify.error, USER_FACING_ERRORS.VERIFICATION_LINK)
+      : USER_FACING_ERRORS.VERIFICATION_LINK;
     return (
       <div className="space-y-5 text-center" role="alert">
         <XCircle aria-hidden className="mx-auto size-12 text-red-400" strokeWidth={1.5} />
         <div>
           <h2 className="text-xl font-bold uppercase tracking-[-.02em] text-white">
-            Verification failed
+            We couldn&apos;t verify your email
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[#b5b0a8]">{message}</p>
         </div>

@@ -179,7 +179,7 @@ describe('AuthService', () => {
         },
       );
       await expect(service.register(registerInput)).rejects.toThrow(
-        'An account with this email already exists. Please sign in or reset your password.',
+        'An account with this email already exists. Try logging in or use a different email address.',
       );
       expect(prisma.user.create).not.toHaveBeenCalled();
     });
@@ -199,7 +199,7 @@ describe('AuthService', () => {
       );
       await expect(service.register(registerInput)).rejects.toBeInstanceOf(ConflictException);
       await expect(service.register(registerInput)).rejects.toThrow(
-        'This mobile number is already registered. Please sign in or use a different number.',
+        'An account with this mobile number already exists. Try logging in or use a different number.',
       );
     });
 
@@ -220,7 +220,7 @@ describe('AuthService', () => {
         }),
       );
       await expect(service.register(registerInput)).rejects.toThrow(
-        'This mobile number is already registered. Please sign in or use a different number.',
+        'An account with this mobile number already exists. Try logging in or use a different number.',
       );
     });
   });

@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import { useMemo, useState, type FormEvent } from 'react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
@@ -20,6 +19,7 @@ import {
 import {
   adminApi,
   adminKeys,
+  mutationErrorMessage,
   useAdminMutation,
   useInventoryBalances,
   useInventoryLocations,
@@ -28,14 +28,6 @@ import {
   type InventoryBalance,
   type InventoryMovement,
 } from '@/features/admin';
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 function StockAlertsPanel({
   onFillAlert,

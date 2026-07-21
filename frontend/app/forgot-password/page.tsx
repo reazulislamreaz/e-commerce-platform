@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField } from '@/components/common/form-field';
 import { useForgotPassword } from '@/features/auth/hooks';
 import { forgotPasswordSchema, type ForgotPasswordInput } from '@/features/auth/schemas';
+import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
@@ -58,7 +59,10 @@ export default function ForgotPasswordPage() {
                 role="alert"
                 className="rounded-[4px] border border-red-900/60 bg-red-950/50 px-3.5 py-2.5 text-sm text-red-300"
               >
-                Something went wrong. Please try again.
+                {getUserFacingErrorMessage(
+                  forgotPassword.error,
+                  "We couldn't send a reset link right now. Please try again in a moment.",
+                )}
               </p>
             )}
             <button
@@ -68,7 +72,10 @@ export default function ForgotPasswordPage() {
             >
               {isSubmitting ? 'Sending…' : 'Send Reset Link'}
             </button>
-            <Link href="/login" className="block text-center text-sm text-[#b5b0a8] hover:text-[#e3bb78]">
+            <Link
+              href="/login"
+              className="block text-center text-sm text-[#b5b0a8] hover:text-[#e3bb78]"
+            >
               ← Back to login
             </Link>
           </form>

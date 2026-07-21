@@ -1,9 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
-  Prisma,
-  PromotionRewardType,
-  PromotionStatus,
-} from '@/generated/prisma/client';
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma, PromotionRewardType, PromotionStatus } from '@/generated/prisma/client';
+import { USER_FACING } from '@/common/messages/user-facing-errors';
 import { poishaToTaka, takaToPoisha } from '@/common/utils/money';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { AuditService } from '@/modules/platform/audit.service';
@@ -16,10 +18,7 @@ import type {
 import type { CouponResponseDto } from './dto/coupon-response.dto';
 import type { ValidateCouponDto } from './dto/validate-coupon.dto';
 import type { ValidateCouponResponseDto } from './dto/validate-coupon-response.dto';
-import {
-  PromotionsRepository,
-  type CouponWithPromotion,
-} from './promotions.repository';
+import { PromotionsRepository, type CouponWithPromotion } from './promotions.repository';
 
 export type CouponQuote = {
   couponId: string;
@@ -37,7 +36,7 @@ export type RedeemCouponInput = {
   shippingWaived: boolean;
 };
 
-const INVALID_COUPON_MESSAGE = 'Invalid or expired coupon code.';
+const INVALID_COUPON_MESSAGE = USER_FACING.INVALID_COUPON;
 
 @Injectable()
 export class PromotionsService {
@@ -51,15 +50,8 @@ export class PromotionsService {
     return code.trim().toUpperCase();
   }
 
-  async validate(
-    dto: ValidateCouponDto,
-    userId: string,
-  ): Promise<ValidateCouponResponseDto> {
-    const quote = await this.quoteCoupon(
-      dto.code,
-      takaToPoisha(dto.subtotal),
-      userId,
-    );
+  async validate(dto: ValidateCouponDto, userId: string): Promise<ValidateCouponResponseDto> {
+    const quote = await this.quoteCoupon(dto.code, takaToPoisha(dto.subtotal), userId);
 
     return {
       code: quote.code,
@@ -73,14 +65,8 @@ export class PromotionsService {
     const coupons = await this.promotions.listActiveCoupons();
     const results = await Promise.all(
       coupons.map(async (coupon) => {
-        const userRedemptions = await this.promotions.countUserRedemptions(
-          coupon.id,
-          userId,
-        );
-        return this.toCouponResponse(
-          coupon,
-          userRedemptions >= coupon.maxRedemptionsPerUser,
-        );
+        const userRedemptions = await this.promotions.countUserRedemptions(coupon.id, userId);
+        return this.toCouponResponse(coupon, userRedemptions >= coupon.maxRedemptionsPerUser);
       }),
     );
     return results;
@@ -100,10 +86,7 @@ export class PromotionsService {
 
     await this.assertCouponEligible(coupon, subtotalPoisha, userId, tx);
 
-    const { discountPoisha, shippingWaived } = this.computeReward(
-      coupon,
-      subtotalPoisha,
-    );
+    const { discountPoisha, shippingWaived } = this.computeReward(coupon, subtotalPoisha);
 
     return {
       couponId: coupon.id,
@@ -114,18 +97,12 @@ export class PromotionsService {
     };
   }
 
-  async redeemCoupon(
-    input: RedeemCouponInput,
-    tx: Prisma.TransactionClient,
-  ): Promise<void> {
+  async redeemCoupon(input: RedeemCouponInput, tx: Prisma.TransactionClient): Promise<void> {
     await this.promotions.lockCouponById(input.couponId, tx);
     await this.promotions.createRedemption(input, tx);
   }
 
-  async voidRedemptionForOrder(
-    orderId: string,
-    tx: Prisma.TransactionClient,
-  ): Promise<void> {
+  async voidRedemptionForOrder(orderId: string, tx: Prisma.TransactionClient): Promise<void> {
     await this.promotions.voidRedemptionForOrder(orderId, tx);
   }
 
@@ -217,9 +194,7 @@ export class PromotionsService {
     const existing = await this.promotions.findAdminCouponById(id);
     if (!existing) throw new NotFoundException('Coupon not found');
 
-    const reward = dto.rewardType
-      ? this.mapRewardInput(dto.rewardType, dto.value)
-      : null;
+    const reward = dto.rewardType ? this.mapRewardInput(dto.rewardType, dto.value) : null;
 
     const coupon = await this.prisma.$transaction(async (tx) => {
       const updated = await this.promotions.updateAdminCoupon(
@@ -233,13 +208,9 @@ export class PromotionsService {
         },
         {
           ...(dto.title != null ? { name: dto.title } : {}),
-          ...(dto.minOrderTaka != null
-            ? { minOrderPoisha: takaToPoisha(dto.minOrderTaka) }
-            : {}),
+          ...(dto.minOrderTaka != null ? { minOrderPoisha: takaToPoisha(dto.minOrderTaka) } : {}),
           ...(dto.startsAt != null ? { startsAt: new Date(dto.startsAt) } : {}),
-          ...(dto.endsAt !== undefined
-            ? { endsAt: dto.endsAt ? new Date(dto.endsAt) : null }
-            : {}),
+          ...(dto.endsAt !== undefined ? { endsAt: dto.endsAt ? new Date(dto.endsAt) : null } : {}),
           ...(reward
             ? {
                 rewardType: reward.rewardType,
@@ -326,11 +297,7 @@ export class PromotionsService {
     const now = new Date();
     const { promotion } = coupon;
 
-    if (
-      coupon.deletedAt ||
-      promotion.deletedAt ||
-      promotion.status !== PromotionStatus.ACTIVE
-    ) {
+    if (coupon.deletedAt || promotion.deletedAt || promotion.status !== PromotionStatus.ACTIVE) {
       throw new BadRequestException(INVALID_COUPON_MESSAGE);
     }
 
@@ -348,20 +315,13 @@ export class PromotionsService {
       );
     }
 
-    const userRedemptions = await this.promotions.countUserRedemptions(
-      coupon.id,
-      userId,
-      tx,
-    );
+    const userRedemptions = await this.promotions.countUserRedemptions(coupon.id, userId, tx);
     if (userRedemptions >= coupon.maxRedemptionsPerUser) {
       throw new BadRequestException(INVALID_COUPON_MESSAGE);
     }
 
     if (coupon.maxRedemptionsGlobal != null) {
-      const globalRedemptions = await this.promotions.countGlobalRedemptions(
-        coupon.id,
-        tx,
-      );
+      const globalRedemptions = await this.promotions.countGlobalRedemptions(coupon.id, tx);
       if (globalRedemptions >= coupon.maxRedemptionsGlobal) {
         throw new BadRequestException(INVALID_COUPON_MESSAGE);
       }
@@ -393,8 +353,7 @@ export class PromotionsService {
           throw new BadRequestException(INVALID_COUPON_MESSAGE);
         }
         return {
-          discountPoisha:
-            fixedOffPoisha < subtotalPoisha ? fixedOffPoisha : subtotalPoisha,
+          discountPoisha: fixedOffPoisha < subtotalPoisha ? fixedOffPoisha : subtotalPoisha,
           shippingWaived: false,
         };
       }
@@ -403,10 +362,7 @@ export class PromotionsService {
     }
   }
 
-  private toCouponResponse(
-    coupon: CouponWithPromotion,
-    used: boolean,
-  ): CouponResponseDto {
+  private toCouponResponse(coupon: CouponWithPromotion, used: boolean): CouponResponseDto {
     const { promotion } = coupon;
     const discountType = this.mapDiscountType(promotion.rewardType);
     const value = this.mapDiscountValue(promotion);
@@ -419,16 +375,12 @@ export class PromotionsService {
       discountType,
       value,
       minOrder: poishaToTaka(promotion.minOrderPoisha),
-      expiresAt:
-        promotion.endsAt?.toISOString() ??
-        '2099-12-31T23:59:59.000Z',
+      expiresAt: promotion.endsAt?.toISOString() ?? '2099-12-31T23:59:59.000Z',
       used,
     };
   }
 
-  private mapDiscountType(
-    rewardType: PromotionRewardType,
-  ): CouponResponseDto['discountType'] {
+  private mapDiscountType(rewardType: PromotionRewardType): CouponResponseDto['discountType'] {
     switch (rewardType) {
       case PromotionRewardType.PERCENT_OFF:
         return 'percent';
@@ -446,9 +398,7 @@ export class PromotionsService {
       case PromotionRewardType.PERCENT_OFF:
         return promotion.percentOff ?? 0;
       case PromotionRewardType.FIXED_OFF:
-        return promotion.fixedOffPoisha != null
-          ? poishaToTaka(promotion.fixedOffPoisha)
-          : 0;
+        return promotion.fixedOffPoisha != null ? poishaToTaka(promotion.fixedOffPoisha) : 0;
       case PromotionRewardType.FREE_SHIPPING:
         return 0;
       default:

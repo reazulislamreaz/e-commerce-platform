@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -14,18 +13,16 @@ import {
   AdminTextarea,
   StatusPill,
 } from '@/components/admin/admin-ui';
-import { adminApi, adminKeys, useAdminMutation, useAdminOrder } from '@/features/admin';
+import {
+  mutationErrorMessage,
+  adminApi,
+  adminKeys,
+  useAdminMutation,
+  useAdminOrder,
+} from '@/features/admin';
 import { formatTaka } from '@/lib/currency';
 
 const ORDER_INVALIDATE = [adminKeys.ordersRoot(), adminKeys.orderRoot()] as const;
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>();

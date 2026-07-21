@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState, type FormEvent } from 'react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
@@ -19,6 +18,7 @@ import {
 import {
   adminApi,
   adminKeys,
+  mutationErrorMessage,
   useAdminMutation,
   useAdminNewsletter,
   type NewsletterStatus,
@@ -30,14 +30,6 @@ const STATUS_OPTIONS: { value: NewsletterStatus | ''; label: string }[] = [
   { value: 'ACTIVE', label: 'Active' },
   { value: 'UNSUBSCRIBED', label: 'Unsubscribed' },
 ];
-
-function mutationErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 function isActiveStatus(status: string): boolean {
   return status.toUpperCase() === 'ACTIVE';
@@ -140,9 +132,7 @@ function NewsletterListBody({ status }: { status: string }) {
           </p>
         ) : null}
 
-        {showInitialLoading ? (
-          <AdminTableSkeleton />
-        ) : null}
+        {showInitialLoading ? <AdminTableSkeleton /> : null}
 
         {!showInitialLoading && !query.isError && rows.length === 0 ? (
           <AdminEmpty>No newsletter subscriptions.</AdminEmpty>
@@ -176,9 +166,7 @@ function NewsletterListBody({ status }: { status: string }) {
                     </AdminTd>
                     <AdminTd>
                       <span className="text-[#b5b0a8]">
-                        {sub.unsubscribedAt
-                          ? new Date(sub.unsubscribedAt).toLocaleString()
-                          : '—'}
+                        {sub.unsubscribedAt ? new Date(sub.unsubscribedAt).toLocaleString() : '—'}
                       </span>
                     </AdminTd>
                     <AdminTd className="text-right">
@@ -224,11 +212,7 @@ function NewsletterListInner() {
 
 export default function AdminNewsletterPage() {
   return (
-    <Suspense
-      fallback={
-        <AdminTableSkeleton />
-      }
-    >
+    <Suspense fallback={<AdminTableSkeleton />}>
       <NewsletterListInner />
     </Suspense>
   );

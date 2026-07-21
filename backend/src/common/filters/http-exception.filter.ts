@@ -7,6 +7,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import {
+  toUserFacingMessage,
+  toUserFacingValidationDetail,
+  USER_FACING,
+} from '../messages/user-facing-errors';
 
 interface HttpErrorBody {
   message?: string | string[];
@@ -23,29 +28,34 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = context.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
-    let error = 'Internal Server Error';
+    let message: string = USER_FACING.INTERNAL;
+    let error = 'Error';
     let details: string[] | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const body = exception.getResponse();
       if (typeof body === 'string') {
-        message = body;
-        error = exception.name;
+        message = toUserFacingMessage(body, status);
+        error = exception.name.replace(/Exception$/, '') || 'Error';
       } else {
         const { message: bodyMessage, error: bodyError } = body as HttpErrorBody;
         if (Array.isArray(bodyMessage)) {
-          message = 'Validation failed';
-          details = bodyMessage;
+          message = USER_FACING.VALIDATION;
+          details = bodyMessage.map((item) => toUserFacingValidationDetail(String(item)));
         } else if (bodyMessage) {
-          message = bodyMessage;
+          message = toUserFacingMessage(String(bodyMessage), status);
+        } else {
+          message = toUserFacingMessage(undefined, status);
         }
-        error = bodyError ?? exception.name;
+        // Keep a short non-technical label for API consumers; never leak class names.
+        error = sanitizeErrorLabel(bodyError ?? exception.name, status);
       }
     } else {
       // Unknown errors are logged with full detail but never leaked to clients.
       this.logger.error(exception instanceof Error ? exception.stack : String(exception));
+      message = USER_FACING.INTERNAL;
+      error = 'Error';
     }
 
     response.status(status).json({
@@ -58,4 +68,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     });
   }
+}
+
+function sanitizeErrorLabel(raw: string, status: number): string {
+  const cleaned = raw.replace(/Exception$/i, '').trim();
+  if (!cleaned || /prisma|mongo|postgres|stack|econn/i.test(cleaned)) {
+    if (status >= 500) return 'Error';
+    if (status === 401) return 'Unauthorized';
+    if (status === 403) return 'Forbidden';
+    if (status === 404) return 'Not Found';
+    if (status === 409) return 'Conflict';
+    if (status === 429) return 'Too Many Requests';
+    return 'Bad Request';
+  }
+  return cleaned;
 }

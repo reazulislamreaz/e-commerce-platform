@@ -217,7 +217,11 @@ export function applyCoupon(
   coupons: AccountCoupon[],
 ): { discount: number; coupon?: AccountCoupon; error?: string } {
   const coupon = coupons.find((c) => c.code.toUpperCase() === code.trim().toUpperCase() && !c.used);
-  if (!coupon) return { discount: 0, error: 'Invalid or expired coupon code.' };
+  if (!coupon)
+    return {
+      discount: 0,
+      error: 'This coupon code is invalid or has expired. Please check the code and try again.',
+    };
   if (subtotal < coupon.minOrder) {
     return {
       discount: 0,

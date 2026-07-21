@@ -8,7 +8,7 @@ import { FormField } from '@/components/common/form-field';
 import { GoogleLoginButton } from '@/features/auth/components/google-login-button';
 import { useRegister, useResendVerification } from '@/features/auth/hooks';
 import { registerSchema, type RegisterInput } from '@/features/auth/schemas';
-import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
+import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
 
 function CheckInbox({ email }: { email: string }) {
   const resend = useResendVerification();
@@ -71,10 +71,7 @@ export function RegisterForm() {
 
   const serverError =
     registerMutation.isError &&
-    getUserFacingErrorMessage(
-      registerMutation.error,
-      'Could not create your account. Please check your details and try again.',
-    );
+    getUserFacingErrorMessage(registerMutation.error, USER_FACING_ERRORS.REGISTER_FAILED);
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">

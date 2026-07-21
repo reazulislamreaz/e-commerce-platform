@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Role, UserStatus } from '@/generated/prisma/client';
+import { USER_FACING } from '@/common/messages/user-facing-errors';
 import { PrismaService } from '@/prisma/prisma.service';
 
 export interface JwtPayload {
@@ -38,7 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       select: { role: true, status: true, deletedAt: true },
     });
     if (!user || user.deletedAt || user.status !== UserStatus.ACTIVE)
-      throw new UnauthorizedException('Account is no longer active');
+      throw new UnauthorizedException(USER_FACING.ACCOUNT_INACTIVE);
     return { ...payload, role: user.role };
   }
 }

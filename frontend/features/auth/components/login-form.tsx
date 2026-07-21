@@ -9,7 +9,7 @@ import { FormField } from '@/components/common/form-field';
 import { GoogleLoginButton } from '@/features/auth/components/google-login-button';
 import { useLogin } from '@/features/auth/hooks';
 import { loginSchema, type LoginInput } from '@/features/auth/schemas';
-import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
+import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
 
 function LoginFormInner() {
   const router = useRouter();
@@ -34,7 +34,7 @@ function LoginFormInner() {
   });
 
   const serverError =
-    login.isError && getUserFacingErrorMessage(login.error, 'Could not sign in. Please try again.');
+    login.isError && getUserFacingErrorMessage(login.error, USER_FACING_ERRORS.SIGN_IN_FAILED);
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">

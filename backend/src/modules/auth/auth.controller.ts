@@ -26,6 +26,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Public } from '@/common/decorators/public.decorator';
+import { USER_FACING } from '@/common/messages/user-facing-errors';
 import {
   AuthService,
   REFRESH_TOKEN_TTL_MS,
@@ -178,7 +179,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Missing, expired, or reused refresh token' })
   async refresh(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const token = request.cookies?.[REFRESH_COOKIE] as string | undefined;
-    if (!token) throw new UnauthorizedException('Your session expired. Please sign in again.');
+    if (!token) throw new UnauthorizedException(USER_FACING.SESSION_ENDED);
     const result = await this.auth.refresh(token);
     this.setRefreshCookie(response, result.refreshToken, result.rememberMe);
     return { accessToken: result.accessToken };

@@ -14,15 +14,14 @@ import { uniqueConflictIncludes } from '@/common/utils/prisma-unique-conflict';
 import { MailService } from '@/modules/mail/mail.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { PrismaService } from '@/prisma/prisma.service';
+import { USER_FACING } from '@/common/messages/user-facing-errors';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 import type { JwtPayload } from './jwt.strategy';
 
-const EMAIL_ALREADY_REGISTERED =
-  'An account with this email already exists. Please sign in or reset your password.';
-const PHONE_ALREADY_REGISTERED =
-  'This mobile number is already registered. Please sign in or use a different number.';
-const SESSION_EXPIRED = 'Your session expired. Please sign in again.';
+const EMAIL_ALREADY_REGISTERED = USER_FACING.EMAIL_ALREADY_REGISTERED;
+const PHONE_ALREADY_REGISTERED = USER_FACING.PHONE_ALREADY_REGISTERED;
+const SESSION_EXPIRED = USER_FACING.SESSION_ENDED;
 
 const ACCESS_TOKEN_TTL = '15m';
 export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -172,9 +171,9 @@ export class AuthService {
       token.expiresAt <= now ||
       token.user.deletedAt
     )
-      throw new BadRequestException('Verification link is invalid or has expired');
+      throw new BadRequestException(USER_FACING.VERIFICATION_LINK);
     if (token.usedAt || token.user.status !== UserStatus.PENDING_VERIFICATION)
-      throw new BadRequestException('This email address has already been verified');
+      throw new BadRequestException(USER_FACING.ALREADY_VERIFIED);
 
     await this.prisma.$transaction(async (tx) => {
       // Atomic claim: a token can activate an account exactly once.
@@ -182,8 +181,7 @@ export class AuthService {
         where: { id: token.id, usedAt: null },
         data: { usedAt: now },
       });
-      if (claimed.count === 0)
-        throw new BadRequestException('This email address has already been verified');
+      if (claimed.count === 0) throw new BadRequestException(USER_FACING.ALREADY_VERIFIED);
       await tx.user.update({
         where: { id: token.userId },
         data: { status: UserStatus.ACTIVE, emailVerifiedAt: now },
@@ -296,7 +294,7 @@ export class AuthService {
       token.user.deletedAt ||
       token.user.status !== UserStatus.ACTIVE
     )
-      throw new BadRequestException('Reset link is invalid or has expired');
+      throw new BadRequestException(USER_FACING.RESET_LINK);
 
     const passwordHash = await argon2.hash(newPassword);
     await this.prisma.$transaction(async (tx) => {
@@ -305,8 +303,7 @@ export class AuthService {
         where: { id: token.id, usedAt: null },
         data: { usedAt: now },
       });
-      if (claimed.count === 0)
-        throw new BadRequestException('Reset link is invalid or has expired');
+      if (claimed.count === 0) throw new BadRequestException(USER_FACING.RESET_LINK);
       await tx.user.update({ where: { id: token.userId }, data: { passwordHash } });
       await tx.authSession.updateMany({
         where: { userId: token.userId, revokedAt: null },
@@ -335,9 +332,9 @@ export class AuthService {
       select: { id: true, passwordHash: true },
     });
     if (!user || !(await argon2.verify(user.passwordHash, currentPassword)))
-      throw new BadRequestException('Current password is incorrect');
+      throw new BadRequestException(USER_FACING.CURRENT_PASSWORD_INCORRECT);
     if (currentPassword === newPassword)
-      throw new BadRequestException('New password must be different from the current password');
+      throw new BadRequestException(USER_FACING.PASSWORD_MUST_DIFFER);
 
     const now = new Date();
     const passwordHash = await argon2.hash(newPassword);
@@ -359,12 +356,12 @@ export class AuthService {
       where: { email: dto.email.trim().toLowerCase() },
     });
     if (!user || user.deletedAt || !(await argon2.verify(user.passwordHash, dto.password)))
-      throw new UnauthorizedException('Email and password do not match.');
+      throw new UnauthorizedException(USER_FACING.INVALID_CREDENTIALS);
     if (user.status !== UserStatus.ACTIVE)
       throw new UnauthorizedException(
         user.status === UserStatus.SUSPENDED
-          ? 'Your account has been suspended. Please contact support.'
-          : 'Please verify your email address before signing in. Check your inbox for the link.',
+          ? USER_FACING.ACCOUNT_SUSPENDED
+          : USER_FACING.EMAIL_NOT_VERIFIED,
       );
 
     const rememberMe = dto.rememberMe ?? false;

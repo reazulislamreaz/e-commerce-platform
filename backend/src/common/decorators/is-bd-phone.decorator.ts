@@ -9,7 +9,7 @@ export function IsBdPhone(validationOptions?: ValidationOptions) {
       target: object.constructor,
       propertyName,
       options: {
-        message: 'phone must be a valid Bangladeshi mobile number (e.g. 01712345678)',
+        message: 'Enter a valid Bangladeshi mobile number, e.g. 01712345678.',
         ...validationOptions,
       },
       validator: {

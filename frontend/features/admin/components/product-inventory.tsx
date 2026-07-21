@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import { useMemo, useState, type FormEvent } from 'react';
 import {
   AdminButton,
@@ -16,6 +15,7 @@ import {
 } from '@/components/admin/admin-ui';
 import { adminApi } from '../api';
 import { adminKeys, useAdminMutation, useInventoryLocations } from '../hooks';
+import { mutationErrorMessage } from '../mutation-error';
 import type { AdminProductDetail, InventoryBalance } from '../types';
 
 type ProductInventoryProps = {
@@ -25,12 +25,7 @@ type ProductInventoryProps = {
   error: boolean;
 };
 
-export function ProductInventory({
-  variants,
-  balances,
-  loading,
-  error,
-}: ProductInventoryProps) {
+export function ProductInventory({ variants, balances, loading, error }: ProductInventoryProps) {
   const locations = useInventoryLocations();
   const adjust = useAdminMutation(adminApi.adjustInventory, [adminKeys.inventoryRoot()]);
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id ?? '');
@@ -88,7 +83,9 @@ export function ProductInventory({
       setQuantityDelta('');
       setNote('');
     } catch (requestError) {
-      setFormError(errorMessage(requestError));
+      setFormError(
+        mutationErrorMessage(requestError, 'Could not adjust inventory. Please try again.'),
+      );
     }
   }
 
@@ -97,7 +94,9 @@ export function ProductInventory({
       title="Inventory"
       description="Review stock by variant and apply signed adjustments at an inventory location."
     >
-      {error || locations.isError ? <AdminError>Could not load product inventory.</AdminError> : null}
+      {error || locations.isError ? (
+        <AdminError>Could not load product inventory.</AdminError>
+      ) : null}
       {loading ? <p className="text-sm text-[#b5b0a8]">Loading inventory…</p> : null}
       {!loading && !error && balances.length === 0 ? (
         <AdminEmpty>No stock has been added for these variants.</AdminEmpty>
@@ -185,7 +184,8 @@ export function ProductInventory({
         <div className="rounded-lg border border-[#2d2a27] px-3.5 py-2.5 text-xs text-[#b5b0a8]">
           {selectedBalance ? (
             <>
-              Available: <span className="font-semibold text-white">{selectedBalance.available}</span>
+              Available:{' '}
+              <span className="font-semibold text-white">{selectedBalance.available}</span>
               {' · '}Version: {selectedBalance.version}
             </>
           ) : (
@@ -221,11 +221,4 @@ export function ProductInventory({
       </form>
     </AdminPanel>
   );
-}
-
-function errorMessage(error: unknown): string {
-  if (axios.isAxiosError<{ message?: string }>(error)) {
-    return error.response?.data.message ?? 'Could not adjust inventory.';
-  }
-  return error instanceof Error ? error.message : 'Could not adjust inventory.';
 }
