@@ -7,6 +7,8 @@ COPY package.json package-lock.json ./
 COPY backend/package.json backend/
 RUN npm ci --workspace=backend
 COPY backend backend
+# Stale incremental cache without dist makes `nest build` exit 0 and emit nothing.
+RUN rm -f backend/tsconfig*.tsbuildinfo
 # prisma.config.ts resolves env('DATABASE_URL') at config load even for
 # `prisma generate` (no DB connection is made) — any placeholder works.
 ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
