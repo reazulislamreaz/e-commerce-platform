@@ -191,9 +191,7 @@ describe('UsersService', () => {
 
     it('ADMIN cannot delete a super admin', async () => {
       prisma.user.findUnique.mockResolvedValue(target('super-1', Role.SUPER_ADMIN));
-      await expect(service.softDelete(admin, 'super-1')).rejects.toBeInstanceOf(
-        ForbiddenException,
-      );
+      await expect(service.softDelete(admin, 'super-1')).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('nobody can manage a SUPER_ADMIN account', async () => {
@@ -252,14 +250,15 @@ describe('UsersService', () => {
       );
     });
 
-    it('soft delete anonymizes the email and revokes sessions', async () => {
+    it('soft delete anonymizes email and phone and revokes sessions', async () => {
       prisma.user.findUnique.mockResolvedValue(target('cust-1', Role.CUSTOMER));
       prisma.user.update.mockResolvedValue({});
       await service.softDelete(admin, 'cust-1');
       const args = prisma.user.update.mock.calls[0][0] as {
-        data: { email: string; deletedAt: Date };
+        data: { email: string; phone: string; deletedAt: Date };
       };
       expect(args.data.email).toBe('deleted+cust-1@deleted.invalid');
+      expect(args.data.phone).toBe('deleted+cust-1');
       expect(args.data.deletedAt).toBeInstanceOf(Date);
       expect(auth.revokeAllUserSessions).toHaveBeenCalledWith('cust-1');
     });

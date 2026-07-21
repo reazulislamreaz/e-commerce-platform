@@ -2,15 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
 import { FormField } from '@/components/common/form-field';
 import { GoogleLoginButton } from '@/features/auth/components/google-login-button';
 import { useLogin } from '@/features/auth/hooks';
 import { loginSchema, type LoginInput } from '@/features/auth/schemas';
-import { useState } from 'react';
+import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
 
 function LoginFormInner() {
   const router = useRouter();
@@ -25,18 +24,17 @@ function LoginFormInner() {
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = handleSubmit(async (input) => {
-    const result = await login.mutateAsync({ ...input, rememberMe });
-    const isAdmin = result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN';
-    router.replace(isAdmin ? '/admin' : next);
+    try {
+      const result = await login.mutateAsync({ ...input, rememberMe });
+      const isAdmin = result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN';
+      router.replace(isAdmin ? '/admin' : next);
+    } catch {
+      // Inline alert below shows a user-facing message.
+    }
   });
 
-  // Surface the backend's specific 401 reason (e.g. unverified email, suspended).
   const serverError =
-    login.isError &&
-    (axios.isAxiosError<{ message?: string }>(login.error) &&
-    login.error.response?.status === 401
-      ? (login.error.response.data.message ?? 'Invalid email or password.')
-      : 'Something went wrong. Please try again.');
+    login.isError && getUserFacingErrorMessage(login.error, 'Could not sign in. Please try again.');
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">

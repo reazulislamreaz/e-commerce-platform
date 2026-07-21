@@ -10,12 +10,19 @@ import { JwtService } from '@nestjs/jwt';
 import { Prisma, type User, UserStatus, VerificationTokenType } from '@/generated/prisma/client';
 import * as argon2 from 'argon2';
 import { normalizeBdPhone } from '@/common/utils/bd-phone';
+import { uniqueConflictIncludes } from '@/common/utils/prisma-unique-conflict';
 import { MailService } from '@/modules/mail/mail.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 import type { JwtPayload } from './jwt.strategy';
+
+const EMAIL_ALREADY_REGISTERED =
+  'An account with this email already exists. Please sign in or reset your password.';
+const PHONE_ALREADY_REGISTERED =
+  'This mobile number is already registered. Please sign in or use a different number.';
+const SESSION_EXPIRED = 'Your session expired. Please sign in again.';
 
 const ACCESS_TOKEN_TTL = '15m';
 export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -68,6 +75,44 @@ export class AuthService {
     // DTO validation guarantees the format; normalization cannot fail here.
     const phone = normalizeBdPhone(dto.phone) as string;
 
+    // Clear, field-accurate conflicts before create. Soft-deleted rows still
+    // hold unique phones until anonymized — free those so re-registration works.
+    const [byEmail, byPhone] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { email },
+        select: { id: true, status: true, deletedAt: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { phone },
+        select: { id: true, email: true, deletedAt: true },
+      }),
+    ]);
+
+    if (byEmail && !byEmail.deletedAt) {
+      if (byEmail.status === UserStatus.PENDING_VERIFICATION) {
+        // Same email tried again before verify: re-send the link instead of a
+        // confusing "already registered" dead-end (password is not changed).
+        const pending = await this.prisma.user.findUniqueOrThrow({
+          where: { id: byEmail.id },
+          select: userSelect,
+        });
+        await this.issueEmailVerification(pending.id, pending.email, pending.firstName);
+        return pending;
+      }
+      throw new ConflictException(EMAIL_ALREADY_REGISTERED);
+    }
+
+    if (byPhone && !byPhone.deletedAt) {
+      throw new ConflictException(PHONE_ALREADY_REGISTERED);
+    }
+
+    if (byPhone?.deletedAt) {
+      await this.prisma.user.update({
+        where: { id: byPhone.id },
+        data: { phone: `deleted+${byPhone.id}` },
+      });
+    }
+
     let user;
     try {
       user = await this.prisma.user.create({
@@ -84,11 +129,10 @@ export class AuthService {
     } catch (error) {
       // Unique indexes arbitrate concurrent registrations; a pre-check alone is race-prone.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        const target = (error.meta?.target as string[] | undefined) ?? [];
         throw new ConflictException(
-          target.includes('phone')
-            ? 'Phone number is already registered'
-            : 'Email is already registered',
+          uniqueConflictIncludes(error, 'phone')
+            ? PHONE_ALREADY_REGISTERED
+            : EMAIL_ALREADY_REGISTERED,
         );
       }
       throw error;
@@ -315,12 +359,12 @@ export class AuthService {
       where: { email: dto.email.trim().toLowerCase() },
     });
     if (!user || user.deletedAt || !(await argon2.verify(user.passwordHash, dto.password)))
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Email and password do not match.');
     if (user.status !== UserStatus.ACTIVE)
       throw new UnauthorizedException(
         user.status === UserStatus.SUSPENDED
-          ? 'Account is suspended'
-          : 'Please verify your email address before signing in',
+          ? 'Your account has been suspended. Please contact support.'
+          : 'Please verify your email address before signing in. Check your inbox for the link.',
       );
 
     const rememberMe = dto.rememberMe ?? false;
@@ -368,11 +412,11 @@ export class AuthService {
       where: { tokenHash },
       include: { session: { include: { user: true } } },
     });
-    if (!token) throw new UnauthorizedException('Invalid refresh token');
+    if (!token) throw new UnauthorizedException(SESSION_EXPIRED);
 
     if (token.usedAt || token.revokedAt) {
       await this.revokeTokenFamily(token.familyId, token.sessionId, now);
-      throw new UnauthorizedException('Refresh token has been revoked');
+      throw new UnauthorizedException(SESSION_EXPIRED);
     }
 
     const { session } = token;
@@ -383,7 +427,7 @@ export class AuthService {
       session.user.deletedAt ||
       session.user.status !== UserStatus.ACTIVE
     )
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException(SESSION_EXPIRED);
 
     const ttlMs = refreshTtlMs(session.rememberMe);
     const nextRefreshToken = await this.prisma.$transaction(async (tx) => {
@@ -392,7 +436,7 @@ export class AuthService {
         where: { id: token.id, usedAt: null, revokedAt: null },
         data: { usedAt: now },
       });
-      if (claimed.count === 0) throw new UnauthorizedException('Refresh token has been revoked');
+      if (claimed.count === 0) throw new UnauthorizedException(SESSION_EXPIRED);
 
       const raw = this.generateRefreshToken();
       const replacement = await tx.refreshToken.create({

@@ -1,5 +1,5 @@
-import axios from 'axios';
 import { dismissAllToasts, dismissToast, pushToast, type ToastOptions } from './store';
+import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
 
 export type { ToastOptions, ToastRecord, ToastVariant } from './store';
 export { dismissAllToasts, dismissToast, getToasts, subscribeToasts } from './store';
@@ -27,14 +27,7 @@ export const toast = Object.assign(show, {
 
 /** Extract a user-facing message from an API or network error. */
 export function toastFromError(error: unknown, fallback: string): string {
-  if (axios.isAxiosError(error)) {
-    if (!error.response) {
-      return 'Network error. Check your connection and try again.';
-    }
-    const data = error.response.data as { message?: string } | undefined;
-    if (data?.message) return data.message;
-  }
-  return error instanceof Error && error.message ? error.message : fallback;
+  return getUserFacingErrorMessage(error, fallback);
 }
 
 /** Show an error toast from a caught exception. */
