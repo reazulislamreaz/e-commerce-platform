@@ -10,13 +10,13 @@ export const BRAND_LOGO = {
   markOnLight: '/images/brand/elevate-apparel-mark-on-light.webp',
   markOnDark: '/images/brand/elevate-apparel-mark-on-dark.webp',
   /** 3D EA mark + Elevate wordmark — navbar (horizontal) and auth (stacked) */
-  elevate3dHorizontal: '/images/brand/elevate-logo-nav-3d.webp',
+  elevate3dHorizontal: '/images/brand/elevate-logo-nav-exact.webp',
   elevate3dStacked: '/images/brand/elevate-logo-stacked-3d.webp',
   elevate3dMark: '/images/brand/elevate-mark-3d.webp',
   width: 1248,
   height: 179,
-  elevate3dHorizontalWidth: 422,
-  elevate3dHorizontalHeight: 130,
+  elevate3dHorizontalWidth: 544,
+  elevate3dHorizontalHeight: 172,
   elevate3dStackedWidth: 631,
   elevate3dStackedHeight: 438,
   elevate3dMarkWidth: 141,
@@ -87,14 +87,7 @@ export function BrandLogo({
         height={height}
         priority={priority}
         quality={quality}
-        className={cn(
-          'w-auto max-w-full object-contain',
-          // Navbar horizontal: clip residual 1–2px resize halo above the mark
-          // (left/right/bottom shadows stay inside the visible area).
-          layout === 'horizontal' && '[clip-path:inset(3px_0_0_0)]',
-          heightClassName,
-          className,
-        )}
+        className={cn('w-auto max-w-full object-contain', heightClassName, className)}
       />
     );
   }

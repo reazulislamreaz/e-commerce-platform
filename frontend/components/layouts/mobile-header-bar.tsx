@@ -39,7 +39,7 @@ export function MobileHeaderBar({
       <Link
         href="/"
         aria-label="Elevate Apparel home"
-        className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5"
+        className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
       >
         <BrandLogo
           style="elevate3d"
@@ -48,9 +48,6 @@ export function MobileHeaderBar({
           heightClassName="h-8 sm:h-9"
           className="max-w-[min(100%,168px)] sm:max-w-[188px]"
         />
-        <span className="shrink-0 pt-0.5 text-[10px] font-medium leading-none tracking-[-0.01em] text-[#111111] sm:text-[11px]">
-          Apparel
-        </span>
       </Link>
 
       <div className="z-10 ml-auto flex shrink-0 items-center">
