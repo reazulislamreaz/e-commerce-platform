@@ -16,12 +16,12 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col items-center justify-center bg-black px-5 text-center text-white">
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+      <body className="flex min-h-screen flex-col items-center justify-center bg-[#FAFAFA] px-5 text-center text-[#111111]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Unexpected issue
         </p>
         <h1 className="mt-2 text-2xl font-extrabold">We hit a snag</h1>
-        <p className="mt-3 max-w-md text-sm text-[#b5b0a8]">
+        <p className="mt-3 max-w-md text-sm text-[#555555]">
           Something unexpected happened on our side. Please try again. If the problem continues,
           return home or contact support.
         </p>
@@ -29,13 +29,13 @@ export default function GlobalError({
           <button
             type="button"
             onClick={reset}
-            className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-5 py-3 text-[11px] font-bold uppercase text-[#18120b]"
+            className="rounded-[4px] border border-[#111111] bg-[#111111] px-5 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
           >
             Try Again
           </button>
           <Link
             href="/"
-            className="rounded-[4px] border border-[#37332c] px-5 py-3 text-[11px] font-bold uppercase text-white"
+            className="rounded-[4px] border border-[#111111] bg-white px-5 py-3 text-[11px] font-bold uppercase text-[#111111] transition-colors hover:bg-[#111111] hover:text-white"
           >
             Home
           </Link>

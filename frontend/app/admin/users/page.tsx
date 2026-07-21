@@ -102,12 +102,12 @@ export default function AdminUsersPage() {
                 return (
                   <tr key={user.id}>
                     <AdminTd>
-                      <p className="font-semibold text-white">
+                      <p className="font-semibold text-[#111111]">
                         {[user.firstName, user.lastName].filter(Boolean).join(' ') ||
                           'Unnamed user'}
                       </p>
-                      <p className="text-xs text-[#b5b0a8]">{user.email}</p>
-                      <p className="text-xs text-[#8b867d]">{user.phone}</p>
+                      <p className="text-xs text-[#555555]">{user.email}</p>
+                      <p className="text-xs text-[#555555]">{user.phone}</p>
                     </AdminTd>
                     <AdminTd>
                       {superAdmin && !protectedUser ? (
@@ -230,7 +230,7 @@ function Field({
 }: PropsWithChildren<{ label: string; error?: string; className?: string }>) {
   return (
     <label className={className}>
-      <span className="mb-1.5 block text-sm font-medium text-[#d8d4cd]">{label}</span>
+      <span className="mb-1.5 block text-sm font-medium text-[#555555]">{label}</span>
       {children}
       {error ? <span className="mt-1 block text-xs text-red-400">{error}</span> : null}
     </label>

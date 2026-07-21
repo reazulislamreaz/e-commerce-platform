@@ -117,20 +117,13 @@ export function ShopCatalog({
     () => sortProducts(filterProducts(localProducts, filters), sort),
     [localProducts, filters, sort],
   );
-  const localPage = useMemo(
-    () => paginateProducts(filtered, page, PAGE_SIZE),
-    [filtered, page],
-  );
+  const localPage = useMemo(() => paginateProducts(filtered, page, PAGE_SIZE), [filtered, page]);
   const paged = remote ? (remoteResult.data ?? initialResult ?? localPage) : localPage;
   const count = remote ? paged.total : filtered.length;
   const isRefreshing = remote && remoteResult.isFetching && Boolean(remoteResult.data);
   const showSkeleton = remote && remoteResult.isLoading && !remoteResult.data && !initialResult;
 
-  const pushState = (next: {
-    filters?: ProductFilters;
-    sort?: ProductSort;
-    page?: number;
-  }) => {
+  const pushState = (next: { filters?: ProductFilters; sort?: ProductSort; page?: number }) => {
     const params = catalogStateToSearchParams({
       filters: next.filters ?? filters,
       sort: next.sort ?? sort,
@@ -163,17 +156,17 @@ export function ShopCatalog({
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-[4px] border border-[#37332c] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#eee9e1] lg:hidden"
+              className="inline-flex items-center gap-1.5 rounded-[4px] border border-[#E5E7EB] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#555555] lg:hidden"
             >
               <SlidersHorizontal className="size-3.5" strokeWidth={1.7} />
               Filters
             </button>
-            <label className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#b5b0a8]">
+            <label className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#555555]">
               Sort
               <select
                 value={sort}
                 onChange={(e) => pushState({ sort: e.target.value as ProductSort, page: 1 })}
-                className="rounded-[4px] border border-[#37332c] bg-[#1a1815] px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wide text-white outline-none focus:border-[#e3bb78]"
+                className="rounded-[4px] border border-[#E5E7EB] bg-white px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#111111] outline-none focus:border-[#C9A227]"
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -188,7 +181,7 @@ export function ShopCatalog({
         {remoteResult.isError ? (
           <div
             role="alert"
-            className="rounded-[4px] border border-red-900/60 bg-red-950/30 p-5 text-sm text-red-300"
+            className="rounded-[4px] border border-red-900/60 bg-red-950/30 p-5 text-sm text-red-700"
           >
             We couldn&apos;t load the catalog. Please try again.
           </div>
@@ -214,7 +207,7 @@ export function ShopCatalog({
               type="button"
               disabled={paged.page <= 1}
               onClick={() => pushState({ page: Math.max(1, paged.page - 1) })}
-              className="rounded-[4px] border border-[#37332c] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-white disabled:opacity-40"
+              className="rounded-[4px] border border-[#E5E7EB] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#111111] disabled:opacity-40"
             >
               Prev
             </button>
@@ -222,7 +215,7 @@ export function ShopCatalog({
               item === 'ellipsis' ? (
                 <span
                   key={`ellipsis-${index}`}
-                  className="min-w-9 px-1 text-center text-[11px] text-[#8b867d]"
+                  className="min-w-9 px-1 text-center text-[11px] text-[#555555]"
                   aria-hidden
                 >
                   …
@@ -235,8 +228,8 @@ export function ShopCatalog({
                   aria-current={item === paged.page ? 'page' : undefined}
                   className={`min-w-9 rounded-[4px] border px-2.5 py-2 text-[11px] font-semibold ${
                     item === paged.page
-                      ? 'border-[#e5bd79] bg-[#e5bd79] text-[#18120b]'
-                      : 'border-[#37332c] text-white hover:border-[#e3bb78]'
+                      ? 'border-[#C9A227] bg-[#C9A227] text-[#111111]'
+                      : 'border-[#E5E7EB] text-[#111111] hover:border-[#C9A227]'
                   }`}
                 >
                   {item}
@@ -247,7 +240,7 @@ export function ShopCatalog({
               type="button"
               disabled={paged.page >= paged.totalPages}
               onClick={() => pushState({ page: Math.min(paged.totalPages, paged.page + 1) })}
-              className="rounded-[4px] border border-[#37332c] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-white disabled:opacity-40"
+              className="rounded-[4px] border border-[#E5E7EB] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#111111] disabled:opacity-40"
             >
               Next
             </button>

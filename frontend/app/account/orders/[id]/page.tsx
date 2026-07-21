@@ -37,9 +37,9 @@ function OrderDetailInner() {
 
   if (orderQuery.isError || !order) {
     return (
-      <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#b5b0a8]">
+      <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5 text-sm text-[#555555]">
         Order not found.{' '}
-        <Link href="/account/orders" className="text-[#e3bb78]">
+        <Link href="/account/orders" className="text-[#C9A227]">
           Back to orders
         </Link>
       </div>
@@ -53,25 +53,25 @@ function OrderDetailInner() {
   return (
     <div className="space-y-4">
       {confirmed && (
-        <div className="rounded-[4px] border border-[#2d4a2d] bg-[#102010] p-4 text-sm text-[#8fbf8f]">
+        <div className="rounded-[4px] border border-green-200 bg-[#f0fdf4] p-4 text-sm text-green-700">
           Order placed successfully. Thank you for shopping with Elevate Apparel.
         </div>
       )}
 
-      <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
+      <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold text-white">Order #{order.number}</h2>
-            <p className="mt-1 text-sm capitalize text-[#b5b0a8]">
+            <h2 className="text-lg font-bold text-[#111111]">Order #{order.number}</h2>
+            <p className="mt-1 text-sm capitalize text-[#555555]">
               Status: {order.status} · {new Date(order.createdAt).toLocaleString()}
             </p>
             {order.trackingNumber && (
-              <p className="mt-1 text-sm text-[#e3bb78]">Tracking: {order.trackingNumber}</p>
+              <p className="mt-1 text-sm text-[#C9A227]">Tracking: {order.trackingNumber}</p>
             )}
           </div>
           <Link
             href={`/track-order?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(user.email)}`}
-            className="rounded-[4px] border border-[#37332c] px-3 py-2 text-[10px] font-bold uppercase text-white hover:border-[#e3bb78]"
+            className="rounded-[4px] border border-[#E5E7EB] px-3 py-2 text-[10px] font-bold uppercase text-[#111111] hover:border-[#C9A227]"
           >
             Track Order
           </Link>
@@ -83,8 +83,8 @@ function OrderDetailInner() {
               key={step.label}
               className={`rounded-[4px] border px-3 py-2 text-[11px] ${
                 step.done
-                  ? 'border-[#e5bd79]/40 bg-[#1a1815] text-[#e3bb78]'
-                  : 'border-[#2d2a27] text-[#8b867d]'
+                  ? 'border-[#C9A227]/40 bg-white text-[#C9A227]'
+                  : 'border-[#E5E7EB] text-[#555555]'
               }`}
             >
               {step.label}
@@ -93,8 +93,8 @@ function OrderDetailInner() {
         </ol>
       </div>
 
-      <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-        <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">Items</h3>
+      <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+        <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">Items</h3>
         <ul className="mt-4 space-y-3">
           {order.items.map((item) => (
             <li key={`${item.productId}-${item.size}-${item.color}`} className="flex gap-3">
@@ -110,61 +110,61 @@ function OrderDetailInner() {
               <div className="min-w-0 flex-1 text-sm">
                 <Link
                   href={`/product/${item.slug}`}
-                  className="font-medium text-white hover:text-[#e3bb78]"
+                  className="font-medium text-[#111111] hover:text-[#C9A227]"
                 >
                   {item.name}
                 </Link>
-                <p className="text-[12px] text-[#8b867d]">
+                <p className="text-[12px] text-[#555555]">
                   {item.color} / {item.size} × {item.quantity}
                 </p>
               </div>
-              <p className="text-sm font-semibold text-[#e5c17d]">
+              <p className="text-sm font-semibold text-[#C9A227]">
                 {formatTaka(item.unitPrice * item.quantity)}
               </p>
             </li>
           ))}
         </ul>
-        <dl className="mt-5 space-y-1 border-t border-[#2d2a27] pt-4 text-sm">
-          <div className="flex justify-between text-[#b5b0a8]">
+        <dl className="mt-5 space-y-1 border-t border-[#E5E7EB] pt-4 text-sm">
+          <div className="flex justify-between text-[#555555]">
             <dt>Subtotal</dt>
             <dd>{formatTaka(order.subtotal)}</dd>
           </div>
           {order.discount > 0 && (
-            <div className="flex justify-between text-[#b5b0a8]">
+            <div className="flex justify-between text-[#555555]">
               <dt>Discount</dt>
-              <dd className="text-[#8fbf8f]">−{formatTaka(order.discount)}</dd>
+              <dd className="text-green-700">−{formatTaka(order.discount)}</dd>
             </div>
           )}
-          <div className="flex justify-between text-[#b5b0a8]">
+          <div className="flex justify-between text-[#555555]">
             <dt>Shipping</dt>
             <dd>{order.shipping === 0 ? 'Free' : formatTaka(order.shipping)}</dd>
           </div>
-          <div className="flex justify-between pt-2 font-semibold text-white">
+          <div className="flex justify-between pt-2 font-semibold text-[#111111]">
             <dt>Total</dt>
-            <dd className="text-[#e5c17d]">{formatTaka(order.total)}</dd>
+            <dd className="text-[#C9A227]">{formatTaka(order.total)}</dd>
           </div>
         </dl>
       </div>
 
       {order.status === 'delivered' ? (
-        <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-          <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+        <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+          <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
             Review your purchase
           </h3>
-          <p className="mt-1 text-sm text-[#b5b0a8]">
+          <p className="mt-1 text-sm text-[#555555]">
             Share feedback for each product in this delivered order.
           </p>
           <ul className="mt-4 space-y-3">
             {uniqueProducts.map((item) => {
               const existingReview = reviews.find((review) => review.productId === item.productId);
               return (
-                <li key={item.productId} className="rounded-[4px] border border-[#2d2a27] p-3">
+                <li key={item.productId} className="rounded-[4px] border border-[#E5E7EB] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-medium text-white">{item.name}</p>
+                    <p className="font-medium text-[#111111]">{item.name}</p>
                     {existingReview ? (
                       <Link
                         href="/account/reviews"
-                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
                       >
                         View your review
                       </Link>
@@ -176,7 +176,7 @@ function OrderDetailInner() {
                             current === item.productId ? null : item.productId,
                           )
                         }
-                        className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-3 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] hover:bg-[#eec98a]"
+                        className="rounded-[4px] border border-[#111111] bg-[#111111] px-3 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
                       >
                         Write review
                       </button>
@@ -200,18 +200,20 @@ function OrderDetailInner() {
         </div>
       ) : null}
 
-      <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#e9e5de]">
-        <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">Shipping To</h3>
+      <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5 text-sm text-[#555555]">
+        <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
+          Shipping To
+        </h3>
         <p className="mt-2">{order.shippingAddress.fullName}</p>
-        <p className="text-[#b5b0a8]">
+        <p className="text-[#555555]">
           {order.shippingAddress.line1}
           {order.shippingAddress.line2 ? `, ${order.shippingAddress.line2}` : ''}
         </p>
-        <p className="text-[#b5b0a8]">
+        <p className="text-[#555555]">
           {order.shippingAddress.city}, {order.shippingAddress.district}{' '}
           {order.shippingAddress.postalCode}
         </p>
-        <p className="mt-2 capitalize text-[#b5b0a8]">Payment: {order.paymentMethod}</p>
+        <p className="mt-2 capitalize text-[#555555]">Payment: {order.paymentMethod}</p>
       </div>
     </div>
   );

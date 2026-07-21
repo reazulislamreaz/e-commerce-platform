@@ -44,10 +44,10 @@ export function ConfirmDialog({
       }
     >
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-red-900/50 bg-red-950/30 text-red-300">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700">
           <AlertTriangle className="size-4" strokeWidth={1.7} />
         </span>
-        <p className="text-sm leading-relaxed text-[#b5b0a8]">{message}</p>
+        <p className="text-sm leading-relaxed text-[#555555]">{message}</p>
       </div>
     </AdminModal>
   );

@@ -122,7 +122,7 @@ function ContactListBody({ status }: { status: string }) {
       <AdminPanel title="Inbox" description="Filter messages by status.">
         <form onSubmit={applyFilters} className="mb-5 flex flex-wrap items-end gap-3">
           <label className="block min-w-[180px] flex-1 space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Status
             </span>
             <AdminSelect
@@ -149,7 +149,7 @@ function ContactListBody({ status }: { status: string }) {
         {query.isError ? <AdminError>Could not load contact messages.</AdminError> : null}
         {actionError ? <AdminError>{actionError}</AdminError> : null}
         {success ? (
-          <p className="mb-3 rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
+          <p className="mb-3 rounded-[4px] border border-[#C9A227]/40 bg-[#FFFFFF] px-3 py-2 text-sm text-[#C9A227]">
             {success}
           </p>
         ) : null}
@@ -176,18 +176,18 @@ function ContactListBody({ status }: { status: string }) {
                 {rows.map((message) => (
                   <tr key={message.id}>
                     <AdminTd>
-                      <span className="font-semibold text-white">{message.name}</span>
-                      <p className="text-xs text-[#b5b0a8]">{message.email}</p>
+                      <span className="font-semibold text-[#111111]">{message.name}</span>
+                      <p className="text-xs text-[#555555]">{message.email}</p>
                     </AdminTd>
                     <AdminTd>
-                      <span className="line-clamp-2 text-[#e9e5de]">{message.subject}</span>
-                      <p className="mt-1 line-clamp-2 text-xs text-[#8b867d]">{message.body}</p>
+                      <span className="line-clamp-2 text-[#111111]">{message.subject}</span>
+                      <p className="mt-1 line-clamp-2 text-xs text-[#555555]">{message.body}</p>
                     </AdminTd>
                     <AdminTd>
                       <StatusPill>{message.status}</StatusPill>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#b5b0a8]">
+                      <span className="text-[#555555]">
                         {new Date(message.createdAt).toLocaleString()}
                       </span>
                     </AdminTd>
@@ -207,7 +207,7 @@ function ContactListBody({ status }: { status: string }) {
 
             <div className="mt-4 flex justify-center">
               {query.isFetching && cursor ? (
-                <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+                <p className="text-sm text-[#555555]">Loading more…</p>
               ) : nextCursor ? (
                 <AdminButton type="button" variant="secondary" onClick={loadMore}>
                   Load more
@@ -222,7 +222,7 @@ function ContactListBody({ status }: { status: string }) {
         <AdminPanel title="Update message" description="Set status and admin notes.">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+              <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
                 Status
               </span>
               <AdminSelect
@@ -238,7 +238,7 @@ function ContactListBody({ status }: { status: string }) {
               </AdminSelect>
             </label>
             <label className="block space-y-1.5 sm:col-span-2">
-              <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+              <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
                 Admin notes
               </span>
               <AdminTextarea

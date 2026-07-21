@@ -1,8 +1,21 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #0a0a0b;
-  --foreground: #f4f4f5;
+  /* Elevate Apparel — light storefront design system */
+  --background: #fafafa;
+  --foreground: #111111;
+  --color-muted: #555555;
+  --color-gold: #c9a227;
+  --color-gold-hover: #d4b03a;
+  --color-border: #e5e7eb;
+  --color-card: #ffffff;
+  --color-ink: #111111;
+  --color-surface: #fafafa;
+  --color-surface-2: #ffffff;
+  --color-surface-3: #f4f4f5;
+  --color-edge: #e5e7eb;
+  --color-gold-light: #d4b03a;
+  --color-gold-dark: #c9a227;
 }
 
 @theme inline {
@@ -14,19 +27,15 @@
 }
 
 @theme {
-  /* Premium Black & Gold palette */
-  --color-gold: #d4af37;
-  --color-gold-light: #e6c860;
-  --color-gold-dark: #b8962e;
-  --color-ink: #111827;
-  --color-card: #f9fafb;
-  /* Dark surfaces */
-  --color-surface: #0a0a0b;
-  --color-surface-2: #141416;
-  --color-surface-3: #1d1d21;
-  --color-edge: #27272a;
-
-  /* Site content container (1400px on large desktop) */
+  --color-gold: #c9a227;
+  --color-gold-light: #d4b03a;
+  --color-gold-dark: #c9a227;
+  --color-ink: #111111;
+  --color-card: #ffffff;
+  --color-surface: #fafafa;
+  --color-surface-2: #ffffff;
+  --color-surface-3: #f4f4f5;
+  --color-edge: #e5e7eb;
   --container-8xl: 87.5rem;
 }
 
@@ -57,13 +66,13 @@ button:disabled,
   cursor: not-allowed;
 }
 
-/* Keep browser autofill from repainting the dark inputs. */
+/* Autofill matches light inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #1a1815 inset;
-  -webkit-text-fill-color: #ffffff;
-  caret-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: #111111;
+  caret-color: #111111;
   transition: background-color 9999s ease-in-out 0s;
 }
 

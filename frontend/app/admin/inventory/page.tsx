@@ -64,7 +64,7 @@ function StockAlertsPanel({
             {rows.map((alert) => (
               <tr
                 key={alert.id}
-                className="cursor-pointer hover:bg-[#1a1815]"
+                className="cursor-pointer hover:bg-[#FFFFFF]"
                 onClick={() =>
                   onFillAlert({
                     variantId: alert.variantId,
@@ -77,22 +77,22 @@ function StockAlertsPanel({
                   <StatusPill>{alert.level}</StatusPill>
                 </AdminTd>
                 <AdminTd>
-                  <span className="font-semibold text-white">{alert.sku}</span>
+                  <span className="font-semibold text-[#111111]">{alert.sku}</span>
                 </AdminTd>
                 <AdminTd>
-                  <span className="text-[#e9e5de]">
+                  <span className="text-[#111111]">
                     {alert.size} / {alert.color}
                   </span>
                 </AdminTd>
                 <AdminTd>
-                  <span className="text-[#e9e5de]">{alert.locationCode}</span>
+                  <span className="text-[#111111]">{alert.locationCode}</span>
                 </AdminTd>
                 <AdminTd>
-                  <span className="text-[#e3bb78]">{alert.available}</span>
+                  <span className="text-[#C9A227]">{alert.available}</span>
                 </AdminTd>
                 <AdminTd>{alert.threshold}</AdminTd>
                 <AdminTd>
-                  <span className="text-[#b5b0a8]">
+                  <span className="text-[#555555]">
                     {new Date(alert.createdAt).toLocaleString()}
                   </span>
                 </AdminTd>
@@ -145,7 +145,7 @@ function InventoryMovementsPanel({ seedVariantId = '' }: { seedVariantId?: strin
     >
       <div className="mb-5 flex flex-wrap items-end gap-3">
         <label className="block min-w-[220px] flex-1 space-y-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+          <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
             Variant ID
           </span>
           <AdminInput
@@ -184,31 +184,31 @@ function InventoryMovementsPanel({ seedVariantId = '' }: { seedVariantId?: strin
               {rows.map((row) => (
                 <tr key={row.id}>
                   <AdminTd>
-                    <span className="text-[#b5b0a8]">
+                    <span className="text-[#555555]">
                       {new Date(row.createdAt).toLocaleString()}
                     </span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="font-mono text-xs uppercase text-[#e3bb78]">{row.type}</span>
+                    <span className="font-mono text-xs uppercase text-[#C9A227]">{row.type}</span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="font-mono text-xs text-[#e9e5de]">
+                    <span className="font-mono text-xs text-[#111111]">
                       {row.variantId.slice(0, 8)}…
                     </span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="font-mono text-xs text-[#b5b0a8]">
+                    <span className="font-mono text-xs text-[#555555]">
                       {row.locationId.slice(0, 8)}…
                     </span>
                   </AdminTd>
                   <AdminTd>
-                    <span className={row.quantity < 0 ? 'text-red-300' : 'text-emerald-300'}>
+                    <span className={row.quantity < 0 ? 'text-red-700' : 'text-emerald-700'}>
                       {row.quantity > 0 ? `+${row.quantity}` : row.quantity}
                     </span>
                   </AdminTd>
                   <AdminTd>{row.balanceAfter}</AdminTd>
                   <AdminTd>
-                    <span className="text-[#b5b0a8]">{row.note?.trim() || '—'}</span>
+                    <span className="text-[#555555]">{row.note?.trim() || '—'}</span>
                   </AdminTd>
                 </tr>
               ))}
@@ -216,7 +216,7 @@ function InventoryMovementsPanel({ seedVariantId = '' }: { seedVariantId?: strin
           </AdminTable>
           <div className="mt-4 flex justify-center">
             {movementsQuery.isFetching && cursor ? (
-              <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+              <p className="text-sm text-[#555555]">Loading more…</p>
             ) : nextCursor ? (
               <AdminButton type="button" variant="secondary" onClick={loadMore}>
                 Load more
@@ -273,7 +273,7 @@ function InventoryBalancesPanel({
     >
       <div className="mb-5 flex flex-wrap items-end gap-3">
         <label className="block min-w-[200px] flex-1 space-y-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+          <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
             Location
           </span>
           <AdminSelect value={locationId} onChange={(event) => setLocationId(event.target.value)}>
@@ -315,28 +315,28 @@ function InventoryBalancesPanel({
               {rows.map((balance) => (
                 <tr
                   key={balance.id}
-                  className="cursor-pointer hover:bg-[#1a1815]"
+                  className="cursor-pointer hover:bg-[#FFFFFF]"
                   onClick={() => onFillBalance(balance)}
                 >
                   <AdminTd>
-                    <span className="font-semibold text-white">{balance.variantSku}</span>
-                    <p className="font-mono text-xs text-[#8b867d]">
+                    <span className="font-semibold text-[#111111]">{balance.variantSku}</span>
+                    <p className="font-mono text-xs text-[#555555]">
                       {balance.variantId.slice(0, 8)}…
                     </p>
                   </AdminTd>
                   <AdminTd>
-                    <span className="font-mono text-xs text-[#b5b0a8]">{balance.variantId}</span>
+                    <span className="font-mono text-xs text-[#555555]">{balance.variantId}</span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="text-[#e9e5de]">{balance.locationCode}</span>
+                    <span className="text-[#111111]">{balance.locationCode}</span>
                   </AdminTd>
                   <AdminTd>{balance.onHand}</AdminTd>
                   <AdminTd>{balance.reserved}</AdminTd>
                   <AdminTd>
-                    <span className="text-[#e3bb78]">{balance.available}</span>
+                    <span className="text-[#C9A227]">{balance.available}</span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="text-[#b5b0a8]">{balance.version}</span>
+                    <span className="text-[#555555]">{balance.version}</span>
                   </AdminTd>
                 </tr>
               ))}
@@ -345,7 +345,7 @@ function InventoryBalancesPanel({
 
           <div className="mt-4 flex justify-center">
             {balancesQuery.isFetching && cursor ? (
-              <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+              <p className="text-sm text-[#555555]">Loading more…</p>
             ) : nextCursor ? (
               <AdminButton type="button" variant="secondary" onClick={loadMore}>
                 Load more
@@ -452,14 +452,14 @@ export default function AdminInventoryPage() {
       >
         {formError ? <AdminError>{formError}</AdminError> : null}
         {success ? (
-          <p className="mb-3 rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
+          <p className="mb-3 rounded-[4px] border border-[#C9A227]/40 bg-[#FFFFFF] px-3 py-2 text-sm text-[#C9A227]">
             {success}
           </p>
         ) : null}
 
         <form onSubmit={(event) => void onAdjust(event)} className="grid gap-3 sm:grid-cols-2">
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Variant ID
             </span>
             <AdminInput
@@ -471,7 +471,7 @@ export default function AdminInventoryPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Location
             </span>
             <AdminSelect
@@ -488,7 +488,7 @@ export default function AdminInventoryPage() {
             </AdminSelect>
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Quantity delta
             </span>
             <AdminInput
@@ -499,7 +499,7 @@ export default function AdminInventoryPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Expected version (optional)
             </span>
             <AdminInput
@@ -513,7 +513,7 @@ export default function AdminInventoryPage() {
             />
           </label>
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Note (optional)
             </span>
             <AdminTextarea

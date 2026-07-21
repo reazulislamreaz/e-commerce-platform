@@ -275,13 +275,13 @@ export function CheckoutClient() {
 
   if (!cartHydrated || (items.length > 0 && products.isLoading && !products.data)) {
     return (
-      <main id="main-content" className="flex-1 bg-black" aria-busy="true">
+      <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true">
         <section className="mx-auto max-w-[1400px] space-y-4 px-5 py-10 sm:px-7">
-          <div className="h-3 w-28 animate-pulse rounded-[4px] bg-[#1a1815]" />
-          <div className="h-9 w-56 animate-pulse rounded-[4px] bg-[#1a1815]" />
+          <div className="h-3 w-28 animate-pulse rounded-[4px] bg-white" />
+          <div className="h-9 w-56 animate-pulse rounded-[4px] bg-white" />
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <div className="h-72 animate-pulse rounded-[4px] border border-[#2d2a27] bg-[#111110]" />
-            <div className="h-72 animate-pulse rounded-[4px] border border-[#2d2a27] bg-[#111110]" />
+            <div className="h-72 animate-pulse rounded-[4px] border border-[#E5E7EB] bg-white" />
+            <div className="h-72 animate-pulse rounded-[4px] border border-[#E5E7EB] bg-white" />
           </div>
         </section>
       </main>
@@ -292,16 +292,16 @@ export function CheckoutClient() {
     return (
       <main
         id="main-content"
-        className="flex flex-1 flex-col items-center justify-center bg-black px-5 py-20 text-center"
+        className="flex flex-1 flex-col items-center justify-center bg-[#FAFAFA] px-5 py-20 text-center"
       >
-        <h1 className="text-2xl font-extrabold text-white">Could not load your bag</h1>
-        <p className="mt-3 max-w-sm text-sm text-[#b5b0a8]" role="alert">
+        <h1 className="text-2xl font-extrabold text-[#111111]">Could not load your bag</h1>
+        <p className="mt-3 max-w-sm text-sm text-[#555555]" role="alert">
           We couldn&apos;t load product details for checkout. Check your connection and try again.
         </p>
         <button
           type="button"
           onClick={() => void products.refetch()}
-          className="mt-8 border border-[#efc677] bg-[#e5bd79] px-6 py-3 text-[11px] font-bold uppercase text-[#18120b] hover:bg-[#eec98a]"
+          className="mt-8 border border-[#111111] bg-[#111111] px-6 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
         >
           Try Again
         </button>
@@ -311,9 +311,9 @@ export function CheckoutClient() {
 
   if (lines.length === 0) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center bg-black px-5 py-20 text-center">
-        <h1 className="text-2xl font-extrabold text-white">Nothing to checkout</h1>
-        <Link href="/shop" className="mt-6 text-[11px] font-bold uppercase text-[#e3bb78]">
+      <main className="flex flex-1 flex-col items-center justify-center bg-[#FAFAFA] px-5 py-20 text-center">
+        <h1 className="text-2xl font-extrabold text-[#111111]">Nothing to checkout</h1>
+        <Link href="/shop" className="mt-6 text-[11px] font-bold uppercase text-[#C9A227]">
           Continue Shopping
         </Link>
       </main>
@@ -321,30 +321,30 @@ export function CheckoutClient() {
   }
 
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-7 sm:py-10">
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Checkout
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-white">
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-[#111111]">
           SHIPPING & PAYMENT
         </h1>
 
         <form onSubmit={onSubmit} className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-6 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-            <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+          <div className="space-y-6 rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+            <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
               Shipping Information
             </h2>
 
             {user && shippingAddresses.length > 0 && (
               <div>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#b5b0a8]">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#555555]">
                     Saved addresses
                   </p>
                   <Link
                     href="/account/addresses"
-                    className="text-[10px] font-semibold uppercase text-[#e3bb78] hover:text-[#eec98a]"
+                    className="text-[10px] font-semibold uppercase text-[#C9A227] hover:text-[#D4B03A]"
                   >
                     Manage
                   </Link>
@@ -361,19 +361,19 @@ export function CheckoutClient() {
                           onClick={() => applySavedAddress(address)}
                           className={`w-full rounded-[4px] border px-3 py-2.5 text-left transition-colors ${
                             selected
-                              ? 'border-[#e5bd79] bg-[#1a1815]'
-                              : 'border-[#37332c] hover:border-[#e3bb78]'
+                              ? 'border-[#C9A227] bg-white'
+                              : 'border-[#E5E7EB] hover:border-[#C9A227]'
                           }`}
                         >
-                          <p className="text-[12px] font-semibold text-white">
+                          <p className="text-[12px] font-semibold text-[#111111]">
                             {address.label}
                             {address.isDefault ? (
-                              <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-[#e0bd7d]">
+                              <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-[#C9A227]">
                                 Default
                               </span>
                             ) : null}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-[#b5b0a8]">
+                          <p className="mt-0.5 text-[11px] text-[#555555]">
                             {address.fullName} · {address.line1}, {address.city}
                           </p>
                         </button>
@@ -381,16 +381,16 @@ export function CheckoutClient() {
                     );
                   })}
                 </ul>
-                <p className="mt-2 text-[11px] text-[#8b867d]">
+                <p className="mt-2 text-[11px] text-[#555555]">
                   Select an address to fill the form, or edit the fields below.
                 </p>
               </div>
             )}
 
             {user && shippingAddresses.length === 0 && (
-              <p className="rounded-[4px] border border-dashed border-[#37332c] px-3 py-2.5 text-[12px] text-[#b5b0a8]">
+              <p className="rounded-[4px] border border-dashed border-[#E5E7EB] px-3 py-2.5 text-[12px] text-[#555555]">
                 No saved addresses yet.{' '}
-                <Link href="/account/addresses" className="text-[#e3bb78] hover:text-[#eec98a]">
+                <Link href="/account/addresses" className="text-[#C9A227] hover:text-[#D4B03A]">
                   Add one in your account
                 </Link>{' '}
                 for faster checkout next time.
@@ -443,28 +443,28 @@ export function CheckoutClient() {
             </div>
 
             <div>
-              <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+              <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
                 Payment Method
               </h2>
               <div className="mt-3 space-y-2">
-                <label className="flex cursor-pointer items-center gap-2.5 rounded-[4px] border border-[#37332c] px-3 py-2.5 text-sm text-[#e9e5de]">
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-[4px] border border-[#E5E7EB] px-3 py-2.5 text-sm text-[#555555]">
                   <input
                     type="radio"
                     value="cod"
                     {...register('paymentMethod')}
-                    className="accent-[#e5bd79]"
+                    className="accent-[#C9A227]"
                   />
                   Cash on Delivery
                 </label>
-                <p className="rounded-[4px] border border-dashed border-[#37332c] px-3 py-2.5 text-xs text-[#8b867d]">
+                <p className="rounded-[4px] border border-dashed border-[#E5E7EB] px-3 py-2.5 text-xs text-[#555555]">
                   bKash and card payments are coming soon.
                 </p>
               </div>
             </div>
           </div>
 
-          <aside className="h-fit space-y-4 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-            <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+          <aside className="h-fit space-y-4 rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+            <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
               Your Order
             </h2>
             <ul className="space-y-3">
@@ -480,20 +480,20 @@ export function CheckoutClient() {
                     />
                   </div>
                   <div className="min-w-0 flex-1 text-[12px]">
-                    <p className="truncate font-medium text-white">{product.name}</p>
-                    <p className="text-[#8b867d]">
+                    <p className="truncate font-medium text-[#111111]">{product.name}</p>
+                    <p className="text-[#555555]">
                       {item.color} / {item.size} × {item.quantity}
                     </p>
-                    <p className="text-[#e5c17d]">{formatTaka(product.price * item.quantity)}</p>
+                    <p className="text-[#C9A227]">{formatTaka(product.price * item.quantity)}</p>
                   </div>
                 </li>
               ))}
             </ul>
 
-            <div className="border-t border-[#2d2a27] pt-4">
+            <div className="border-t border-[#E5E7EB] pt-4">
               <label
                 htmlFor="checkout-coupon"
-                className="text-[11px] font-semibold uppercase tracking-wide text-[#b5b0a8]"
+                className="text-[11px] font-semibold uppercase tracking-wide text-[#555555]"
               >
                 Coupon
               </label>
@@ -504,24 +504,24 @@ export function CheckoutClient() {
                   onChange={(e) => setCouponCode(e.target.value)}
                   placeholder="ELEVATE10"
                   disabled={couponPending}
-                  className="w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-3 py-2 text-sm text-white outline-none focus:border-[#e3bb78] disabled:opacity-60"
+                  className="w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#111111] outline-none focus:border-[#C9A227] disabled:opacity-60"
                 />
                 <button
                   type="button"
                   onClick={() => void applyCode()}
                   disabled={couponPending || !couponCode.trim()}
-                  className="rounded-[4px] border border-[#37332c] px-3 text-[10px] font-bold uppercase text-white hover:border-[#e3bb78] disabled:opacity-50"
+                  className="rounded-[4px] border border-[#E5E7EB] px-3 text-[10px] font-bold uppercase text-[#111111] hover:border-[#C9A227] disabled:opacity-50"
                 >
                   {couponPending ? 'Applying…' : 'Apply'}
                 </button>
               </div>
-              {couponError && <p className="mt-1.5 text-xs text-red-400">{couponError}</p>}
+              {couponError && <p className="mt-1.5 text-xs text-red-600">{couponError}</p>}
               {appliedCode && !couponError && (
-                <p className="mt-1.5 text-xs text-[#8fbf8f]">Coupon {appliedCode} applied.</p>
+                <p className="mt-1.5 text-xs text-green-700">Coupon {appliedCode} applied.</p>
               )}
               {!user && (
-                <p className="mt-1.5 text-[11px] text-[#8b867d]">
-                  <Link href="/login" className="text-[#e3bb78] hover:text-[#eec98a]">
+                <p className="mt-1.5 text-[11px] text-[#555555]">
+                  <Link href="/login" className="text-[#C9A227] hover:text-[#D4B03A]">
                     Sign in
                   </Link>{' '}
                   to use coupons.
@@ -529,42 +529,42 @@ export function CheckoutClient() {
               )}
             </div>
 
-            <dl className="space-y-2 border-t border-[#2d2a27] pt-4 text-sm">
-              <div className="flex justify-between text-[#b5b0a8]">
+            <dl className="space-y-2 border-t border-[#E5E7EB] pt-4 text-sm">
+              <div className="flex justify-between text-[#555555]">
                 <dt>Subtotal</dt>
-                <dd className="text-white">{formatTaka(subtotal)}</dd>
+                <dd className="text-[#111111]">{formatTaka(subtotal)}</dd>
               </div>
               {discount > 0 && (
-                <div className="flex justify-between text-[#b5b0a8]">
+                <div className="flex justify-between text-[#555555]">
                   <dt>Discount</dt>
-                  <dd className="text-[#8fbf8f]">−{formatTaka(discount)}</dd>
+                  <dd className="text-green-700">−{formatTaka(discount)}</dd>
                 </div>
               )}
-              <div className="flex justify-between text-[#b5b0a8]">
+              <div className="flex justify-between text-[#555555]">
                 <dt>Shipping</dt>
-                <dd className="text-white">{shipping === 0 ? 'Free' : formatTaka(shipping)}</dd>
+                <dd className="text-[#111111]">{shipping === 0 ? 'Free' : formatTaka(shipping)}</dd>
               </div>
-              <div className="flex justify-between pt-2 text-base font-semibold text-white">
+              <div className="flex justify-between pt-2 text-base font-semibold text-[#111111]">
                 <dt>Total</dt>
-                <dd className="text-[#e5c17d]">{formatTaka(total)}</dd>
+                <dd className="text-[#C9A227]">{formatTaka(total)}</dd>
               </div>
             </dl>
 
             {!user && (
-              <p className="text-[11px] text-[#b5b0a8]">
-                <Link href="/login" className="text-[#e3bb78] hover:text-[#eec98a]">
+              <p className="text-[11px] text-[#555555]">
+                <Link href="/login" className="text-[#C9A227] hover:text-[#D4B03A]">
                   Sign in
                 </Link>{' '}
                 to save this order to your account history.
               </p>
             )}
 
-            {submitError && <p className="text-xs text-red-400">{submitError}</p>}
+            {submitError && <p className="text-xs text-red-600">{submitError}</p>}
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-[4px] border border-[#efc677] bg-[#e5bd79] py-3 text-[11px] font-bold uppercase text-[#18120b] hover:bg-[#eec98a] disabled:opacity-50"
+              className="w-full rounded-[4px] border border-[#111111] bg-[#111111] py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:opacity-50"
             >
               {submitting ? 'Placing Order…' : 'Place Order'}
             </button>

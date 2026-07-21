@@ -17,43 +17,45 @@ import {
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import {
-  selectAuthUser,
-  selectCartCount,
-  selectWishlistCount,
-} from '@/store/selectors';
+import { selectAuthUser, selectCartCount, selectWishlistCount } from '@/store/selectors';
 import { useLogout } from '@/features/auth/hooks';
 import { displayName } from '@/features/account';
 import { isActiveNav, MAIN_NAV } from '@/components/layouts/site-nav';
 import { PrefetchNavLink } from '@/components/layouts/prefetch-nav-link';
 import { MobileHeaderBar } from '@/components/layouts/mobile-header-bar';
 import { MobileNavDrawer } from '@/components/layouts/mobile-nav-drawer';
+import { cn } from '@/lib/utils';
 
 const SearchDialog = dynamic(
-  () =>
-    import('@/components/shared/search-dialog').then((mod) => mod.SearchDialog),
+  () => import('@/components/shared/search-dialog').then((mod) => mod.SearchDialog),
   {
     ssr: false,
     loading: () => (
       <div
-        className="fixed inset-0 z-70 flex items-start justify-center bg-black/70 pt-[12vh] backdrop-blur-sm"
+        className="fixed inset-0 z-70 flex items-start justify-center bg-[#111111]/40 pt-[12vh] backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         aria-busy="true"
         aria-label="Loading search"
       >
-        <div className="w-full max-w-xl rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 shadow-2xl">
-          <div className="h-11 animate-pulse rounded-[4px] bg-[#1a1815]" />
+        <div className="w-full max-w-xl rounded-[4px] border border-[#E5E7EB] bg-white p-5 shadow-2xl">
+          <div className="h-11 animate-pulse rounded-[4px] bg-[#E5E7EB]" />
           <div className="mt-4 space-y-2">
-            <div className="h-10 animate-pulse rounded-[4px] bg-[#1a1815]" />
-            <div className="h-10 animate-pulse rounded-[4px] bg-[#1a1815]" />
-            <div className="h-10 animate-pulse rounded-[4px] bg-[#1a1815]" />
+            <div className="h-10 animate-pulse rounded-[4px] bg-[#E5E7EB]" />
+            <div className="h-10 animate-pulse rounded-[4px] bg-[#E5E7EB]" />
+            <div className="h-10 animate-pulse rounded-[4px] bg-[#E5E7EB]" />
           </div>
         </div>
       </div>
     ),
   },
 );
+
+const iconClass =
+  'p-1 text-[#111111] transition-colors hover:text-[#C9A227] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]';
+
+const menuItemClass =
+  'block px-3 py-2 text-[12px] text-[#111111] transition-colors hover:bg-[#FAFAFA] hover:text-[#C9A227]';
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -75,23 +77,21 @@ export function SiteHeader() {
         className="fixed inset-0 z-40"
         onClick={() => setAccountOpen(false)}
       />
-      <div className="absolute right-0 z-50 mt-2 w-52 rounded-[4px] border border-[#2d2a27] bg-[#111110] py-2 shadow-xl">
+      <div className="absolute right-0 z-50 mt-2 w-52 rounded-[4px] border border-[#E5E7EB] bg-white py-2 text-[#111111] shadow-xl">
         {user ? (
           <>
-            <p className="truncate px-3 pb-2 text-[11px] text-[#b5b0a8]">
-              {displayName(user)}
-            </p>
+            <p className="truncate px-3 pb-2 text-[11px] text-[#555555]">{displayName(user)}</p>
             <Link
               href="/account"
               onClick={() => setAccountOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
+              className={cn(menuItemClass, 'flex items-center gap-2')}
             >
               <UserRound className="size-3.5" /> My Account
             </Link>
             <Link
               href="/account/orders"
               onClick={() => setAccountOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
+              className={cn(menuItemClass, 'flex items-center gap-2')}
             >
               <Package className="size-3.5" /> Orders
             </Link>
@@ -101,31 +101,23 @@ export function SiteHeader() {
                 setAccountOpen(false);
                 logout.mutate();
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] hover:bg-[#1a1815] hover:text-red-300"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-[#111111] transition-colors hover:bg-[#FAFAFA] hover:text-red-600"
             >
               <LogOut className="size-3.5" /> Logout
             </button>
           </>
         ) : (
           <>
-            <Link
-              href="/login"
-              onClick={() => setAccountOpen(false)}
-              className="block px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
-            >
+            <Link href="/login" onClick={() => setAccountOpen(false)} className={menuItemClass}>
               Login
             </Link>
-            <Link
-              href="/register"
-              onClick={() => setAccountOpen(false)}
-              className="block px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
-            >
+            <Link href="/register" onClick={() => setAccountOpen(false)} className={menuItemClass}>
               Register
             </Link>
             <Link
               href="/track-order"
               onClick={() => setAccountOpen(false)}
-              className="block px-3 py-2 text-[12px] hover:bg-[#1a1815] hover:text-[#e3bb78]"
+              className={menuItemClass}
             >
               Track Order
             </Link>
@@ -136,9 +128,9 @@ export function SiteHeader() {
   );
 
   return (
-    <header className="z-40 bg-black text-white">
-      {/* Desktop header — unchanged */}
-      <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#292929] px-4 sm:px-7 lg:flex">
+    <header className="sticky top-0 z-40 bg-[#FAFAFA] text-[#111111] shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+      {/* Desktop header */}
+      <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#E5E7EB] px-4 sm:px-7 lg:flex">
         <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">
           <Image
             src="/images/brand/elevate-apparel-logo.webp"
@@ -156,9 +148,12 @@ export function SiteHeader() {
               <PrefetchNavLink
                 key={href}
                 href={href}
-                className={`relative py-[20px] text-[11px] font-semibold tracking-[-.01em] transition-colors ${
-                  active ? 'text-white' : 'text-white/90 hover:text-[#e3bb78]'
-                } ${active ? 'after:absolute after:inset-x-0 after:-bottom-px after:h-[2px] after:bg-[#e4bd7c]' : ''}`}
+                className={cn(
+                  'relative py-[20px] text-[11px] font-semibold tracking-[-.01em] transition-colors',
+                  active
+                    ? 'text-[#111111] after:absolute after:inset-x-0 after:-bottom-px after:h-[2px] after:bg-[#C9A227]'
+                    : 'text-[#111111] hover:text-[#C9A227]',
+                )}
               >
                 {name}
               </PrefetchNavLink>
@@ -170,7 +165,7 @@ export function SiteHeader() {
             type="button"
             aria-label="Search"
             onClick={() => setSearchOpen(true)}
-            className="p-1 transition-colors hover:text-[#e3bb78]"
+            className={iconClass}
           >
             <Search className="size-5" strokeWidth={1.7} />
           </button>
@@ -178,18 +173,14 @@ export function SiteHeader() {
             href="/store"
             aria-label="Store — Wari, Dhaka"
             title="Store"
-            className={`p-1 transition-colors hover:text-[#e3bb78] ${storeActive ? 'text-[#e3bb78]' : ''}`}
+            className={cn(iconClass, storeActive && 'text-[#C9A227]')}
           >
             <MapPin className="size-5" strokeWidth={1.7} />
           </Link>
-          <Link
-            href="/wishlist"
-            aria-label="Wishlist"
-            className="relative p-1 transition-colors hover:text-[#e3bb78]"
-          >
+          <Link href="/wishlist" aria-label="Wishlist" className={cn('relative', iconClass)}>
             <Heart className="size-5" strokeWidth={1.7} />
             {wishlistCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">
+              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#C9A227] text-[9px] font-bold text-[#111111]">
                 {wishlistCount > 9 ? '9+' : wishlistCount}
               </span>
             )}
@@ -200,27 +191,23 @@ export function SiteHeader() {
               aria-label="Account"
               aria-expanded={accountOpen}
               onClick={() => setAccountOpen((v) => !v)}
-              className="p-1 transition-colors hover:text-[#e3bb78]"
+              className={iconClass}
             >
               <UserRound className="size-5" strokeWidth={1.7} />
             </button>
             {accountDropdown}
           </div>
-          <Link
-            href="/cart"
-            aria-label="Shopping bag"
-            className="relative p-1 transition-colors hover:text-[#e3bb78]"
-          >
+          <Link href="/cart" aria-label="Shopping bag" className={cn('relative', iconClass)}>
             <ShoppingBag className="size-5" strokeWidth={1.7} />
-            <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">
+            <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#C9A227] text-[9px] font-bold text-[#111111]">
               {cartCount > 9 ? '9+' : cartCount}
             </span>
           </Link>
         </div>
       </div>
 
-      {/* Tablet header — previous layout preserved */}
-      <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#292929] px-4 sm:px-7 md:flex lg:hidden">
+      {/* Tablet header */}
+      <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#E5E7EB] px-4 sm:px-7 md:flex lg:hidden">
         <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">
           <Image
             src="/images/brand/elevate-apparel-logo.webp"
@@ -236,7 +223,7 @@ export function SiteHeader() {
             type="button"
             aria-label="Search"
             onClick={() => setSearchOpen(true)}
-            className="p-1 transition-colors hover:text-[#e3bb78]"
+            className={iconClass}
           >
             <Search className="size-5" strokeWidth={1.7} />
           </button>
@@ -244,18 +231,14 @@ export function SiteHeader() {
             href="/store"
             aria-label="Store — Wari, Dhaka"
             title="Store"
-            className={`p-1 transition-colors hover:text-[#e3bb78] ${storeActive ? 'text-[#e3bb78]' : ''}`}
+            className={cn(iconClass, storeActive && 'text-[#C9A227]')}
           >
             <MapPin className="size-5" strokeWidth={1.7} />
           </Link>
-          <Link
-            href="/wishlist"
-            aria-label="Wishlist"
-            className="relative p-1 transition-colors hover:text-[#e3bb78]"
-          >
+          <Link href="/wishlist" aria-label="Wishlist" className={cn('relative', iconClass)}>
             <Heart className="size-5" strokeWidth={1.7} />
             {wishlistCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">
+              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#C9A227] text-[9px] font-bold text-[#111111]">
                 {wishlistCount > 9 ? '9+' : wishlistCount}
               </span>
             )}
@@ -266,26 +249,22 @@ export function SiteHeader() {
               aria-label="Account"
               aria-expanded={accountOpen}
               onClick={() => setAccountOpen((v) => !v)}
-              className="p-1 transition-colors hover:text-[#e3bb78]"
+              className={iconClass}
             >
               <UserRound className="size-5" strokeWidth={1.7} />
             </button>
             {accountDropdown}
           </div>
-          <Link
-            href="/cart"
-            aria-label="Shopping bag"
-            className="relative p-1 transition-colors hover:text-[#e3bb78]"
-          >
+          <Link href="/cart" aria-label="Shopping bag" className={cn('relative', iconClass)}>
             <ShoppingBag className="size-5" strokeWidth={1.7} />
-            <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">
+            <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#C9A227] text-[9px] font-bold text-[#111111]">
               {cartCount > 9 ? '9+' : cartCount}
             </span>
           </Link>
           <button
             type="button"
             aria-label={tabletMenuOpen ? 'Close menu' : 'Open menu'}
-            className="p-1"
+            className={iconClass}
             onClick={() => setTabletMenuOpen(!tabletMenuOpen)}
           >
             {tabletMenuOpen ? (
@@ -297,15 +276,18 @@ export function SiteHeader() {
         </div>
       </div>
       {tabletMenuOpen && (
-        <nav className="hidden border-b border-[#292929] px-5 py-3 md:block lg:hidden">
+        <nav className="hidden border-b border-[#E5E7EB] bg-[#FAFAFA] px-5 py-3 md:block lg:hidden">
           {MAIN_NAV.map(([name, href]) => (
             <PrefetchNavLink
               key={href}
               href={href}
               onClick={() => setTabletMenuOpen(false)}
-              className={`block border-b border-white/5 py-2.5 text-xs font-semibold tracking-wide ${
-                isActiveNav(pathname, href) ? 'text-[#e3bb78]' : ''
-              }`}
+              className={cn(
+                'block border-b border-[#E5E7EB] py-2.5 text-xs font-semibold tracking-wide transition-colors',
+                isActiveNav(pathname, href)
+                  ? 'text-[#C9A227]'
+                  : 'text-[#111111] hover:text-[#C9A227]',
+              )}
             >
               {name}
             </PrefetchNavLink>
@@ -313,9 +295,10 @@ export function SiteHeader() {
           <Link
             href="/store"
             onClick={() => setTabletMenuOpen(false)}
-            className={`flex items-center gap-2 border-b border-white/5 py-2.5 text-xs font-semibold tracking-wide ${
-              storeActive ? 'text-[#e3bb78]' : ''
-            }`}
+            className={cn(
+              'flex items-center gap-2 border-b border-[#E5E7EB] py-2.5 text-xs font-semibold tracking-wide',
+              storeActive ? 'text-[#C9A227]' : 'text-[#111111] hover:text-[#C9A227]',
+            )}
           >
             <MapPin className="size-3.5" strokeWidth={1.7} />
             STORE — WARI, DHAKA
@@ -323,14 +306,14 @@ export function SiteHeader() {
           <Link
             href="/wishlist"
             onClick={() => setTabletMenuOpen(false)}
-            className="block border-b border-white/5 py-2.5 text-xs font-semibold tracking-wide"
+            className="block border-b border-[#E5E7EB] py-2.5 text-xs font-semibold tracking-wide text-[#111111] hover:text-[#C9A227]"
           >
             WISHLIST
           </Link>
           <Link
             href={user ? '/account' : '/login'}
             onClick={() => setTabletMenuOpen(false)}
-            className="block py-2.5 text-xs font-semibold tracking-wide"
+            className="block py-2.5 text-xs font-semibold tracking-wide text-[#111111] hover:text-[#C9A227]"
           >
             {user ? 'MY ACCOUNT' : 'LOGIN'}
           </Link>
@@ -338,12 +321,13 @@ export function SiteHeader() {
       )}
 
       {/* Mobile header */}
-      <div className="border-b border-[#292929] md:hidden">
+      <div className="border-b border-[#E5E7EB] md:hidden">
         <MobileHeaderBar
           menuOpen={menuOpen}
           onMenuToggle={() => setMenuOpen((value) => !value)}
           onSearchOpen={() => setSearchOpen(true)}
           wishlistCount={wishlistCount}
+          theme="light"
         />
       </div>
 
@@ -354,11 +338,10 @@ export function SiteHeader() {
         storeActive={storeActive}
         user={user}
         onLogout={() => logout.mutate()}
+        theme="light"
       />
 
-      {searchOpen ? (
-        <SearchDialog open onClose={() => setSearchOpen(false)} />
-      ) : null}
+      {searchOpen ? <SearchDialog open onClose={() => setSearchOpen(false)} /> : null}
     </header>
   );
 }

@@ -18,18 +18,18 @@ async function NewArrivalsCatalogSection() {
 
 export default function NewArrivalsPage() {
   return (
-    <main id="main-content" className="flex-1 bg-black">
-      <section className="border-b border-[#2d2a27] bg-[#111110]">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
+      <section className="border-b border-[#E5E7EB] bg-white">
         <div className="mx-auto flex max-w-[1400px] gap-0 overflow-x-auto px-3 sm:px-6">
           {['Drop 01 — Tees', 'Drop 02 — Hoodies', 'Drop 03 — Bottoms', 'Drop 04 — Essentials'].map(
             (label, i) => (
               <div
                 key={label}
-                className={`flex min-w-[180px] flex-1 items-center gap-3 px-4 py-4 text-[11px] font-semibold uppercase tracking-wide text-[#eee9e1] ${
-                  i ? 'border-l border-[#2d2a27]' : ''
+                className={`flex min-w-[180px] flex-1 items-center gap-3 px-4 py-4 text-[11px] font-semibold uppercase tracking-wide text-[#555555] ${
+                  i ? 'border-l border-[#E5E7EB]' : ''
                 }`}
               >
-                <span className="text-[#e3bb78]">{String(i + 1).padStart(2, '0')}</span>
+                <span className="text-[#C9A227]">{String(i + 1).padStart(2, '0')}</span>
                 {label.replace(/^Drop 0\d — /, '')}
               </div>
             ),

@@ -30,7 +30,7 @@ export function GoogleLoginButton({ label }: { label: string }) {
       type="button"
       disabled
       title="Google sign-in is coming soon"
-      className="flex w-full items-center justify-center gap-2.5 rounded-[4px] border border-[#37332c] bg-transparent py-3 text-sm font-medium text-white transition-colors hover:border-[#e3bb78]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78] disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex w-full items-center justify-center gap-2.5 rounded-[4px] border border-[#E5E7EB] bg-transparent py-3 text-sm font-medium text-[#111111] transition-colors hover:border-[#C9A227]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <GoogleIcon />
       {label}

@@ -28,8 +28,8 @@ export default function ChangePasswordPage() {
     getUserFacingErrorMessage(changePassword.error, USER_FACING_ERRORS.GENERIC);
 
   return (
-    <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-      <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+    <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+      <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
         Change Password
       </h2>
       <form onSubmit={onSubmit} className="mt-5 max-w-md space-y-4">
@@ -55,14 +55,14 @@ export default function ChangePasswordPage() {
           {...register('confirmPassword')}
         />
         {serverError && (
-          <p role="alert" className="text-sm text-red-300">
+          <p role="alert" className="text-sm text-red-700">
             {serverError}
           </p>
         )}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-5 py-3 text-[11px] font-bold uppercase text-[#18120b] disabled:opacity-50"
+          className="rounded-[4px] border border-[#111111] bg-[#111111] px-5 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:opacity-50"
         >
           {isSubmitting ? 'Updating…' : 'Update Password'}
         </button>

@@ -181,7 +181,7 @@ export default function AdminBannersPage() {
         {bannersQuery.isError ? <AdminError>Could not load banners.</AdminError> : null}
         {actionError ? <AdminError>{actionError}</AdminError> : null}
         {success ? (
-          <p className="mb-3 rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
+          <p className="mb-3 rounded-[4px] border border-[#C9A227]/40 bg-[#FFFFFF] px-3 py-2 text-sm text-[#C9A227]">
             {success}
           </p>
         ) : null}
@@ -207,19 +207,19 @@ export default function AdminBannersPage() {
               {banners.map((banner) => (
                 <tr key={banner.id}>
                   <AdminTd>
-                    <span className="font-semibold text-white">{banner.title}</span>
+                    <span className="font-semibold text-[#111111]">{banner.title}</span>
                     {banner.subtitle ? (
-                      <span className="mt-1 block text-xs text-[#b5b0a8]">{banner.subtitle}</span>
+                      <span className="mt-1 block text-xs text-[#555555]">{banner.subtitle}</span>
                     ) : null}
                   </AdminTd>
                   <AdminTd>
-                    <span className="text-[#e9e5de]">{banner.placement}</span>
+                    <span className="text-[#111111]">{banner.placement}</span>
                   </AdminTd>
                   <AdminTd>
                     <StatusPill>{banner.status}</StatusPill>
                   </AdminTd>
                   <AdminTd>
-                    <span className="text-xs text-[#b5b0a8]">
+                    <span className="text-xs text-[#555555]">
                       {banner.startsAt ? new Date(banner.startsAt).toLocaleDateString() : 'Open'}
                       {banner.endsAt
                         ? ` – ${new Date(banner.endsAt).toLocaleDateString()}`
@@ -264,7 +264,7 @@ export default function AdminBannersPage() {
       >
         <form onSubmit={(event) => void onSubmit(event)} className="grid gap-3 sm:grid-cols-2">
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Placement
             </span>
             <AdminSelect
@@ -284,7 +284,7 @@ export default function AdminBannersPage() {
             </AdminSelect>
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Status
             </span>
             <AdminSelect
@@ -303,7 +303,7 @@ export default function AdminBannersPage() {
             </AdminSelect>
           </label>
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Title
             </span>
             <AdminInput
@@ -315,7 +315,7 @@ export default function AdminBannersPage() {
             />
           </label>
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Subtitle
             </span>
             <AdminTextarea
@@ -328,7 +328,7 @@ export default function AdminBannersPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               CTA label
             </span>
             <AdminInput
@@ -340,7 +340,7 @@ export default function AdminBannersPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               CTA href
             </span>
             <AdminInput
@@ -352,7 +352,7 @@ export default function AdminBannersPage() {
             />
           </label>
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Desktop image URL
             </span>
             <AdminInput
@@ -364,7 +364,7 @@ export default function AdminBannersPage() {
             />
           </label>
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Mobile image URL (optional)
             </span>
             <AdminInput
@@ -376,7 +376,7 @@ export default function AdminBannersPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Position
             </span>
             <AdminInput
@@ -390,7 +390,7 @@ export default function AdminBannersPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Starts at (optional)
             </span>
             <AdminInput
@@ -403,7 +403,7 @@ export default function AdminBannersPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Ends at (optional)
             </span>
             <AdminInput

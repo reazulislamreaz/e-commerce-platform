@@ -175,13 +175,13 @@ export default function AddressesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
           Saved Addresses
         </h2>
         <button
           type="button"
           onClick={() => (mode === 'closed' ? openCreate() : closeForm())}
-          className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-3 py-2 text-[10px] font-bold uppercase text-[#18120b]"
+          className="rounded-[4px] border border-[#111111] bg-[#111111] px-3 py-2 text-[10px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
         >
           {mode === 'closed' ? 'Add Address' : 'Cancel'}
         </button>
@@ -199,9 +199,9 @@ export default function AddressesPage() {
       {mode !== 'closed' && (
         <form
           onSubmit={onSubmit}
-          className="grid gap-3 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 sm:grid-cols-2"
+          className="grid gap-3 rounded-[4px] border border-[#E5E7EB] bg-white p-5 sm:grid-cols-2"
         >
-          <p className="sm:col-span-2 text-[11px] font-bold uppercase tracking-[.12em] text-[#e0bd7d]">
+          <p className="sm:col-span-2 text-[11px] font-bold uppercase tracking-[.12em] text-[#C9A227]">
             {mode === 'edit' ? 'Edit address' : 'New address'}
           </p>
           <FormField label="Label" error={errors.label?.message} {...register('label')} />
@@ -224,14 +224,14 @@ export default function AddressesPage() {
             error={errors.postalCode?.message}
             {...register('postalCode')}
           />
-          <label className="flex items-center gap-2 text-sm text-[#e9e5de] sm:col-span-2">
-            <input type="checkbox" {...register('isDefault')} className="accent-[#e5bd79]" />
+          <label className="flex items-center gap-2 text-sm text-[#555555] sm:col-span-2">
+            <input type="checkbox" {...register('isDefault')} className="accent-[#C9A227]" />
             Set as default shipping address
           </label>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-4 py-2.5 text-[10px] font-bold uppercase text-[#18120b] disabled:opacity-50 sm:w-fit"
+            className="rounded-[4px] border border-[#111111] bg-[#111111] px-4 py-2.5 text-[10px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:opacity-50 sm:w-fit"
           >
             {isSubmitting ? 'Saving…' : mode === 'edit' ? 'Update Address' : 'Save Address'}
           </button>
@@ -239,7 +239,7 @@ export default function AddressesPage() {
       )}
 
       {addresses.length === 0 ? (
-        <p className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#b5b0a8]">
+        <p className="rounded-[4px] border border-[#E5E7EB] bg-white p-5 text-sm text-[#555555]">
           No saved addresses yet.
         </p>
       ) : (
@@ -247,27 +247,27 @@ export default function AddressesPage() {
           {addresses.map((address) => (
             <li
               key={address.id}
-              className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-4 text-sm text-[#e9e5de]"
+              className="rounded-[4px] border border-[#E5E7EB] bg-white p-4 text-sm text-[#555555]"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-white">
+                  <p className="font-semibold text-[#111111]">
                     {address.label}
                     {address.isDefault && (
-                      <span className="ml-2 text-[10px] uppercase tracking-wide text-[#e3bb78]">
+                      <span className="ml-2 text-[10px] uppercase tracking-wide text-[#C9A227]">
                         Default
                       </span>
                     )}
                   </p>
                   <p className="mt-1">{address.fullName}</p>
-                  <p className="text-[#b5b0a8]">
+                  <p className="text-[#555555]">
                     {address.line1}
                     {address.line2 ? `, ${address.line2}` : ''}
                   </p>
-                  <p className="text-[#b5b0a8]">
+                  <p className="text-[#555555]">
                     {address.city}, {address.district} {address.postalCode}
                   </p>
-                  <p className="text-[#b5b0a8]">{address.phone}</p>
+                  <p className="text-[#555555]">{address.phone}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {!address.isDefault ? (
@@ -275,7 +275,7 @@ export default function AddressesPage() {
                       type="button"
                       disabled={busyId === address.id}
                       onClick={() => void onSetDefault(address.id)}
-                      className="text-[11px] uppercase tracking-wide text-[#e3bb78] hover:text-[#eec98a] disabled:opacity-50"
+                      className="text-[11px] uppercase tracking-wide text-[#C9A227] hover:text-[#D4B03A] disabled:opacity-50"
                     >
                       Set default
                     </button>
@@ -284,7 +284,7 @@ export default function AddressesPage() {
                     type="button"
                     disabled={busyId === address.id}
                     onClick={() => openEdit(address)}
-                    className="text-[11px] uppercase tracking-wide text-[#d8d4cd] hover:text-white disabled:opacity-50"
+                    className="text-[11px] uppercase tracking-wide text-[#111111] hover:text-[#111111] disabled:opacity-50"
                   >
                     Edit
                   </button>
@@ -292,7 +292,7 @@ export default function AddressesPage() {
                     type="button"
                     disabled={busyId === address.id}
                     onClick={() => void onRemove(address.id)}
-                    className="text-[11px] uppercase text-red-300 hover:text-red-200 disabled:opacity-50"
+                    className="text-[11px] uppercase text-red-700 hover:text-red-200 disabled:opacity-50"
                   >
                     Remove
                   </button>

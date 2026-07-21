@@ -64,7 +64,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   if (!(key in collections)) notFound();
 
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
         <Suspense fallback={<CatalogSectionSkeleton count={8} />}>
           <CategoryCatalog collection={key} />

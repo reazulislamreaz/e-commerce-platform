@@ -103,7 +103,7 @@ function MoveToCartControl({
             value={variantId}
             onChange={(event) => setVariantId(event.target.value)}
             disabled={loading}
-            className="w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-2.5 py-2 text-[11px] text-white outline-none focus:border-[#e3bb78]"
+            className="w-full rounded-[4px] border border-[#E5E7EB] bg-white px-2.5 py-2 text-[11px] text-[#111111] outline-none focus:border-[#C9A227]"
           >
             {availableVariants.map((variant) => (
               <option key={variant.id} value={variant.id}>
@@ -117,7 +117,7 @@ function MoveToCartControl({
         type="button"
         disabled={loading || product.inStock === false}
         onClick={() => void prepareMove()}
-        className="w-full rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-3 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a] disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-[4px] border border-[#111111] bg-[#111111] px-3 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? 'Moving…' : detail ? 'Move selected to bag' : 'Move to bag'}
       </button>
@@ -148,13 +148,13 @@ export function WishlistGrid({
   if (!hydrated || (ids.length > 0 && resolved.isLoading && !resolved.data)) {
     return (
       <div className="space-y-4">
-        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">{title}</h2>
+        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">{title}</h2>
         <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 min-[480px]:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: Math.min(ids.length || 4, 4) }, (_, i) => (
             <div key={i} className="min-w-0" aria-hidden>
-              <div className="aspect-[.8] animate-pulse rounded-[4px] bg-[#1a1815]" />
-              <div className="mt-2 h-3 w-[80%] animate-pulse rounded-[4px] bg-[#1a1815]" />
-              <div className="mt-1.5 h-3 w-[40%] animate-pulse rounded-[4px] bg-[#1a1815]" />
+              <div className="aspect-[.8] animate-pulse rounded-[4px] bg-white" />
+              <div className="mt-2 h-3 w-[80%] animate-pulse rounded-[4px] bg-white" />
+              <div className="mt-1.5 h-3 w-[40%] animate-pulse rounded-[4px] bg-white" />
             </div>
           ))}
         </div>
@@ -165,18 +165,18 @@ export function WishlistGrid({
   if (ids.length > 0 && resolved.isError) {
     return (
       <div className="space-y-4">
-        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
           {title} ({count})
         </h2>
         <div
-          className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#b5b0a8]"
+          className="rounded-[4px] border border-[#E5E7EB] bg-white p-5 text-sm text-[#555555]"
           role="alert"
         >
           <p>We couldn&apos;t load your saved items. Check your connection and try again.</p>
           <button
             type="button"
             onClick={() => void resolved.refetch()}
-            className="mt-4 rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-4 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] hover:bg-[#eec98a]"
+            className="mt-4 rounded-[4px] border border-[#111111] bg-[#111111] px-4 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
           >
             Try Again
           </button>
@@ -188,7 +188,7 @@ export function WishlistGrid({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
           {title} ({count})
         </h2>
         {showClear && products.length > 0 && (
@@ -205,16 +205,16 @@ export function WishlistGrid({
                 });
               });
             }}
-            className="text-[10px] font-semibold uppercase text-[#b5b0a8] hover:text-[#e3bb78]"
+            className="text-[10px] font-semibold uppercase text-[#555555] hover:text-[#C9A227]"
           >
             Clear All
           </button>
         )}
       </div>
       {products.length === 0 ? (
-        <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#b5b0a8]">
+        <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5 text-sm text-[#555555]">
           {emptyHint}{' '}
-          <Link href="/shop" className="text-[#e3bb78]">
+          <Link href="/shop" className="text-[#C9A227]">
             Browse products
           </Link>
         </div>

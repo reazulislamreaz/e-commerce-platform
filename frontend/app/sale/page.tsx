@@ -6,7 +6,11 @@ import { ShopCatalog } from '@/components/shop/shop-catalog';
 import { CatalogSectionSkeleton, PageHeroSkeleton } from '@/components/loading';
 import { productCatalog } from '@/features/products';
 import { marketingApi } from '@/features/marketing/api';
-import { bannerToPageHero, FALLBACK_BANNERS, pickPrimaryBanner } from '@/features/marketing/banners';
+import {
+  bannerToPageHero,
+  FALLBACK_BANNERS,
+  pickPrimaryBanner,
+} from '@/features/marketing/banners';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,26 +44,24 @@ async function SaleHeroSection() {
 
 async function SaleCatalogSection() {
   const products = await productCatalog.onSale();
-  return (
-    <ShopCatalog products={products} title="On Sale" initialFilters={{ discount: true }} />
-  );
+  return <ShopCatalog products={products} title="On Sale" initialFilters={{ discount: true }} />;
 }
 
 export default function SalePage() {
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <Suspense fallback={<PageHeroSkeleton variant="full" />}>
         <SaleHeroSection />
       </Suspense>
 
-      <section className="bg-[#e5bd79]">
+      <section className="bg-[#C9A227]">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-7">
-          <p className="text-xs font-bold uppercase tracking-[.12em] text-[#18120b]">
+          <p className="text-xs font-bold uppercase tracking-[.12em] text-[#111111]">
             Member tip — unlock exclusive sale drops first
           </p>
           <Link
             href="/register"
-            className="border border-[#18120b] px-3 py-1.5 text-[10px] font-bold uppercase text-[#18120b] transition-colors hover:bg-[#18120b] hover:text-[#e5bd79]"
+            className="border border-[#111111] px-3 py-1.5 text-[10px] font-bold uppercase text-[#111111] transition-colors hover:bg-[#111111] hover:text-[#C9A227]"
           >
             Join Elevate
           </Link>

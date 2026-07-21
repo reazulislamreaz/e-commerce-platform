@@ -65,22 +65,22 @@ export function ReviewForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-4 rounded-[4px] border border-[#37332c] bg-[#0a0a0b] p-4"
+      className="space-y-4 rounded-[4px] border border-[#E5E7EB] bg-[#FAFAFA] p-4"
     >
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#e0bd7d]">
+        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#C9A227]">
           {review ? 'Edit review' : 'Write a review'}
         </p>
-        <h4 className="mt-1 font-semibold text-white">{productName}</h4>
+        <h4 className="mt-1 font-semibold text-[#111111]">{productName}</h4>
       </div>
       <div>
-        <label htmlFor={`rating-${productId}`} className="mb-1.5 block text-sm text-[#d8d4cd]">
+        <label htmlFor={`rating-${productId}`} className="mb-1.5 block text-sm text-[#111111]">
           Rating
         </label>
         <select
           id={`rating-${productId}`}
           {...register('rating', { valueAsNumber: true })}
-          className="w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-3.5 py-3 text-sm text-white outline-none focus:border-[#e3bb78]"
+          className="w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3.5 py-3 text-sm text-[#111111] outline-none focus:border-[#C9A227]"
         >
           {[5, 4, 3, 2, 1].map((rating) => (
             <option key={rating} value={rating}>
@@ -91,19 +91,19 @@ export function ReviewForm({
       </div>
       <FormField label="Title" error={errors.title?.message} {...register('title')} />
       <div>
-        <label htmlFor={`review-body-${productId}`} className="mb-1.5 block text-sm text-[#d8d4cd]">
+        <label htmlFor={`review-body-${productId}`} className="mb-1.5 block text-sm text-[#111111]">
           Review
         </label>
         <textarea
           id={`review-body-${productId}`}
           rows={5}
           {...register('body')}
-          className="w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-3.5 py-3 text-sm text-white outline-none focus:border-[#e3bb78]"
+          className="w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3.5 py-3 text-sm text-[#111111] outline-none focus:border-[#C9A227]"
         />
-        {errors.body ? <p className="mt-1.5 text-xs text-red-400">{errors.body.message}</p> : null}
+        {errors.body ? <p className="mt-1.5 text-xs text-red-600">{errors.body.message}</p> : null}
       </div>
       {errorMessage ? (
-        <p role="alert" className="text-sm text-red-300">
+        <p role="alert" className="text-sm text-red-700">
           {errorMessage}
         </p>
       ) : null}
@@ -111,7 +111,7 @@ export function ReviewForm({
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-4 py-2.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] hover:bg-[#eec98a] disabled:opacity-50"
+          className="rounded-[4px] border border-[#111111] bg-[#111111] px-4 py-2.5 text-[10px] font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:opacity-50"
         >
           {mutation.isPending ? 'Saving…' : review ? 'Save changes' : 'Submit review'}
         </button>
@@ -119,7 +119,7 @@ export function ReviewForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-[4px] border border-[#37332c] px-4 py-2.5 text-[10px] font-bold uppercase tracking-[.08em] text-white hover:border-[#e3bb78]"
+            className="rounded-[4px] border border-[#E5E7EB] px-4 py-2.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#111111] hover:border-[#C9A227]"
           >
             Cancel
           </button>

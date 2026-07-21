@@ -5,8 +5,8 @@ export function Skeleton({ className }: { className?: string }) {
     <div
       aria-hidden
       className={cn(
-        'relative overflow-hidden rounded-[4px] bg-[#1a1815]',
-        'before:absolute before:inset-0 before:-translate-x-full before:bg-linear-to-r before:from-transparent before:via-[#e3bb78]/8 before:to-transparent before:content-[""]',
+        'relative overflow-hidden rounded-[4px] bg-[#E5E7EB]',
+        'before:absolute before:inset-0 before:-translate-x-full before:bg-linear-to-r before:from-transparent before:via-white/70 before:to-transparent before:content-[""]',
         'motion-safe:before:animate-[elevate-shimmer_1.4s_ease-in-out_infinite]',
         className,
       )}
@@ -41,7 +41,7 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
 
 export function ProductDetailSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className="mx-auto max-w-[1400px] px-5 py-6 sm:px-7 lg:py-10">
         <Skeleton className="mb-6 h-3 w-48" />
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
@@ -71,7 +71,7 @@ export function ProductDetailSkeleton() {
 
 export function CatalogPageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
         <div className="mb-5 flex items-end justify-between gap-3">
           <div className="space-y-2">
@@ -112,11 +112,11 @@ export function AdminTableSkeleton({ rows = 6 }: { rows?: number }) {
         <Skeleton className="h-5 w-40" />
         <Skeleton className="h-9 w-28" />
       </div>
-      <div className="overflow-hidden rounded-lg border border-[#26231f]">
+      <div className="overflow-hidden rounded-lg border border-[#E5E7EB] bg-white">
         {Array.from({ length: rows }, (_, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 border-b border-[#26231f]/70 px-4 py-3.5 last:border-b-0"
+            className="flex items-center gap-4 border-b border-[#E5E7EB] px-4 py-3.5 last:border-b-0"
           >
             <Skeleton className="h-3.5 w-24" />
             <Skeleton className="h-3.5 flex-1" />
@@ -143,7 +143,7 @@ export function AuthFormSkeleton() {
 
 export function PageShellSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className="mx-auto max-w-[1400px] px-5 py-10 sm:px-7">
         <Skeleton className="h-3 w-28" />
         <Skeleton className="mt-3 h-9 w-64 max-w-full" />

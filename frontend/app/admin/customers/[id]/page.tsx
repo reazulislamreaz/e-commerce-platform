@@ -55,7 +55,7 @@ export default function AdminCustomerDetailPage() {
     return (
       <div className="space-y-3">
         <AdminError>Customer not found or failed to load.</AdminError>
-        <Link href="/admin/customers" className="text-xs font-bold uppercase text-[#e3bb78]">
+        <Link href="/admin/customers" className="text-xs font-bold uppercase text-[#C9A227]">
           ← Customers
         </Link>
       </div>
@@ -79,14 +79,17 @@ export default function AdminCustomerDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/admin/customers"
-          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
         >
           ← Customers
         </Link>
         <StatusPill>{metrics.segment.replaceAll('_', ' ')}</StatusPill>
       </div>
 
-      <AdminPanel title={name} description={`Customer since ${new Date(customer.createdAt).toLocaleDateString()}`}>
+      <AdminPanel
+        title={name}
+        description={`Customer since ${new Date(customer.createdAt).toLocaleDateString()}`}
+      >
         <dl className="grid gap-4 text-sm sm:grid-cols-3">
           <ProfileItem label="Email" value={customer.email} />
           <ProfileItem label="Phone" value={customer.phone} />
@@ -103,7 +106,9 @@ export default function AdminCustomerDetailPage() {
         <MetricCard label="Cancelled" value={String(metrics.cancelledOrderCount)} />
         <MetricCard
           label="First order"
-          value={metrics.firstOrderAt ? new Date(metrics.firstOrderAt).toLocaleDateString() : 'Never'}
+          value={
+            metrics.firstOrderAt ? new Date(metrics.firstOrderAt).toLocaleDateString() : 'Never'
+          }
         />
         <MetricCard
           label="Last order"
@@ -137,7 +142,7 @@ export default function AdminCustomerDetailPage() {
                     <AdminTd>
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        className="font-semibold text-[#e3bb78]"
+                        className="font-semibold text-[#C9A227]"
                       >
                         #{order.number}
                       </Link>
@@ -171,7 +176,10 @@ export default function AdminCustomerDetailPage() {
         ) : null}
       </AdminPanel>
 
-      <AdminPanel title="Activity timeline" description="Commerce events recorded for this customer.">
+      <AdminPanel
+        title="Activity timeline"
+        description="Commerce events recorded for this customer."
+      >
         {activityQuery.isError ? <AdminError>Could not load customer activity.</AdminError> : null}
         {activityQuery.isLoading && activityRows.length === 0 ? (
           <AdminSkeleton className="h-40 w-full" />
@@ -183,16 +191,19 @@ export default function AdminCustomerDetailPage() {
           {activityRows.map((event) => {
             const href = toAdminActivityHref(event.href);
             return (
-              <li key={event.id} className="relative border-l border-[#37332c] pb-6 pl-6 last:pb-0">
-                <span className="absolute -left-1.5 top-1 size-3 rounded-full border-2 border-[#0a0a0b] bg-[#e5bd79]" />
+              <li key={event.id} className="relative border-l border-[#E5E7EB] pb-6 pl-6 last:pb-0">
+                <span className="absolute -left-1.5 top-1 size-3 rounded-full border-2 border-[#FAFAFA] bg-[#C9A227]" />
                 {href ? (
-                  <Link href={href} className="text-sm font-semibold text-white hover:text-[#e3bb78]">
+                  <Link
+                    href={href}
+                    className="text-sm font-semibold text-[#111111] hover:text-[#C9A227]"
+                  >
                     {event.title}
                   </Link>
                 ) : (
-                  <p className="text-sm font-semibold text-white">{event.title}</p>
+                  <p className="text-sm font-semibold text-[#111111]">{event.title}</p>
                 )}
-                <p className="mt-1 text-xs text-[#8b867d]">
+                <p className="mt-1 text-xs text-[#555555]">
                   {event.eventType.replaceAll('_', ' ')} ·{' '}
                   {new Date(event.createdAt).toLocaleString()}
                 </p>
@@ -235,17 +246,17 @@ function toAdminActivityHref(href: string | undefined): string | undefined {
 function ProfileItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#8b867d]">{label}</dt>
-      <dd className="mt-1 text-white">{value}</dd>
+      <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">{label}</dt>
+      <dd className="mt-1 text-[#111111]">{value}</dd>
     </div>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[#26231f] bg-[#111110] p-4">
-      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#8b867d]">{label}</p>
-      <p className="mt-2 text-xl font-extrabold text-[#e3bb78]">{value}</p>
+    <div className="rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">{label}</p>
+      <p className="mt-2 text-xl font-extrabold text-[#C9A227]">{value}</p>
     </div>
   );
 }

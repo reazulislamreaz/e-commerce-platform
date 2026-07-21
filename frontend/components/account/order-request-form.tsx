@@ -145,15 +145,15 @@ export function OrderRequestForm({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">{title}</h2>
+      <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">{title}</h2>
         <form onSubmit={onSubmit} className="mt-4 max-w-lg space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#d8d4cd]">Order</label>
+            <label className="mb-1.5 block text-sm font-medium text-[#111111]">Order</label>
             <select
               {...register('orderId')}
               disabled={ordersLoading}
-              className="w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-3.5 py-3 text-sm text-white outline-none focus:border-[#e3bb78] disabled:opacity-50"
+              className="w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3.5 py-3 text-sm text-[#111111] outline-none focus:border-[#C9A227] disabled:opacity-50"
             >
               <option value="">{ordersLoading ? 'Loading orders…' : 'Select order'}</option>
               {orders
@@ -165,16 +165,16 @@ export function OrderRequestForm({
                 ))}
             </select>
             {errors.orderId && (
-              <p className="mt-1.5 text-xs text-red-400">{errors.orderId.message}</p>
+              <p className="mt-1.5 text-xs text-red-600">{errors.orderId.message}</p>
             )}
             {ordersError ? (
-              <p className="mt-1.5 text-xs text-red-400">Could not load orders.</p>
+              <p className="mt-1.5 text-xs text-red-600">Could not load orders.</p>
             ) : null}
           </div>
 
           {type === 'exchange' && activeSelectedOrder ? (
-            <div className="space-y-3 rounded-[4px] border border-[#2d2a27] bg-[#1a1815] p-3">
-              <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#e3bb78]">
+            <div className="space-y-3 rounded-[4px] border border-[#E5E7EB] bg-white p-3">
+              <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#C9A227]">
                 Replacement variants
               </p>
               {activeSelectedOrder.items.map((item) => {
@@ -186,7 +186,7 @@ export function OrderRequestForm({
 
                 return (
                   <label key={lineId} className="block space-y-1.5 text-sm">
-                    <span className="text-[#e9e5de]">
+                    <span className="text-[#555555]">
                       {item.name} ({item.color} / {item.size})
                     </span>
                     <select
@@ -198,7 +198,7 @@ export function OrderRequestForm({
                         }))
                       }
                       disabled={productsQuery.isLoading}
-                      className="w-full rounded-[4px] border border-[#37332c] bg-[#111110] px-3 py-2 text-sm text-white outline-none focus:border-[#e3bb78] disabled:opacity-50"
+                      className="w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#111111] outline-none focus:border-[#C9A227] disabled:opacity-50"
                     >
                       <option value="">
                         {productsQuery.isLoading ? 'Loading sizes…' : 'Select replacement'}
@@ -217,23 +217,23 @@ export function OrderRequestForm({
           ) : null}
 
           <FormField label={reasonLabel} error={errors.reason?.message} {...register('reason')} />
-          <label className="flex items-start gap-2 text-sm text-[#e9e5de]">
+          <label className="flex items-start gap-2 text-sm text-[#555555]">
             <input
               type="checkbox"
               {...register('conditionAttested')}
-              className="mt-0.5 accent-[#e5bd79]"
+              className="mt-0.5 accent-[#C9A227]"
             />
             <span>
               I confirm the item(s) are unworn, unwashed, and have all original tags attached.
             </span>
           </label>
           {errors.conditionAttested && (
-            <p className="text-xs text-red-400">{errors.conditionAttested.message}</p>
+            <p className="text-xs text-red-600">{errors.conditionAttested.message}</p>
           )}
           <button
             type="submit"
             disabled={isSubmitting || createReturn.isPending || ordersLoading}
-            className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-5 py-3 text-[11px] font-bold uppercase text-[#18120b] disabled:opacity-50"
+            className="rounded-[4px] border border-[#111111] bg-[#111111] px-5 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:opacity-50"
           >
             {isSubmitting || createReturn.isPending ? 'Submitting…' : submitLabel}
           </button>
@@ -241,22 +241,24 @@ export function OrderRequestForm({
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">{listTitle}</h3>
+        <h3 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
+          {listTitle}
+        </h3>
         {returnsLoading ? (
-          <p className="text-sm text-[#b5b0a8]">Loading requests…</p>
+          <p className="text-sm text-[#555555]">Loading requests…</p>
         ) : returnsError ? (
-          <p className="text-sm text-red-300">Could not load requests.</p>
+          <p className="text-sm text-red-700">Could not load requests.</p>
         ) : filtered.length === 0 ? (
-          <p className="text-sm text-[#b5b0a8]">{emptyMessage}</p>
+          <p className="text-sm text-[#555555]">{emptyMessage}</p>
         ) : (
           filtered.map((req) => (
             <div
               key={req.id}
-              className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-4 text-sm"
+              className="rounded-[4px] border border-[#E5E7EB] bg-white p-4 text-sm"
             >
-              <p className="font-semibold text-white">Order #{req.orderNumber}</p>
-              <p className="mt-1 text-[#b5b0a8]">{req.reason}</p>
-              <p className="mt-2 text-[11px] capitalize text-[#e3bb78]">{req.status}</p>
+              <p className="font-semibold text-[#111111]">Order #{req.orderNumber}</p>
+              <p className="mt-1 text-[#555555]">{req.reason}</p>
+              <p className="mt-2 text-[11px] capitalize text-[#C9A227]">{req.status}</p>
             </div>
           ))
         )}

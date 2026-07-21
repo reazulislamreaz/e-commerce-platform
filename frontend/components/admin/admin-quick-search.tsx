@@ -24,7 +24,12 @@ function buildResults(query: string): SearchResult[] {
         item.label.toLowerCase().includes(lower) ||
         item.keywords?.some((keyword) => keyword.includes(lower)),
     )
-    .map((item) => ({ href: item.href, label: item.label, hint: 'Go to section', icon: item.icon }));
+    .map((item) => ({
+      href: item.href,
+      label: item.label,
+      hint: 'Go to section',
+      icon: item.icon,
+    }));
 
   if (!trimmed) return destinations.slice(0, 6);
 
@@ -89,7 +94,7 @@ export function AdminQuickSearch({ className }: { className?: string }) {
     <div ref={containerRef} className={cn('relative', className)}>
       <Search
         aria-hidden
-        className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-[#8b867d]"
+        className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-[#555555]"
         strokeWidth={1.7}
       />
       <input
@@ -123,11 +128,11 @@ export function AdminQuickSearch({ className }: { className?: string }) {
             navigate(results[activeIndex]);
           }
         }}
-        className="w-full rounded-lg border border-[#2d2a27] bg-[#141311] py-2 pl-9 pr-12 text-[13px] text-white outline-none transition-colors placeholder:text-[#6f6a61] hover:border-[#4a4438] focus:border-[#e3bb78] focus:ring-2 focus:ring-[#e3bb78]/15 [&::-webkit-search-cancel-button]:hidden"
+        className="w-full rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] py-2 pl-9 pr-12 text-[13px] text-[#111111] outline-none transition-colors placeholder:text-[#555555] hover:border-[#D1D5DB] focus:border-[#C9A227] focus:ring-2 focus:ring-[#C9A227]/15 [&::-webkit-search-cancel-button]:hidden"
       />
       <kbd
         aria-hidden
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-[#2d2a27] bg-[#1a1815] px-1.5 py-0.5 text-[10px] font-semibold text-[#8b867d]"
+        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-[#E5E7EB] bg-[#FFFFFF] px-1.5 py-0.5 text-[10px] font-semibold text-[#555555]"
       >
         ⌘K
       </kbd>
@@ -136,12 +141,16 @@ export function AdminQuickSearch({ className }: { className?: string }) {
         <ul
           id="admin-quick-search-results"
           role="listbox"
-          className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-[#26231f] bg-[#12110f] py-1.5 shadow-[0_16px_48px_-12px_rgba(0,0,0,.7)]"
+          className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] py-1.5 shadow-[0_16px_48px_-12px_rgba(0,0,0,.15)]"
         >
           {results.map((result, index) => {
             const Icon = result.icon ?? Search;
             return (
-              <li key={`${result.href}-${result.label}`} role="option" aria-selected={index === activeIndex}>
+              <li
+                key={`${result.href}-${result.label}`}
+                role="option"
+                aria-selected={index === activeIndex}
+              >
                 <button
                   type="button"
                   onClick={() => navigate(result)}
@@ -149,23 +158,27 @@ export function AdminQuickSearch({ className }: { className?: string }) {
                   className={cn(
                     'flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors',
                     index === activeIndex
-                      ? 'bg-[#e3bb78]/[0.08] text-white'
-                      : 'text-[#d8d4cd] hover:bg-white/[0.04]',
+                      ? 'bg-[#C9A227]/[0.08] text-[#111111]'
+                      : 'text-[#555555] hover:bg-[#FAFAFA]',
                   )}
                 >
                   <Icon
                     className={cn(
                       'size-4 shrink-0',
-                      index === activeIndex ? 'text-[#e3bb78]' : 'text-[#8b867d]',
+                      index === activeIndex ? 'text-[#C9A227]' : 'text-[#555555]',
                     )}
                     strokeWidth={1.6}
                   />
                   <span className="min-w-0 flex-1 truncate">{result.label}</span>
-                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[.08em] text-[#6f6a61]">
+                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[.08em] text-[#555555]">
                     {result.hint}
                   </span>
                   {index === activeIndex ? (
-                    <CornerDownLeft aria-hidden className="size-3.5 shrink-0 text-[#8b867d]" strokeWidth={1.7} />
+                    <CornerDownLeft
+                      aria-hidden
+                      className="size-3.5 shrink-0 text-[#555555]"
+                      strokeWidth={1.7}
+                    />
                   ) : null}
                 </button>
               </li>

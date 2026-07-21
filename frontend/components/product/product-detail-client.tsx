@@ -132,7 +132,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
   };
 
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section className="mx-auto max-w-[1400px] px-5 py-6 sm:px-7 lg:py-10">
         <Breadcrumbs
           items={[
@@ -178,7 +178,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                 }`}
               />
               {discount > 0 && (
-                <span className="absolute left-3 top-3 z-10 bg-[#e5bd79] px-2.5 py-1 text-[11px] font-bold text-[#18120b]">
+                <span className="absolute left-3 top-3 z-10 bg-[#C9A227] px-2.5 py-1 text-[11px] font-bold text-[#111111]">
                   -{discount}%
                 </span>
               )}
@@ -193,7 +193,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                     onClick={() => setActiveImage(index)}
                     aria-pressed={index === activeImage}
                     className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-[4px] border ${
-                      index === activeImage ? 'border-[#e5bd79]' : 'border-transparent'
+                      index === activeImage ? 'border-[#C9A227]' : 'border-transparent'
                     }`}
                   >
                     <ProductImage
@@ -211,37 +211,37 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
           </div>
 
           <div className="flex flex-col">
-            <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+            <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
               {p.brand} · {p.category}
             </p>
-            <h1 className="mt-2 text-[clamp(28px,5vw,42px)] font-extrabold tracking-[-.03em] text-white">
+            <h1 className="mt-2 text-[clamp(28px,5vw,42px)] font-extrabold tracking-[-.03em] text-[#111111]">
               {p.name}
             </h1>
 
             {p.reviewCount > 0 && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-[#b5b0a8]">
-                <span className="inline-flex items-center gap-1 text-[#e5c17d]">
-                  <Star className="size-3.5 fill-[#e5c17d]" strokeWidth={0} />
+              <div className="mt-2 flex items-center gap-2 text-sm text-[#555555]">
+                <span className="inline-flex items-center gap-1 text-[#C9A227]">
+                  <Star className="size-3.5 fill-[#C9A227]" strokeWidth={0} />
                   {p.rating.toFixed(1)}
                 </span>
                 <span>({p.reviewCount} reviews)</span>
               </div>
             )}
 
-            <p className="mt-4 flex items-baseline gap-3 text-xl font-semibold text-[#e5c17d]">
+            <p className="mt-4 flex items-baseline gap-3 text-xl font-semibold text-[#C9A227]">
               {formatTaka(p.price)}
               {p.compareAtPrice && p.onSale && (
-                <span className="text-sm font-normal text-[#8b867d] line-through">
+                <span className="text-sm font-normal text-[#555555] line-through">
                   {formatTaka(p.compareAtPrice)}
                 </span>
               )}
             </p>
 
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-[#eee9e1]">{p.description}</p>
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-[#555555]">{p.description}</p>
 
             <div className="mt-6">
-              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-white">
-                Color: <span className="font-medium text-[#b5b0a8]">{color}</span>
+              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#111111]">
+                Color: <span className="font-medium text-[#555555]">{color}</span>
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {p.colors.map((option) => (
@@ -252,7 +252,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                     onClick={() => setColor(option.name)}
                     aria-pressed={color === option.name}
                     className={`size-8 rounded-full border-2 ${
-                      color === option.name ? 'border-[#e5bd79]' : 'border-[#37332c]'
+                      color === option.name ? 'border-[#C9A227]' : 'border-[#E5E7EB]'
                     }`}
                     style={{ backgroundColor: option.hex }}
                     aria-label={option.name}
@@ -262,7 +262,9 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
             </div>
 
             <div className="mt-5">
-              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-white">Size</p>
+              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#111111]">
+                Size
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {p.sizes.map((option) => {
                   const available =
@@ -277,8 +279,8 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                       aria-pressed={size === option}
                       className={`min-w-11 rounded-[4px] border px-3 py-2 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-30 ${
                         size === option
-                          ? 'border-[#e5bd79] bg-[#e5bd79] text-[#18120b]'
-                          : 'border-[#37332c] text-white hover:border-[#e3bb78]'
+                          ? 'border-[#C9A227] bg-[#C9A227] text-[#111111]'
+                          : 'border-[#E5E7EB] text-[#111111] hover:border-[#C9A227]'
                       }`}
                     >
                       {option}
@@ -290,28 +292,30 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
 
             <p
               className={`mt-4 text-[12px] font-semibold ${
-                inStock ? 'text-[#8fbf8f]' : 'text-red-400'
+                inStock ? 'text-green-700' : 'text-red-600'
               }`}
             >
               {inStock ? `In stock (${stock} left)` : 'Out of stock'}
             </p>
 
             <div className="mt-5 flex items-center gap-3">
-              <div className="inline-flex items-center rounded-[4px] border border-[#37332c]">
+              <div className="inline-flex items-center rounded-[4px] border border-[#E5E7EB]">
                 <button
                   type="button"
                   aria-label="Decrease quantity"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="p-2.5 text-white hover:text-[#e3bb78]"
+                  className="p-2.5 text-[#111111] hover:text-[#C9A227]"
                 >
                   <Minus className="size-3.5" />
                 </button>
-                <span className="min-w-8 text-center text-sm font-semibold text-white">{qty}</span>
+                <span className="min-w-8 text-center text-sm font-semibold text-[#111111]">
+                  {qty}
+                </span>
                 <button
                   type="button"
                   aria-label="Increase quantity"
                   onClick={() => setQty((q) => Math.min(stock || 1, q + 1))}
-                  className="p-2.5 text-white hover:text-[#e3bb78]"
+                  className="p-2.5 text-[#111111] hover:text-[#C9A227]"
                 >
                   <Plus className="size-3.5" />
                 </button>
@@ -329,7 +333,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
 
             <Link
               href="/shop"
-              className="mt-6 text-[11px] font-semibold uppercase tracking-wide text-[#b5b0a8] hover:text-[#e3bb78]"
+              className="mt-6 text-[11px] font-semibold uppercase tracking-wide text-[#555555] hover:text-[#C9A227]"
             >
               ← Back to shop
             </Link>
@@ -344,7 +348,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
           <button
             type="button"
             aria-label="Close enlarged image"
-            className="absolute inset-0 bg-black/90"
+            className="absolute inset-0 bg-[#FAFAFA]/90"
             onClick={() => setLightboxOpen(false)}
           />
           <div
@@ -363,7 +367,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
             <button
               type="button"
               onClick={() => setLightboxOpen(false)}
-              className="absolute right-5 top-5 rounded-[4px] border border-[#37332c] bg-[#111110] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-white"
+              className="absolute right-5 top-5 rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#111111]"
             >
               Close
             </button>

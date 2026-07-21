@@ -1,11 +1,11 @@
 ---
-description: Mandatory Elevate Apparel brand theme — colors, fonts, and visual system for all storefront UI
+description: Mandatory Elevate Apparel brand theme — colors, fonts, and visual system for storefront and admin UI
 alwaysApply: true
 ---
 
 # Elevate Apparel Brand Theme
 
-Follow the full theme spec in [CLAUDE.md](../../CLAUDE.md) (**Elevate Apparel Brand Theme**). Every page must match this system.
+Follow the full theme spec in [CLAUDE.md](../../CLAUDE.md) (**Elevate Apparel Brand Theme**). Homepage is the approved reference. Storefront **and** admin must match this system.
 
 ## Fonts
 
@@ -14,19 +14,38 @@ Follow the full theme spec in [CLAUDE.md](../../CLAUDE.md) (**Elevate Apparel Br
 - Mono rare: Geist Mono (`font-mono`)
 - Do not introduce Inter/Roboto/system as the brand face
 
-## Colors (match live UI)
+## Colors (canonical — do not drift)
 
-- Backgrounds: `#0a0a0b`, `#090909`, `#111110`, `#1a1815`, `black`
-- Gold: `#e3bb78`, `#e0bd7d`, CTA `#e5bd79` / `#e5bd78`, hover `#eec98a`
-- Text: white / `#f4f4f5`; muted `#b5b0a8`; on-gold `#18120b`
-- Borders: `#2d2a27`, `#37332c`, `#292929`
-- CSS tokens also in `frontend/app/globals.css` (`--color-gold`, `--color-surface*`)
+| Role           | Hex       |
+| -------------- | --------- |
+| Background     | `#FAFAFA` |
+| Primary text   | `#111111` |
+| Secondary text | `#555555` |
+| Accent         | `#C9A227` |
+| Accent hover   | `#D4B03A` |
+| Border         | `#E5E7EB` |
+| Cards          | `#FFFFFF` |
+
+Tokens: `frontend/app/globals.css`, `frontend/lib/design-system.ts` (`DS`, `btnPrimary`, `btnSecondary`, `cardShell`).
+
+Do **not** use the old dark palette (`#0a0a0b`, `#111110`, `#1a1815`, `#e3bb78`, etc.).
+
+## Buttons
+
+- **Primary:** `#111111` + white text → hover `#C9A227` + black text
+- **Secondary:** white + black border → hover black fill + white text
+
+## Navbar & footer
+
+- Navbar: sticky `#FAFAFA`, soft shadow, text/icons `#111111`, active/hover gold
+- Footer (storefront only): stays **dark** — black bg, white text, gold headings
 
 ## UI patterns
 
 - Max width `1400px`
 - Sharp radii (`rounded-[4px]`–`rounded-lg`), not pill-heavy
-- Uppercase compact gold CTAs; gold focus rings
-- Dark-first; no purple/indigo glow themes; no cream broadsheet defaults
+- Uppercase compact CTAs; gold focus rings
+- Light-first; no purple/indigo glow themes; no cream broadsheet defaults
+- Soft alerts: green / gold / red / blue for success / warning / error / info
 
-When building or restyling any page, reuse header/footer/auth/homepage visual language.
+When building or restyling any page, reuse header/footer/auth/homepage/admin-shell visual language.

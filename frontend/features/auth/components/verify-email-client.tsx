@@ -21,25 +21,25 @@ export function VerifyEmailClient() {
       : USER_FACING_ERRORS.VERIFICATION_LINK;
     return (
       <div className="space-y-5 text-center" role="alert">
-        <XCircle aria-hidden className="mx-auto size-12 text-red-400" strokeWidth={1.5} />
+        <XCircle aria-hidden className="mx-auto size-12 text-red-600" strokeWidth={1.5} />
         <div>
-          <h2 className="text-xl font-bold uppercase tracking-[-.02em] text-white">
+          <h2 className="text-xl font-bold uppercase tracking-[-.02em] text-[#111111]">
             We couldn&apos;t verify your email
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-[#b5b0a8]">{message}</p>
+          <p className="mt-2 text-sm leading-relaxed text-[#555555]">{message}</p>
         </div>
-        <p className="text-sm text-[#b5b0a8]">
+        <p className="text-sm text-[#555555]">
           Request a new link from the{' '}
           <Link
             href="/register"
-            className="font-semibold text-[#e3bb78] transition-colors hover:text-[#eec98a]"
+            className="font-semibold text-[#C9A227] transition-colors hover:text-[#D4B03A]"
           >
             registration page
           </Link>{' '}
           or{' '}
           <Link
             href="/login"
-            className="font-semibold text-[#e3bb78] transition-colors hover:text-[#eec98a]"
+            className="font-semibold text-[#C9A227] transition-colors hover:text-[#D4B03A]"
           >
             sign in
           </Link>{' '}
@@ -52,18 +52,18 @@ export function VerifyEmailClient() {
   if (verify.isSuccess) {
     return (
       <div className="space-y-5 text-center" role="status">
-        <CheckCircle2 aria-hidden className="mx-auto size-12 text-[#e3bb78]" strokeWidth={1.5} />
+        <CheckCircle2 aria-hidden className="mx-auto size-12 text-[#C9A227]" strokeWidth={1.5} />
         <div>
-          <h2 className="text-xl font-bold uppercase tracking-[-.02em] text-white">
+          <h2 className="text-xl font-bold uppercase tracking-[-.02em] text-[#111111]">
             Email verified
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-[#b5b0a8]">
+          <p className="mt-2 text-sm leading-relaxed text-[#555555]">
             Your account is now active. Sign in to start shopping.
           </p>
         </div>
         <Link
           href="/login"
-          className="inline-block w-full rounded-[4px] bg-[#e5bd78] py-3 text-center text-xs font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+          className="inline-block w-full rounded-[4px] border border-[#111111] bg-[#111111] py-3 text-center text-xs font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]"
         >
           Sign In
         </Link>
@@ -73,8 +73,8 @@ export function VerifyEmailClient() {
 
   return (
     <div className="space-y-4 text-center" role="status">
-      <Loader2 aria-hidden className="mx-auto size-10 animate-spin text-[#e3bb78]" />
-      <p className="text-sm text-[#b5b0a8]">Verifying your email address…</p>
+      <Loader2 aria-hidden className="mx-auto size-10 animate-spin text-[#C9A227]" />
+      <p className="text-sm text-[#555555]">Verifying your email address…</p>
     </div>
   );
 }

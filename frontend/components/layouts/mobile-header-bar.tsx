@@ -3,15 +3,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, Menu, Search } from 'lucide-react';
-
-const iconButtonClass =
-  'flex size-11 shrink-0 items-center justify-center rounded-[4px] text-white transition-colors hover:text-[#e3bb78] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-black';
+import { cn } from '@/lib/utils';
 
 type MobileHeaderBarProps = {
   menuOpen: boolean;
   onMenuToggle: () => void;
   onSearchOpen: () => void;
   wishlistCount: number;
+  /** Home page light chrome only. */
+  theme?: 'dark' | 'light';
 };
 
 export function MobileHeaderBar({
@@ -19,7 +19,16 @@ export function MobileHeaderBar({
   onMenuToggle,
   onSearchOpen,
   wishlistCount,
+  theme = 'dark',
 }: MobileHeaderBarProps) {
+  const isLight = theme === 'light';
+  const iconButtonClass = cn(
+    'flex size-11 shrink-0 items-center justify-center rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2',
+    isLight
+      ? 'text-[#111111] hover:text-[#C9A227] focus-visible:ring-[#C9A227] focus-visible:ring-offset-[#FAFAFA]'
+      : 'text-[#111111] hover:text-[#C9A227] focus-visible:ring-[#C9A227] focus-visible:ring-offset-[#FAFAFA]',
+  );
+
   return (
     <div className="relative mx-auto flex h-[52px] max-w-[1400px] items-center px-2 sm:px-4 md:hidden">
       <button
@@ -59,7 +68,7 @@ export function MobileHeaderBar({
         <Link href="/wishlist" aria-label="Wishlist" className={`relative ${iconButtonClass}`}>
           <Heart className="size-5" strokeWidth={1.7} />
           {wishlistCount > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-[#e5bd78] text-[9px] font-bold text-black">
+            <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-[#C9A227] text-[9px] font-bold text-black">
               {wishlistCount > 9 ? '9+' : wishlistCount}
             </span>
           )}

@@ -103,7 +103,7 @@ export function DonutChart({
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="#1d1b18"
+        stroke="#FAFAFA"
         strokeWidth={thickness}
       />
       {arcs.map((arc) => (
@@ -121,12 +121,7 @@ export function DonutChart({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       ))}
-      <text
-        x="50%"
-        y="47%"
-        textAnchor="middle"
-        className="fill-white text-[26px] font-extrabold"
-      >
+      <text x="50%" y="47%" textAnchor="middle" className="fill-white text-[26px] font-extrabold">
         {centerLabel}
       </text>
       {centerSub ? (
@@ -134,7 +129,7 @@ export function DonutChart({
           x="50%"
           y="60%"
           textAnchor="middle"
-          className="fill-[#8b867d] text-[10px] font-bold uppercase tracking-[.14em]"
+          className="fill-[#555555] text-[10px] font-bold uppercase tracking-[.14em]"
         >
           {centerSub}
         </text>
@@ -180,7 +175,7 @@ export function AreaChart({
       <div className="flex gap-3">
         <div
           aria-hidden
-          className="flex w-12 shrink-0 flex-col justify-between pb-0.5 text-right text-[10px] font-semibold text-[#6f6a61]"
+          className="flex w-12 shrink-0 flex-col justify-between pb-0.5 text-right text-[10px] font-semibold text-[#555555]"
         >
           <span>{formatValue(max)}</span>
           <span>{formatValue(max / 2)}</span>
@@ -195,8 +190,8 @@ export function AreaChart({
           >
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#e3bb78" stopOpacity="0.32" />
-                <stop offset="100%" stopColor="#e3bb78" stopOpacity="0" />
+                <stop offset="0%" stopColor="#C9A227" stopOpacity="0.32" />
+                <stop offset="100%" stopColor="#C9A227" stopOpacity="0" />
               </linearGradient>
             </defs>
             {[0, 50, 100].map((y) => (
@@ -206,7 +201,7 @@ export function AreaChart({
                 x2={width}
                 y1={y}
                 y2={y}
-                stroke="#26231f"
+                stroke="#E5E7EB"
                 strokeWidth="1"
                 vectorEffect="non-scaling-stroke"
               />
@@ -216,7 +211,7 @@ export function AreaChart({
               <polyline
                 points={line}
                 fill="none"
-                stroke="#e3bb78"
+                stroke="#C9A227"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -227,7 +222,7 @@ export function AreaChart({
           {last ? (
             <span
               aria-hidden
-              className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#e3bb78] shadow-[0_0_0_4px_rgba(227,187,120,.2)]"
+              className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#C9A227] shadow-[0_0_0_4px_rgba(201,162,39,.2)]"
               style={{ left: `${last.x}%`, top: `${(last.y / height) * 100}%` }}
             />
           ) : null}
@@ -235,7 +230,7 @@ export function AreaChart({
       </div>
       <div
         aria-hidden
-        className="mt-2 flex justify-between pl-[60px] text-[10px] font-semibold text-[#6f6a61]"
+        className="mt-2 flex justify-between pl-[60px] text-[10px] font-semibold text-[#555555]"
       >
         {points.map((point) => (
           <span key={point.label}>{point.label}</span>
@@ -256,10 +251,10 @@ export function MeterBar({ percent, className }: { percent: number; className?: 
       aria-valuenow={Math.round(clamped)}
       aria-valuemin={0}
       aria-valuemax={100}
-      className={cn('h-1.5 w-full overflow-hidden rounded-full bg-[#1d1b18]', className)}
+      className={cn('h-1.5 w-full overflow-hidden rounded-full bg-[#E5E7EB]', className)}
     >
       <div
-        className="h-full rounded-full bg-gradient-to-r from-[#b8962e] to-[#e3bb78]"
+        className="h-full rounded-full bg-gradient-to-r from-[#C9A227] to-[#C9A227]"
         style={{ width: `${clamped}%` }}
       />
     </div>

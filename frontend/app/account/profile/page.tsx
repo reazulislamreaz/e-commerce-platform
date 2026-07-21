@@ -44,8 +44,10 @@ export default function ProfilePage() {
     );
 
   return (
-    <div className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-      <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">Edit Profile</h2>
+    <div className="rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+      <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
+        Edit Profile
+      </h2>
       <form onSubmit={onSubmit} className="mt-5 grid max-w-xl gap-4 sm:grid-cols-2">
         <FormField
           label="First name"
@@ -74,14 +76,14 @@ export default function ProfilePage() {
           />
         </div>
         {serverError && (
-          <p role="alert" className="sm:col-span-2 text-sm text-red-300">
+          <p role="alert" className="sm:col-span-2 text-sm text-red-700">
             {serverError}
           </p>
         )}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-5 py-3 text-[11px] font-bold uppercase text-[#18120b] disabled:opacity-50 sm:col-span-2 sm:w-fit"
+          className="rounded-[4px] border border-[#111111] bg-[#111111] px-5 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:opacity-50 sm:col-span-2 sm:w-fit"
         >
           {isSubmitting ? 'Saving…' : 'Save Changes'}
         </button>

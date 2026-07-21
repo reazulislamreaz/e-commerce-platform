@@ -11,32 +11,32 @@ const sectionClass = 'mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10';
 
 export function HomePageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       {/* Hero */}
-      <section className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#2d2a27] bg-[#090909]">
+      <section className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA]">
         <Skeleton className="absolute inset-y-0 right-0 w-full rounded-none sm:w-[62%]" />
         <div className="relative mx-auto flex h-full max-w-[1400px] items-center px-5 sm:px-[10.2%]">
           <div className="max-w-[390px] space-y-3">
-            <Skeleton className="h-3 w-36" />
-            <Skeleton className="h-14 w-[min(100%,340px)] sm:h-16" />
-            <Skeleton className="h-4 w-[min(100%,260px)]" />
+            <Skeleton className="h-3 w-36 bg-[#e5e7eb]" />
+            <Skeleton className="h-14 w-[min(100%,340px)] bg-[#e5e7eb] sm:h-16" />
+            <Skeleton className="h-4 w-[min(100%,260px)] bg-[#e5e7eb]" />
             <div className="flex gap-2.5 pt-2">
-              <Skeleton className="h-10 w-28" />
-              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
+              <Skeleton className="h-10 w-32 bg-[#e5e7eb]" />
             </div>
           </div>
         </div>
       </section>
 
       {/* Benefits strip */}
-      <section className="bg-[#111110]">
-        <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-y-3 px-5 py-4 min-[440px]:grid-cols-2 sm:px-7 lg:grid-cols-4">
+      <section className="border-b border-[#E5E7EB] bg-[#FAFAFA]">
+        <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-y-4 px-5 py-8 min-[440px]:grid-cols-2 sm:px-7 lg:grid-cols-4 lg:py-10">
           {Array.from({ length: 4 }, (_, i) => (
             <div key={i} className="flex items-center gap-3 px-2 sm:px-4">
-              <Skeleton className="size-8 shrink-0 rounded-full" />
+              <Skeleton className="size-8 shrink-0 rounded-full bg-[#e5e7eb]" />
               <div className="flex-1 space-y-1.5">
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="h-2.5 w-32" />
+                <Skeleton className="h-3 w-24 bg-[#e5e7eb]" />
+                <Skeleton className="h-2.5 w-32 bg-[#e5e7eb]" />
               </div>
             </div>
           ))}
@@ -44,45 +44,60 @@ export function HomePageSkeleton() {
       </section>
 
       {/* Promo banner */}
-      <section className="border-y border-[#2d2a27] bg-[#090909]">
-        <div className="relative mx-auto max-w-[1400px] min-h-[160px] sm:min-h-[180px]">
-          <Skeleton className="absolute inset-0 rounded-none opacity-60" />
-          <div className="relative flex min-h-[160px] flex-col justify-center gap-3 px-5 py-8 sm:min-h-[180px] sm:flex-row sm:items-center sm:justify-between sm:px-7">
-            <div className="max-w-xl space-y-2">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-8 w-56" />
-              <Skeleton className="h-4 w-72 max-w-full" />
+      <section className="bg-[#FAFAFA]">
+        <div className="relative mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
+          <div className="relative min-h-[180px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-white sm:min-h-[200px]">
+            <div className="relative flex min-h-[180px] flex-col justify-center gap-4 px-5 py-10 sm:min-h-[200px] sm:flex-row sm:items-center sm:justify-between sm:px-8">
+              <div className="max-w-xl space-y-2">
+                <Skeleton className="h-3 w-20 bg-[#e5e7eb]" />
+                <Skeleton className="h-8 w-56 bg-[#e5e7eb]" />
+                <Skeleton className="h-4 w-72 max-w-full bg-[#e5e7eb]" />
+              </div>
+              <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
             </div>
-            <Skeleton className="h-10 w-28" />
           </div>
         </div>
       </section>
 
       {/* Collection grid */}
-      <section className="mx-auto max-w-[1400px] px-3 pt-3 sm:px-6">
-        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="aspect-[.9] w-full sm:aspect-[1.05] lg:h-[325px] lg:aspect-auto" />
-          ))}
+      <section className="bg-[#FAFAFA]">
+        <div className="mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton
+                key={i}
+                className="aspect-[.9] w-full bg-[#e5e7eb] sm:aspect-[1.05] lg:h-[325px] lg:aspect-auto"
+              />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Featured rail */}
-      <section className="mx-auto max-w-[1400px] px-3 pt-5 sm:px-6 sm:pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-3 w-20" />
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-x-2.5 gap-y-5 min-[480px]:grid-cols-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }, (_, i) => (
-            <ProductCardSkeleton key={i} />
-          ))}
+      <section className="bg-[#FAFAFA]">
+        <div className="mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-5 w-40 bg-[#e5e7eb]" />
+            <Skeleton className="h-3 w-20 bg-[#e5e7eb]" />
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 min-[480px]:grid-cols-3 lg:grid-cols-6">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="min-w-0 rounded-lg border border-[#E5E7EB] bg-white p-2">
+                <Skeleton className="aspect-[.8] w-full rounded-[4px] bg-[#e5e7eb]" />
+                <Skeleton className="mt-2 h-3 w-[80%] bg-[#e5e7eb]" />
+                <Skeleton className="mt-1.5 h-3 w-[40%] bg-[#e5e7eb]" />
+                <Skeleton className="mt-2 h-3.5 w-[33%] bg-[#e5e7eb]" />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Sale promo */}
-      <section className="mx-auto mt-8 max-w-[1400px] px-3 sm:px-6">
-        <Skeleton className="min-h-[140px] w-full sm:min-h-[160px]" />
+      <section className="bg-white">
+        <div className="mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
+          <Skeleton className="min-h-[160px] w-full rounded-lg bg-[#e5e7eb] sm:min-h-[180px]" />
+        </div>
       </section>
     </main>
   );
@@ -90,7 +105,7 @@ export function HomePageSkeleton() {
 
 export function ShopPageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <PageHeroSkeleton variant="asymmetric" />
       <section className={sectionClass}>
         <CatalogSectionSkeleton count={8} />
@@ -101,12 +116,12 @@ export function ShopPageSkeleton() {
 
 export function SalePageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <PageHeroSkeleton variant="full" />
-      <section className="bg-[#e5bd79]" aria-hidden>
+      <section className="bg-[#C9A227]" aria-hidden>
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-7">
-          <Skeleton className="h-3 w-[min(100%,280px)] bg-[#18120b]/20" />
-          <Skeleton className="h-8 w-24 bg-[#18120b]/20" />
+          <Skeleton className="h-3 w-[min(100%,280px)] bg-[#111111]/15" />
+          <Skeleton className="h-8 w-24 bg-[#111111]/15" />
         </div>
       </section>
       <section className={sectionClass}>
@@ -118,13 +133,13 @@ export function SalePageSkeleton() {
 
 export function NewArrivalsPageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
-      <section className="border-b border-[#2d2a27] bg-[#111110]" aria-hidden>
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
+      <section className="border-b border-[#E5E7EB] bg-white" aria-hidden>
         <div className="mx-auto flex max-w-[1400px] gap-0 overflow-x-auto px-3 sm:px-6">
           {Array.from({ length: 4 }, (_, i) => (
             <div
               key={i}
-              className={`flex min-w-[180px] flex-1 items-center gap-3 px-4 py-4 ${i ? 'border-l border-[#2d2a27]' : ''}`}
+              className={`flex min-w-[180px] flex-1 items-center gap-3 px-4 py-4 ${i ? 'border-l border-[#E5E7EB]' : ''}`}
             >
               <Skeleton className="h-3 w-6" />
               <Skeleton className="h-3 w-20" />
@@ -141,7 +156,7 @@ export function NewArrivalsPageSkeleton() {
 
 export function CategoryPageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className={sectionClass}>
         <CatalogSectionSkeleton count={8} />
       </section>
@@ -151,7 +166,7 @@ export function CategoryPageSkeleton() {
 
 export function SearchPageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className={sectionClass}>
         <Skeleton className="h-3 w-16" />
         <Skeleton className="mt-2 h-9 w-64 max-w-full" />
@@ -165,7 +180,7 @@ export function SearchPageSkeleton() {
 
 export function CartPageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-7 sm:py-10">
         <Skeleton className="h-3 w-28" />
         <Skeleton className="mt-2 h-9 w-48" />
@@ -174,7 +189,7 @@ export function CartPageSkeleton() {
             {Array.from({ length: 2 }, (_, i) => (
               <li
                 key={i}
-                className="flex gap-4 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-3 sm:p-4"
+                className="flex gap-4 rounded-[4px] border border-[#E5E7EB] bg-white p-3 sm:p-4"
               >
                 <Skeleton className="h-28 w-24 shrink-0" />
                 <div className="flex-1 space-y-2">
@@ -186,7 +201,7 @@ export function CartPageSkeleton() {
               </li>
             ))}
           </ul>
-          <aside className="h-fit rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
+          <aside className="h-fit rounded-[4px] border border-[#E5E7EB] bg-white p-5">
             <Skeleton className="h-4 w-32" />
             <div className="mt-4 space-y-2">
               <Skeleton className="h-4 w-full" />
@@ -203,12 +218,12 @@ export function CartPageSkeleton() {
 
 export function CheckoutPageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-7 sm:py-10">
         <Skeleton className="h-3 w-20" />
         <Skeleton className="mt-2 h-9 w-72 max-w-full" />
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-4 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
+          <div className="space-y-4 rounded-[4px] border border-[#E5E7EB] bg-white p-5">
             <Skeleton className="h-4 w-40" />
             <div className="grid gap-4 sm:grid-cols-2">
               {Array.from({ length: 8 }, (_, i) => (
@@ -218,7 +233,7 @@ export function CheckoutPageSkeleton() {
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-12 w-full" />
           </div>
-          <aside className="h-fit space-y-4 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
+          <aside className="h-fit space-y-4 rounded-[4px] border border-[#E5E7EB] bg-white p-5">
             <Skeleton className="h-4 w-24" />
             {Array.from({ length: 2 }, (_, i) => (
               <div key={i} className="flex gap-3">
@@ -240,7 +255,7 @@ export function CheckoutPageSkeleton() {
 
 export function WishlistPageSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-7 sm:py-10">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="mt-2 h-9 w-40" />
@@ -254,7 +269,7 @@ export function WishlistPageSkeleton() {
 
 export function AccountLayoutSkeleton() {
   return (
-    <main id="main-content" className="flex-1 bg-black" aria-busy="true" aria-live="polite">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
       <section className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-6 space-y-2">
           <Skeleton className="h-3 w-24" />
@@ -262,7 +277,7 @@ export function AccountLayoutSkeleton() {
           <Skeleton className="h-4 w-56" />
         </div>
         <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-          <aside className="h-fit rounded-[4px] border border-[#2d2a27] bg-[#111110] p-2">
+          <aside className="h-fit rounded-[4px] border border-[#E5E7EB] bg-white p-2">
             <div className="space-y-0.5">
               {Array.from({ length: 10 }, (_, i) => (
                 <Skeleton key={i} className="h-10 w-full rounded-[4px]" />
@@ -290,18 +305,18 @@ export function ProductRailSkeleton({ count = 6 }: { count?: number }) {
 export function HomeHeroSkeleton() {
   return (
     <section
-      className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#2d2a27] bg-[#090909]"
+      className="relative h-[80svh] min-h-[420px] overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA]"
       aria-hidden
     >
-      <Skeleton className="absolute inset-y-0 right-0 w-full rounded-none sm:w-[62%]" />
+      <Skeleton className="absolute inset-y-0 right-0 w-full rounded-none bg-[#e5e7eb] sm:w-[62%]" />
       <div className="relative mx-auto flex h-full max-w-[1400px] items-center px-5 sm:px-[10.2%]">
         <div className="max-w-[390px] space-y-3">
-          <Skeleton className="h-3 w-36" />
-          <Skeleton className="h-14 w-[min(100%,340px)] sm:h-16" />
-          <Skeleton className="h-4 w-[min(100%,260px)]" />
+          <Skeleton className="h-3 w-36 bg-[#e5e7eb]" />
+          <Skeleton className="h-14 w-[min(100%,340px)] bg-[#e5e7eb] sm:h-16" />
+          <Skeleton className="h-4 w-[min(100%,260px)] bg-[#e5e7eb]" />
           <div className="flex gap-2.5 pt-2">
-            <Skeleton className="h-10 w-28" />
-            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
+            <Skeleton className="h-10 w-32 bg-[#e5e7eb]" />
           </div>
         </div>
       </div>
@@ -311,16 +326,17 @@ export function HomeHeroSkeleton() {
 
 export function HomePromoSkeleton() {
   return (
-    <section className="border-y border-[#2d2a27] bg-[#090909]" aria-hidden>
-      <div className="relative mx-auto max-w-[1400px] min-h-[160px] sm:min-h-[180px]">
-        <Skeleton className="absolute inset-0 rounded-none opacity-60" />
-        <div className="relative flex min-h-[160px] flex-col justify-center gap-3 px-5 py-8 sm:min-h-[180px] sm:flex-row sm:items-center sm:justify-between sm:px-7">
-          <div className="max-w-xl space-y-2">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-8 w-56" />
-            <Skeleton className="h-4 w-72 max-w-full" />
+    <section className="bg-[#FAFAFA]" aria-hidden>
+      <div className="relative mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
+        <div className="relative min-h-[180px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-white sm:min-h-[200px]">
+          <div className="relative flex min-h-[180px] flex-col justify-center gap-4 px-5 py-10 sm:min-h-[200px] sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <div className="max-w-xl space-y-2">
+              <Skeleton className="h-3 w-20 bg-[#e5e7eb]" />
+              <Skeleton className="h-8 w-56 bg-[#e5e7eb]" />
+              <Skeleton className="h-4 w-72 max-w-full bg-[#e5e7eb]" />
+            </div>
+            <Skeleton className="h-10 w-28 bg-[#e5e7eb]" />
           </div>
-          <Skeleton className="h-10 w-28" />
         </div>
       </div>
     </section>
@@ -329,32 +345,56 @@ export function HomePromoSkeleton() {
 
 export function HomeFeaturedSectionSkeleton() {
   return (
-    <section className="mx-auto max-w-[1400px] px-3 pt-5 sm:px-6 sm:pt-4" aria-hidden>
-      <div className="flex items-center justify-between gap-3">
-        <Skeleton className="h-5 w-40" />
-        <Skeleton className="h-3 w-20" />
+    <section className="bg-[#FAFAFA]" aria-hidden>
+      <div className="mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-5 w-40 bg-[#e5e7eb]" />
+          <Skeleton className="h-3 w-20 bg-[#e5e7eb]" />
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 min-[480px]:grid-cols-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="min-w-0 rounded-lg border border-[#E5E7EB] bg-white p-2">
+              <Skeleton className="aspect-[.8] w-full rounded-[4px] bg-[#e5e7eb]" />
+              <Skeleton className="mt-2 h-3 w-[80%] bg-[#e5e7eb]" />
+              <Skeleton className="mt-1.5 h-3 w-[40%] bg-[#e5e7eb]" />
+              <Skeleton className="mt-2 h-3.5 w-[33%] bg-[#e5e7eb]" />
+            </div>
+          ))}
+        </div>
       </div>
-      <ProductRailSkeleton count={6} />
     </section>
   );
 }
 
 export function HomeNewArrivalsSectionSkeleton() {
   return (
-    <section className="mx-auto max-w-[1400px] px-3 pt-8 sm:px-6" aria-hidden>
-      <div className="flex items-center justify-between gap-3">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-3 w-20" />
+    <section className="bg-white" aria-hidden>
+      <div className="mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-5 w-32 bg-[#e5e7eb]" />
+          <Skeleton className="h-3 w-20 bg-[#e5e7eb]" />
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 min-[480px]:grid-cols-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="min-w-0 rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] p-2">
+              <Skeleton className="aspect-[.8] w-full rounded-[4px] bg-[#e5e7eb]" />
+              <Skeleton className="mt-2 h-3 w-[80%] bg-[#e5e7eb]" />
+              <Skeleton className="mt-1.5 h-3 w-[40%] bg-[#e5e7eb]" />
+              <Skeleton className="mt-2 h-3.5 w-[33%] bg-[#e5e7eb]" />
+            </div>
+          ))}
+        </div>
       </div>
-      <ProductRailSkeleton count={6} />
     </section>
   );
 }
 
 export function HomeSalePromoSkeleton() {
   return (
-    <section className="mx-auto mt-8 max-w-[1400px] px-3 sm:px-6" aria-hidden>
-      <Skeleton className="min-h-[140px] w-full sm:min-h-[160px]" />
+    <section className="bg-[#FAFAFA]" aria-hidden>
+      <div className="mx-auto max-w-[1400px] px-3 py-10 sm:px-6 sm:py-14">
+        <Skeleton className="min-h-[160px] w-full rounded-lg bg-[#e5e7eb] sm:min-h-[180px]" />
+      </div>
     </section>
   );
 }

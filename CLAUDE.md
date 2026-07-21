@@ -199,7 +199,7 @@ Rules:
 
 ## UI consistency
 
-Every storefront surface must follow **Elevate Apparel Brand Theme (Mandatory)** — spacing, typography, colors, buttons, inputs, cards, icons, radii, and responsive behavior. Do not introduce new palettes, fonts, or light-default themes.
+Every storefront and admin surface must follow **Elevate Apparel Brand Theme (Mandatory)** — spacing, typography, colors, buttons, inputs, cards, icons, radii, and responsive behavior. Do not invent new palettes, fonts, or dark-default themes.
 
 ## Future scalability
 
@@ -263,16 +263,24 @@ If existing code is inefficient, duplicated, poorly structured, not reusable, in
 
 # Elevate Apparel Brand Theme (Mandatory)
 
-This is the **canonical visual system** for the storefront. Every page, layout, form, modal, and marketing surface **must** follow it. Do not invent a new palette, font stack, or visual mood.
+This is the **canonical visual system** for the storefront **and** admin dashboard. Every page, layout, form, modal, and marketing surface **must** follow it. Do not invent a new palette, font stack, or visual mood.
 
-Source of truth in code: `frontend/app/globals.css`, `frontend/app/layout.tsx`, `frontend/lib/fonts.ts`. Prefer theme tokens / Tailwind theme colors over one-off hex when possible; when hardcoding is already the pattern on a page, match the values below exactly.
+**Approved reference:** the Home Page light design. Match homepage / auth / header / admin shell patterns.
+
+Source of truth in code:
+
+- `frontend/app/globals.css` — CSS variables
+- `frontend/lib/design-system.ts` — `DS` tokens + `btnPrimary` / `btnSecondary` / `cardShell`
+- `frontend/app/layout.tsx`, `frontend/lib/fonts.ts`
+
+Prefer theme tokens / Tailwind theme colors over one-off hex when possible; when hardcoding is already the pattern on a page, match the values below exactly.
 
 ## Brand mood
 
-- Premium dark streetwear / apparel
-- Near-black surfaces with champagne-gold accents
-- High contrast, moody photography, minimal chrome
-- Editorial but not newspaper; luxury without purple or neon glow
+- Premium modern apparel — light, clean, luxury-inspired
+- Off-white page surfaces with black text and gold accents
+- High contrast, generous whitespace, minimal chrome
+- Editorial but not newspaper; luxury without purple, neon glow, or dark-default UI
 
 ## Fonts
 
@@ -289,65 +297,112 @@ Rules:
 - Playfair is for selective editorial moments only — never drown the UI in serif
 - Prefer uppercase + tight tracking for nav, CTAs, and section eyebrows (`tracking-[.08em]`–`[.2em]`, `text-[10px]`–`text-xs`, `font-semibold` / `font-bold`)
 
+## Canonical palette (do not drift)
+
+| Role           | Hex       | Notes                                  |
+| -------------- | --------- | -------------------------------------- |
+| Background     | `#FAFAFA` | Page / shell background                |
+| Primary text   | `#111111` | Headings, body, icons (default)        |
+| Secondary text | `#555555` | Muted copy, placeholders, hints        |
+| Accent / brand | `#C9A227` | Active nav, links hover, prices, focus |
+| Accent hover   | `#D4B03A` | Gold hover states                      |
+| Border         | `#E5E7EB` | Inputs, cards, dividers                |
+| Cards / panels | `#FFFFFF` | Elevated surfaces                      |
+
+Do **not** introduce additional primary colors. Do **not** revive the old dark palette (`#0a0a0b`, `#111110`, `#1a1815`, `#e3bb78`, etc.) on storefront or admin surfaces.
+
 ## Color tokens (`globals.css`)
 
-| Token                              | Hex       | Use                          |
-| ---------------------------------- | --------- | ---------------------------- |
-| `--background` / `--color-surface` | `#0a0a0b` | Page background              |
-| `--foreground`                     | `#f4f4f5` | Primary text                 |
-| `--color-surface-2`                | `#141416` | Elevated dark surface        |
-| `--color-surface-3`                | `#1d1d21` | Higher elevation             |
-| `--color-edge`                     | `#27272a` | Subtle borders               |
-| `--color-gold`                     | `#d4af37` | Classic gold token           |
-| `--color-gold-light`               | `#e6c860` | Lighter gold                 |
-| `--color-gold-dark`                | `#b8962e` | Darker gold                  |
-| `--color-ink`                      | `#111827` | Dark ink (badges / contrast) |
+| Token                                       | Hex       | Use                       |
+| ------------------------------------------- | --------- | ------------------------- |
+| `--background` / `--color-surface`          | `#fafafa` | Page background           |
+| `--foreground` / `--color-ink`              | `#111111` | Primary text              |
+| `--color-muted`                             | `#555555` | Secondary text            |
+| `--color-card` / `--color-surface-2`        | `#ffffff` | Cards / elevated          |
+| `--color-surface-3`                         | `#f4f4f5` | Subtle elevated / headers |
+| `--color-edge` / `--color-border`           | `#e5e7eb` | Borders                   |
+| `--color-gold` / `--color-gold-dark`        | `#c9a227` | Brand accent              |
+| `--color-gold-light` / `--color-gold-hover` | `#d4b03a` | Accent hover              |
 
-## In-product accent palette (homepage / auth — match these)
+Helpers: import `DS`, `btnPrimary`, `btnSecondary`, `cardShell` from `frontend/lib/design-system.ts`.
 
-Champagne gold accents used across live UI (keep consistency):
+## Buttons (mandatory)
 
-| Role                           | Hex                               |
-| ------------------------------ | --------------------------------- |
-| Gold primary / links / accents | `#e3bb78`                         |
-| Gold eyebrow / soft accent     | `#e0bd7d`                         |
-| Gold CTA fill                  | `#e5bd79` / `#e5bd78`             |
-| Gold CTA border                | `#efc677`                         |
-| Gold hover                     | `#eec98a`                         |
-| Gold on dark outline buttons   | `#efce91` / `#d3b06f`             |
-| Deep black page / hero         | `#090909` / `black`               |
-| Card / panel surface           | `#111110`                         |
-| Input surface                  | `#1a1815`                         |
-| Border warm dark               | `#2d2a27` / `#37332c` / `#292929` |
-| Muted text                     | `#b5b0a8` / `#8b867d`             |
-| Soft light text                | `#eee9e1` / `#e9e5de` / `#f1eee9` |
-| Text on gold CTA               | `#18120b`                         |
-| Product card image ground      | `#e4e3e1`                         |
+**Primary**
+
+- Default: background `#111111`, text white
+- Hover: background `#C9A227`, text `#111111`
+
+**Secondary**
+
+- Default: white background, `#111111` border and text
+- Hover: `#111111` background, white text
+
+Reuse `btnPrimary` / `btnSecondary` or match these classes exactly. Do not use gold-fill as the default primary CTA.
+
+## Forms
+
+- Inputs: white background, `#111111` text, `#E5E7EB` border, gold focus (`#C9A227`)
+- Labels: `#111111`
+- Placeholders: `#555555`
+- Validation: soft red (`border-red-200` / `bg-red-50` / `text-red-600` or `text-red-700`)
+
+Shared pattern: `frontend/components/common/form-field.tsx` (storefront); `AdminInput` / `AdminField` in `frontend/components/admin/admin-ui.tsx` (admin).
+
+## Cards, tables, icons
+
+- **Cards:** white, light border `#E5E7EB`, soft shadow, sharp radii (`rounded-[4px]`–`rounded-lg`), elegant hover
+- **Tables:** white body, grey header (`#F4F4F5`), black text, light borders
+- **Icons:** default `#111111`; hover / active `#C9A227`
+
+## Navbar & footer
+
+**Navbar (storefront + admin top bar)**
+
+- Background `#FAFAFA`, sticky, soft shadow
+- Text / icons `#111111`
+- Active / hover accent `#C9A227` / `#D4B03A`
+
+**Footer (storefront only — intentional exception)**
+
+- Black background, white text
+- Gold headings (`#C9A227`)
+- Grey secondary text
+- Preserve layout and content; do not restyle the footer to light
+
+## Notifications / toasts
+
+| Tone    | Style                                          |
+| ------- | ---------------------------------------------- |
+| Success | Soft green (`bg-green-50`, `border-green-200`) |
+| Warning | Soft gold (`bg-[#FFF8E7]`, border `#E8D9A8`)   |
+| Error   | Soft red (`bg-red-50`, `border-red-200`)       |
+| Info    | Soft blue (`bg-blue-50`, `border-blue-200`)    |
 
 ## Layout & components
 
 - Max content width: **1400px** (`max-w-[1400px]` / `--container-8xl`)
 - Radii: small and sharp — typically `rounded-[4px]`–`rounded-lg`, not pill-heavy
-- Primary CTA: gold fill + dark text, uppercase, bold, compact padding
-- Secondary CTA: transparent / dark with light border
-- Focus rings: gold (`outline-[#e3bb78]` / `ring-[#e3bb78]/15`)
-- Icons: Lucide, stroke ~1.5–1.7, gold accents where highlighted
-- Imagery: dark, moody apparel photography; WebP/AVIF; never purple gradients or cream broadsheet looks
+- Focus rings: gold (`outline-[#C9A227]` / `ring-[#C9A227]/20`)
+- Icons: Lucide, stroke ~1.5–1.7
+- Imagery: apparel photography; WebP/AVIF; never purple gradients or cream broadsheet looks
+- Admin uses the same light palette via `frontend/components/admin/*`
 
 ## Do / Don't
 
 **Do**
 
-- Keep pages dark-first with gold accents
-- Reuse header/footer, form-field, and auth art-panel patterns
-- Use the same gold for links, active nav underline, prices, and CTAs
+- Keep pages light-first (`#FAFAFA`) with black text and gold accents
+- Reuse header, form-field, auth, homepage, and admin-shell patterns
+- Use the same gold for active nav, prices, focus rings, and accent hovers
+- Keep the storefront footer dark (approved exception)
 
 **Don't**
 
-- Switch to light mode as the default brand experience
+- Reintroduce dark-mode storefront or admin as the default
 - Introduce purple/indigo/glow “AI default” themes
 - Replace Geist / Playfair with generic stacks
-- Use large card grids with heavy shadows as the default marketing language
+- Use gold-fill buttons as the primary CTA (black → gold hover is required)
 - Drift hex values — copy the palette above
 
 ---
@@ -683,7 +738,7 @@ This is a short summary. The authoritative checklist is **Mandatory Pre-Coding F
 - Clean Architecture
 - NestJS conventions
 - Next.js best practices
-- Elevate Apparel brand theme (colors, fonts, dark + gold UI)
+- Elevate Apparel brand theme (light `#FAFAFA` + black text + gold `#C9A227`; dark footer exception)
 - Premium loading experience (page skeletons, SWR, prefetch, no blank flashes)
 - Strict TypeScript
 - DTO validation

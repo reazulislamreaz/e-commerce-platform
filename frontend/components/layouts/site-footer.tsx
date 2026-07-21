@@ -58,7 +58,7 @@ export function SiteFooter() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
-              className="transition-colors hover:text-[#e3bb78]"
+              className="transition-colors hover:text-[#C9A227]"
             >
               <Facebook className="size-4" />
             </a>
@@ -67,7 +67,7 @@ export function SiteFooter() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
-              className="transition-colors hover:text-[#e3bb78]"
+              className="transition-colors hover:text-[#C9A227]"
             >
               <Instagram className="size-4" />
             </a>
@@ -76,7 +76,7 @@ export function SiteFooter() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="YouTube"
-              className="transition-colors hover:text-[#e3bb78]"
+              className="transition-colors hover:text-[#C9A227]"
             >
               <Youtube className="size-4" />
             </a>
@@ -87,11 +87,11 @@ export function SiteFooter() {
         </div>
         {columns.map(([title, links]) => (
           <nav key={title} aria-label={title}>
-            <h3 className="text-[12px] font-semibold tracking-wide">{title}</h3>
-            <ul className="mt-3 space-y-2 text-[#e1ded9]">
+            <h3 className="text-[12px] font-semibold tracking-wide text-[#C9A227]">{title}</h3>
+            <ul className="mt-3 space-y-2 text-[#9ca3af]">
               {links.map(([label, href]) => (
                 <li key={href}>
-                  <Link href={href} className="transition-colors hover:text-[#e3bb78]">
+                  <Link href={href} className="transition-colors hover:text-[#C9A227]">
                     {label}
                   </Link>
                 </li>
@@ -100,11 +100,11 @@ export function SiteFooter() {
           </nav>
         ))}
         <div className="flex flex-col">
-          <h3 className="text-[12px] font-semibold tracking-wide">CONTACT US</h3>
-          <ul className="mt-3 space-y-2.5 text-[#e1ded9]">
+          <h3 className="text-[12px] font-semibold tracking-wide text-[#C9A227]">CONTACT US</h3>
+          <ul className="mt-3 space-y-2.5 text-[#9ca3af]">
             <li className="flex items-center gap-2">
               <Phone className="size-3.5 shrink-0 text-[#e2bb79]" />
-              <a href="tel:+8801234567890" className="transition-colors hover:text-[#e3bb78]">
+              <a href="tel:+8801234567890" className="transition-colors hover:text-[#C9A227]">
                 +880 1234-567890
               </a>
             </li>
@@ -112,14 +112,14 @@ export function SiteFooter() {
               <Mail className="size-3.5 shrink-0 text-[#e2bb79]" />
               <a
                 href="mailto:info@elevateapparel.com"
-                className="transition-colors hover:text-[#e3bb78]"
+                className="transition-colors hover:text-[#C9A227]"
               >
                 info@elevateapparel.com
               </a>
             </li>
             <li className="flex items-center gap-2">
               <MapPin className="size-3.5 shrink-0 text-[#e2bb79]" />
-              <Link href="/store" className="transition-colors hover:text-[#e3bb78]">
+              <Link href="/store" className="transition-colors hover:text-[#C9A227]">
                 Wari, Dhaka
               </Link>
             </li>

@@ -80,7 +80,7 @@ export default function AdminReturnDetailPage() {
         <AdminError>Return not found or failed to load.</AdminError>
         <Link
           href="/admin/returns"
-          className="inline-block text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78]"
+          className="inline-block text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227]"
         >
           Back to returns
         </Link>
@@ -96,7 +96,7 @@ export default function AdminReturnDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/admin/returns"
-          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
         >
           ← Returns
         </Link>
@@ -109,43 +109,43 @@ export default function AdminReturnDetailPage() {
       >
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Type
             </dt>
-            <dd className="mt-1 capitalize text-white">{item.type}</dd>
+            <dd className="mt-1 capitalize text-[#111111]">{item.type}</dd>
           </div>
           <div>
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Order
             </dt>
             <dd className="mt-1">
               <Link
                 href={`/admin/orders/${item.orderId}`}
-                className="text-[#e3bb78] hover:text-[#eec98a]"
+                className="text-[#C9A227] hover:text-[#D4B03A]"
               >
                 #{item.orderNumber}
               </Link>
             </dd>
           </div>
           <div className="sm:col-span-2">
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Reason
             </dt>
-            <dd className="mt-1 text-[#e9e5de]">{item.reason}</dd>
+            <dd className="mt-1 text-[#111111]">{item.reason}</dd>
           </div>
         </dl>
 
         <div className="mt-5">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
             Items
           </p>
-          <ul className="space-y-2 text-sm text-[#e9e5de]">
+          <ul className="space-y-2 text-sm text-[#111111]">
             {item.items.map((line) => (
               <li
                 key={line.orderItemId}
-                className="flex justify-between gap-3 border-b border-[#2d2a27]/60 py-2 last:border-0"
+                className="flex justify-between gap-3 border-b border-[#E5E7EB]/60 py-2 last:border-0"
               >
-                <span className="font-mono text-xs text-[#b5b0a8]">{line.orderItemId}</span>
+                <span className="font-mono text-xs text-[#555555]">{line.orderItemId}</span>
                 <span>× {line.quantity}</span>
               </li>
             ))}
@@ -157,13 +157,13 @@ export default function AdminReturnDetailPage() {
         <AdminPanel title="Actions" description="Approve, reject, or complete this request.">
           {actionError ? <AdminError>{actionError}</AdminError> : null}
           {success ? (
-            <p className="rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
+            <p className="rounded-[4px] border border-[#C9A227]/40 bg-[#FFFFFF] px-3 py-2 text-sm text-[#C9A227]">
               {success}
             </p>
           ) : null}
 
           <label className="mt-3 block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Note (optional)
             </span>
             <AdminTextarea

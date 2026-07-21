@@ -38,19 +38,19 @@ import { cn } from '@/lib/utils';
 const DAY_MS = 86_400_000;
 
 const TONES = {
-  gold: { tile: 'border-[#e3bb78]/25 bg-[#e3bb78]/10 text-[#e3bb78]', spark: 'text-[#e3bb78]' },
+  gold: { tile: 'border-[#C9A227]/25 bg-[#C9A227]/10 text-[#C9A227]', spark: 'text-[#C9A227]' },
   violet: {
     tile: 'border-violet-500/25 bg-violet-500/10 text-violet-300',
     spark: 'text-violet-400',
   },
-  sky: { tile: 'border-sky-500/25 bg-sky-500/10 text-sky-300', spark: 'text-sky-400' },
+  sky: { tile: 'border-sky-500/25 bg-sky-500/10 text-sky-700', spark: 'text-sky-400' },
   emerald: {
-    tile: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
+    tile: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700',
     spark: 'text-emerald-400',
   },
-  rose: { tile: 'border-rose-500/25 bg-rose-500/10 text-rose-300', spark: 'text-rose-400' },
+  rose: { tile: 'border-rose-500/25 bg-rose-500/10 text-rose-700', spark: 'text-rose-400' },
   orange: {
-    tile: 'border-orange-500/25 bg-orange-500/10 text-orange-300',
+    tile: 'border-orange-500/25 bg-orange-500/10 text-orange-700',
     spark: 'text-orange-400',
   },
 } as const;
@@ -291,7 +291,7 @@ export default function AdminDashboardPage() {
             <Link
               key={card.href}
               href={card.href}
-              className="group rounded-xl border border-[#26231f] bg-[#111110] p-4 shadow-[0_1px_2px_rgba(0,0,0,.35)] transition-all duration-150 hover:-translate-y-0.5 hover:border-[#e3bb78]/50 hover:shadow-[0_10px_30px_-12px_rgba(227,187,120,.15)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+              className="group rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] p-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-all duration-150 hover:-translate-y-0.5 hover:border-[#C9A227]/50 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]"
             >
               <div className="flex items-start justify-between gap-3">
                 <span
@@ -303,22 +303,22 @@ export default function AdminDashboardPage() {
                   <Icon className="size-4.5" strokeWidth={1.7} />
                 </span>
                 <ArrowUpRight
-                  className="size-4 text-[#57534b] transition-colors group-hover:text-[#e3bb78]"
+                  className="size-4 text-[#555555] transition-colors group-hover:text-[#C9A227]"
                   strokeWidth={1.7}
                 />
               </div>
               {card.loading ? (
                 <AdminSkeleton className="mt-3 h-8 w-14" />
               ) : (
-                <p className="mt-3 text-[28px] font-extrabold leading-none tracking-[-.02em] text-white">
+                <p className="mt-3 text-[28px] font-extrabold leading-none tracking-[-.02em] text-[#111111]">
                   {card.count}
-                  {card.more ? <span className="text-lg text-[#e3bb78]">+</span> : null}
+                  {card.more ? <span className="text-lg text-[#C9A227]">+</span> : null}
                 </p>
               )}
-              <p className="mt-2 truncate text-[11px] font-bold uppercase tracking-[.1em] text-[#d8d4cd]">
+              <p className="mt-2 truncate text-[11px] font-bold uppercase tracking-[.1em] text-[#555555]">
                 {card.label}
               </p>
-              <p className="mt-0.5 truncate text-xs text-[#6f6a61]">{card.hint}</p>
+              <p className="mt-0.5 truncate text-xs text-[#555555]">{card.hint}</p>
               <Sparkline values={card.trend} className={cn('mt-3', card.tone.spark)} />
             </Link>
           );
@@ -333,7 +333,7 @@ export default function AdminDashboardPage() {
           actions={
             <Link
               href="/admin/orders"
-              className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[.08em] text-[#e3bb78] transition-colors hover:text-[#eec98a]"
+              className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[.08em] text-[#C9A227] transition-colors hover:text-[#D4B03A]"
             >
               View all orders
               <ArrowUpRight className="size-3.5" strokeWidth={1.7} />
@@ -368,11 +368,11 @@ export default function AdminDashboardPage() {
                       <AdminTd>
                         <Link
                           href={`/admin/orders/${order.id}`}
-                          className="font-semibold text-white transition-colors hover:text-[#e3bb78]"
+                          className="font-semibold text-[#111111] transition-colors hover:text-[#C9A227]"
                         >
                           #{order.number}
                         </Link>
-                        <p className="mt-0.5 text-xs text-[#6f6a61]">
+                        <p className="mt-0.5 text-xs text-[#555555]">
                           {new Date(order.createdAt).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
@@ -381,12 +381,12 @@ export default function AdminDashboardPage() {
                         </p>
                       </AdminTd>
                       <AdminTd>
-                        <span className="text-[#d8d4cd]">
+                        <span className="text-[#555555]">
                           {order.email ?? order.shippingAddress.fullName}
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="font-semibold text-[#e5c17d]">
+                        <span className="font-semibold text-[#C9A227]">
                           {formatTaka(order.total)}
                         </span>
                       </AdminTd>
@@ -399,23 +399,23 @@ export default function AdminDashboardPage() {
               </AdminTable>
 
               {/* Total revenue banner */}
-              <div className="mt-4 flex flex-wrap items-center gap-4 rounded-xl border border-[#e3bb78]/25 bg-gradient-to-r from-[#1c150a] via-[#221a0d] to-[#141410] p-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#e3bb78]/30 bg-[#e3bb78]/10 text-[#e3bb78]">
+              <div className="mt-4 flex flex-wrap items-center gap-4 rounded-xl border border-[#C9A227]/25 bg-gradient-to-r from-[#FFF8E7] via-[#FFF8E7] to-[#FAFAFA] p-4">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#C9A227]/30 bg-[#C9A227]/10 text-[#C9A227]">
                   <Banknote className="size-5" strokeWidth={1.6} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#b5b0a8]">
+                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#555555]">
                     Total revenue
                   </p>
                   <div className="mt-0.5 flex flex-wrap items-baseline gap-2">
-                    <p className="text-2xl font-extrabold tracking-[-.02em] text-[#e5c17d]">
+                    <p className="text-2xl font-extrabold tracking-[-.02em] text-[#C9A227]">
                       {formatTaka(analytics.revenue7)}
                     </p>
                     {analytics.revenueDelta !== null ? (
                       <span
                         className={cn(
                           'inline-flex items-center gap-1 text-[11px] font-bold',
-                          analytics.revenueDelta >= 0 ? 'text-emerald-300' : 'text-red-300',
+                          analytics.revenueDelta >= 0 ? 'text-emerald-700' : 'text-red-700',
                         )}
                       >
                         {analytics.revenueDelta >= 0 ? (
@@ -427,12 +427,12 @@ export default function AdminDashboardPage() {
                         {analytics.revenueDelta.toFixed(1)}%
                       </span>
                     ) : null}
-                    <span className="text-[11px] text-[#8b867d]">vs last 7 days</span>
+                    <span className="text-[11px] text-[#555555]">vs last 7 days</span>
                   </div>
                 </div>
                 <Sparkline
                   values={analytics.revenueByDay}
-                  className="ml-auto h-10 w-full max-w-[220px] text-[#e3bb78]"
+                  className="ml-auto h-10 w-full max-w-[220px] text-[#C9A227]"
                 />
               </div>
             </>
@@ -460,11 +460,11 @@ export default function AdminDashboardPage() {
                 <Link
                   key={order.id}
                   href={`/admin/orders/${order.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#26231f] bg-white/[0.015] px-3.5 py-3 transition-colors hover:border-[#e3bb78]/50 hover:bg-[#e3bb78]/[0.04]"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] px-3.5 py-3 transition-colors hover:border-[#C9A227]/50 hover:bg-[#C9A227]/[0.04]"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-white">#{order.number}</p>
-                    <p className="truncate text-xs text-[#b5b0a8]">
+                    <p className="truncate font-semibold text-[#111111]">#{order.number}</p>
+                    <p className="truncate text-xs text-[#555555]">
                       {order.email ?? order.shippingAddress.fullName} · {formatTaka(order.total)}
                     </p>
                   </div>
@@ -475,11 +475,13 @@ export default function AdminDashboardPage() {
                 <Link
                   key={item.id}
                   href={`/admin/returns/${item.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#26231f] bg-white/[0.015] px-3.5 py-3 transition-colors hover:border-[#e3bb78]/50 hover:bg-[#e3bb78]/[0.04]"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] px-3.5 py-3 transition-colors hover:border-[#C9A227]/50 hover:bg-[#C9A227]/[0.04]"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-white">Return {item.orderNumber}</p>
-                    <p className="truncate text-xs text-[#b5b0a8]">{item.reason}</p>
+                    <p className="truncate font-semibold text-[#111111]">
+                      Return {item.orderNumber}
+                    </p>
+                    <p className="truncate text-xs text-[#555555]">{item.reason}</p>
                   </div>
                   <StatusPill>{item.status.toUpperCase()}</StatusPill>
                 </Link>
@@ -488,11 +490,11 @@ export default function AdminDashboardPage() {
                 <Link
                   key={review.id}
                   href={`/admin/reviews/${review.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#26231f] bg-white/[0.015] px-3.5 py-3 transition-colors hover:border-[#e3bb78]/50 hover:bg-[#e3bb78]/[0.04]"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] px-3.5 py-3 transition-colors hover:border-[#C9A227]/50 hover:bg-[#C9A227]/[0.04]"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-white">{review.productName}</p>
-                    <p className="truncate text-xs text-[#b5b0a8]">
+                    <p className="truncate font-semibold text-[#111111]">{review.productName}</p>
+                    <p className="truncate text-xs text-[#555555]">
                       {review.rating}/5 · {review.title}
                     </p>
                   </div>
@@ -522,17 +524,19 @@ export default function AdminDashboardPage() {
               <div className="space-y-4">
                 {analytics.topProducts.map((product) => (
                   <div key={product.productId} className="flex items-center gap-3">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#37332c] bg-[#1a1815] text-[#e3bb78]">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] text-[#C9A227]">
                       <Shirt className="size-3.5" strokeWidth={1.7} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
-                        <p className="truncate text-sm font-semibold text-white">{product.name}</p>
-                        <span className="shrink-0 text-xs font-bold text-[#e3bb78]">
+                        <p className="truncate text-sm font-semibold text-[#111111]">
+                          {product.name}
+                        </p>
+                        <span className="shrink-0 text-xs font-bold text-[#C9A227]">
                           {Math.round(product.share)}%
                         </span>
                       </div>
-                      <p className="text-xs text-[#8b867d]">
+                      <p className="text-xs text-[#555555]">
                         {product.units} {product.units === 1 ? 'unit' : 'units'}
                       </p>
                       <MeterBar percent={product.share} className="mt-1.5" />
@@ -578,11 +582,11 @@ export default function AdminDashboardPage() {
                         className="size-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: segment.color }}
                       />
-                      <span className="min-w-0 flex-1 truncate capitalize text-[#d8d4cd]">
+                      <span className="min-w-0 flex-1 truncate capitalize text-[#555555]">
                         {segment.label.toLowerCase()}
                       </span>
-                      <span className="shrink-0 font-semibold text-white">
-                        {percent}% <span className="text-[#6f6a61]">({segment.value})</span>
+                      <span className="shrink-0 font-semibold text-[#111111]">
+                        {percent}% <span className="text-[#555555]">({segment.value})</span>
                       </span>
                     </li>
                   );
@@ -597,7 +601,7 @@ export default function AdminDashboardPage() {
           title="Sales overview"
           description="Revenue trend for the last 7 days."
           actions={
-            <span className="rounded-lg border border-[#37332c] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[.08em] text-[#b5b0a8]">
+            <span className="rounded-lg border border-[#E5E7EB] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[.08em] text-[#555555]">
               Last 7 days
             </span>
           }

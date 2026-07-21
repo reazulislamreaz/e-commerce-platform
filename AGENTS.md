@@ -38,7 +38,7 @@ Full rules: **Mandatory Pre-Coding Flow** and **Production Readiness Standards**
 
 - Lint and build pass for changed workspaces
 - No duplicate logic, dead code, console logs, or architecture bypasses introduced
-- Storefront UI matches Elevate Apparel dark + gold theme
+- Storefront and admin UI match Elevate Apparel light + gold theme (`#FAFAFA` / `#111111` / `#C9A227`)
 - **Premium loading:** new/changed routes have matching `loading.tsx` + skeleton; no blank flashes; list refetches use SWR/opacity — see [CLAUDE.md — Premium Loading Experience](./CLAUDE.md#premium-loading-experience-mandatory)
 
 ## Premium loading experience (mandatory)
@@ -65,17 +65,23 @@ Full standard: [CLAUDE.md — Premium Loading Experience (Mandatory)](./CLAUDE.m
 
 ## Elevate Apparel brand theme (mandatory)
 
-All storefront pages and UI must follow the **Elevate Apparel** dark + champagne-gold theme defined in [CLAUDE.md](./CLAUDE.md) under **Elevate Apparel Brand Theme (Mandatory)**.
+All storefront **and** admin UI must follow the **Elevate Apparel** light design system defined in [CLAUDE.md](./CLAUDE.md) under **Elevate Apparel Brand Theme (Mandatory)**. Homepage is the approved visual reference.
 
 Quick reference:
 
-- **Mood:** premium dark streetwear — near-black surfaces, champagne-gold accents, high contrast
+- **Mood:** premium light apparel — off-white surfaces, black text, gold accents, generous whitespace
 - **Fonts:** Geist Sans (UI), Playfair Display (editorial only), Geist Mono (rare)
-- **Surfaces:** `#0a0a0b` / `#090909` / `#111110` / `#1a1815`
-- **Gold accents:** `#e3bb78`, `#e0bd7d`, `#e5bd79` (CTA), hover `#eec98a`
-- **Text:** primary `#f4f4f5` / white; muted `#b5b0a8`; on-gold CTA text `#18120b`
-- **Borders:** `#2d2a27`, `#37332c`, `#292929`
+- **Background:** `#FAFAFA`
+- **Primary text:** `#111111`
+- **Secondary text:** `#555555`
+- **Accent / brand:** `#C9A227` (hover `#D4B03A`)
+- **Border:** `#E5E7EB`
+- **Cards:** `#FFFFFF` with soft shadow
+- **Primary button:** `#111111` + white text → hover `#C9A227` + black text
+- **Secondary button:** white + black border → hover black fill + white text
+- **Navbar:** sticky `#FAFAFA`, soft shadow, gold active/hover
+- **Footer (storefront only):** stays dark — black bg, white text, gold headings (approved exception)
+- **Tokens:** `frontend/app/globals.css`, `frontend/lib/design-system.ts` (`DS`, `btnPrimary`, `btnSecondary`, `cardShell`)
 - **Layout:** max width `1400px`; sharp small radii (`rounded-[4px]`); uppercase compact CTAs
-- **Tokens:** `frontend/app/globals.css` (`--color-gold`, `--color-surface*`, fonts)
 
-Do not invent new palettes, font stacks, or light-default marketing themes. Match existing homepage, auth, header, and footer patterns.
+Do not invent new palettes, font stacks, or dark-default themes. Do not revive old dark hex values (`#0a0a0b`, `#e3bb78`, etc.). Match homepage, auth, header, and admin-shell patterns.

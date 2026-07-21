@@ -27,29 +27,31 @@ export function CartClient() {
 
   if (!hydrated || (items.length > 0 && products.isLoading && !products.data)) {
     return (
-      <main id="main-content" className="flex-1 bg-black" aria-busy="true">
+      <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true">
         <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-7 sm:py-10">
-          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
             Shopping Bag
           </p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-white">YOUR BAG</h1>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-[#111111]">
+            YOUR BAG
+          </h1>
           <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
             <ul className="space-y-4">
               {Array.from({ length: Math.min(items.length || 2, 3) }, (_, i) => (
                 <li
                   key={i}
-                  className="flex gap-4 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-3 sm:p-4"
+                  className="flex gap-4 rounded-[4px] border border-[#E5E7EB] bg-white p-3 sm:p-4"
                 >
-                  <div className="h-28 w-24 shrink-0 animate-pulse rounded-[4px] bg-[#1a1815]" />
+                  <div className="h-28 w-24 shrink-0 animate-pulse rounded-[4px] bg-white" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 w-[66%] animate-pulse rounded-[4px] bg-[#1a1815]" />
-                    <div className="h-3 w-[33%] animate-pulse rounded-[4px] bg-[#1a1815]" />
-                    <div className="h-4 w-[25%] animate-pulse rounded-[4px] bg-[#1a1815]" />
+                    <div className="h-4 w-[66%] animate-pulse rounded-[4px] bg-white" />
+                    <div className="h-3 w-[33%] animate-pulse rounded-[4px] bg-white" />
+                    <div className="h-4 w-[25%] animate-pulse rounded-[4px] bg-white" />
                   </div>
                 </li>
               ))}
             </ul>
-            <aside className="h-40 animate-pulse rounded-[4px] border border-[#2d2a27] bg-[#111110]" />
+            <aside className="h-40 animate-pulse rounded-[4px] border border-[#E5E7EB] bg-white" />
           </div>
         </section>
       </main>
@@ -60,22 +62,22 @@ export function CartClient() {
     return (
       <main
         id="main-content"
-        className="flex flex-1 flex-col items-center justify-center bg-black px-5 py-20 text-center"
+        className="flex flex-1 flex-col items-center justify-center bg-[#FAFAFA] px-5 py-20 text-center"
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Shopping Bag
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-white">
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-[#111111]">
           COULD NOT LOAD BAG
         </h1>
-        <p className="mt-3 max-w-sm text-sm text-[#b5b0a8]" role="alert">
+        <p className="mt-3 max-w-sm text-sm text-[#555555]" role="alert">
           We couldn&apos;t load product details for items in your bag. Check your connection and try
           again.
         </p>
         <button
           type="button"
           onClick={() => void products.refetch()}
-          className="mt-8 border border-[#efc677] bg-[#e5bd79] px-6 py-3 text-[11px] font-bold uppercase text-[#18120b] hover:bg-[#eec98a]"
+          className="mt-8 border border-[#111111] bg-[#111111] px-6 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
         >
           Try Again
         </button>
@@ -92,20 +94,20 @@ export function CartClient() {
     return (
       <main
         id="main-content"
-        className="flex flex-1 flex-col items-center justify-center bg-black px-5 py-20 text-center"
+        className="flex flex-1 flex-col items-center justify-center bg-[#FAFAFA] px-5 py-20 text-center"
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Shopping Bag
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-white">
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-[#111111]">
           YOUR BAG IS EMPTY
         </h1>
-        <p className="mt-3 max-w-sm text-sm text-[#b5b0a8]">
+        <p className="mt-3 max-w-sm text-sm text-[#555555]">
           Discover premium essentials and start elevating your everyday.
         </p>
         <Link
           href="/shop"
-          className="mt-8 border border-[#efc677] bg-[#e5bd79] px-6 py-3 text-[11px] font-bold uppercase text-[#18120b] hover:bg-[#eec98a]"
+          className="mt-8 border border-[#111111] bg-[#111111] px-6 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
         >
           Continue Shopping
         </Link>
@@ -114,19 +116,19 @@ export function CartClient() {
   }
 
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-7 sm:py-10">
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Shopping Bag
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-white">YOUR BAG</h1>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-[#111111]">YOUR BAG</h1>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <ul className="space-y-4">
             {lines.map(({ item, product }) => (
               <li
                 key={`${item.productId}-${item.variantId}`}
-                className="flex gap-4 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-3 sm:p-4"
+                className="flex gap-4 rounded-[4px] border border-[#E5E7EB] bg-white p-3 sm:p-4"
               >
                 <Link
                   href={`/product/${product.slug}`}
@@ -145,14 +147,14 @@ export function CartClient() {
                     <div>
                       <Link
                         href={`/product/${product.slug}`}
-                        className="text-sm font-semibold text-white hover:text-[#e3bb78]"
+                        className="text-sm font-semibold text-[#111111] hover:text-[#C9A227]"
                       >
                         {product.name}
                       </Link>
-                      <p className="mt-1 text-[12px] text-[#b5b0a8]">
+                      <p className="mt-1 text-[12px] text-[#555555]">
                         {item.color} · Size {item.size}
                       </p>
-                      <p className="mt-2 text-sm font-semibold text-[#e5c17d]">
+                      <p className="mt-2 text-sm font-semibold text-[#C9A227]">
                         {formatTaka(product.price)}
                       </p>
                     </div>
@@ -170,12 +172,12 @@ export function CartClient() {
                           removeServerCartItem(item.variantId).catch(syncQtyFailed),
                         );
                       }}
-                      className="p-1 text-[#8b867d] hover:text-red-400"
+                      className="p-1 text-[#555555] hover:text-red-600"
                     >
                       <Trash2 className="size-4" strokeWidth={1.5} />
                     </button>
                   </div>
-                  <div className="mt-3 inline-flex items-center rounded-[4px] border border-[#37332c]">
+                  <div className="mt-3 inline-flex items-center rounded-[4px] border border-[#E5E7EB]">
                     <button
                       type="button"
                       aria-label="Decrease"
@@ -192,11 +194,13 @@ export function CartClient() {
                           setServerCartItemQuantity(item.variantId, quantity).catch(syncQtyFailed),
                         );
                       }}
-                      className="p-2 text-white hover:text-[#e3bb78]"
+                      className="p-2 text-[#111111] hover:text-[#C9A227]"
                     >
                       <Minus className="size-3.5" />
                     </button>
-                    <span className="min-w-8 text-center text-sm text-white">{item.quantity}</span>
+                    <span className="min-w-8 text-center text-sm text-[#111111]">
+                      {item.quantity}
+                    </span>
                     <button
                       type="button"
                       aria-label="Increase"
@@ -218,7 +222,7 @@ export function CartClient() {
                           setServerCartItemQuantity(item.variantId, quantity).catch(syncQtyFailed),
                         );
                       }}
-                      className="p-2 text-white hover:text-[#e3bb78]"
+                      className="p-2 text-[#111111] hover:text-[#C9A227]"
                     >
                       <Plus className="size-3.5" />
                     </button>
@@ -228,33 +232,33 @@ export function CartClient() {
             ))}
           </ul>
 
-          <aside className="h-fit rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-            <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+          <aside className="h-fit rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+            <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
               Order Summary
             </h2>
             <dl className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between text-[#b5b0a8]">
+              <div className="flex justify-between text-[#555555]">
                 <dt>Subtotal</dt>
-                <dd className="text-white">{formatTaka(subtotal)}</dd>
+                <dd className="text-[#111111]">{formatTaka(subtotal)}</dd>
               </div>
-              <div className="flex justify-between text-[#b5b0a8]">
+              <div className="flex justify-between text-[#555555]">
                 <dt>Shipping</dt>
-                <dd className="text-white">{shipping === 0 ? 'Free' : formatTaka(shipping)}</dd>
+                <dd className="text-[#111111]">{shipping === 0 ? 'Free' : formatTaka(shipping)}</dd>
               </div>
-              <div className="flex justify-between border-t border-[#2d2a27] pt-3 text-base font-semibold text-white">
+              <div className="flex justify-between border-t border-[#E5E7EB] pt-3 text-base font-semibold text-[#111111]">
                 <dt>Total</dt>
-                <dd className="text-[#e5c17d]">{formatTaka(total)}</dd>
+                <dd className="text-[#C9A227]">{formatTaka(total)}</dd>
               </div>
             </dl>
             <Link
               href="/checkout"
-              className="mt-5 block rounded-[4px] border border-[#efc677] bg-[#e5bd79] py-3 text-center text-[11px] font-bold uppercase text-[#18120b] hover:bg-[#eec98a]"
+              className="mt-5 block rounded-[4px] border border-[#111111] bg-[#111111] py-3 text-center text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
             >
               Checkout
             </Link>
             <Link
               href="/shop"
-              className="mt-3 block text-center text-[11px] font-semibold uppercase tracking-wide text-[#b5b0a8] hover:text-[#e3bb78]"
+              className="mt-3 block text-center text-[11px] font-semibold uppercase tracking-wide text-[#555555] hover:text-[#C9A227]"
             >
               Continue Shopping
             </Link>

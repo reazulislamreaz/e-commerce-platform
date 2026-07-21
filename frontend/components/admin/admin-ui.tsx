@@ -16,8 +16,10 @@ export function AdminPageHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-xl font-extrabold tracking-[-.02em] text-white sm:text-2xl">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-[#b5b0a8]">{description}</p> : null}
+        <h1 className="text-xl font-extrabold tracking-[-.02em] text-[#111111] sm:text-2xl">
+          {title}
+        </h1>
+        {description ? <p className="mt-1 text-sm text-[#555555]">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
     </div>
@@ -43,7 +45,7 @@ export function AdminPanel({
   return (
     <section
       className={cn(
-        'rounded-xl border border-[#26231f] bg-[#111110] p-5 shadow-[0_1px_2px_rgba(0,0,0,.35),0_12px_32px_-16px_rgba(0,0,0,.55)] sm:p-6',
+        'rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] sm:p-6',
         className,
       )}
     >
@@ -55,7 +57,7 @@ export function AdminPanel({
                 type="button"
                 onClick={() => setCollapsed((value) => !value)}
                 aria-expanded={!collapsed}
-                className="rounded-md p-0.5 text-[#b5b0a8] transition-colors hover:text-[#e3bb78] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+                className="rounded-md p-0.5 text-[#555555] transition-colors hover:text-[#C9A227] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]"
               >
                 <ChevronDown
                   className={cn(
@@ -67,10 +69,12 @@ export function AdminPanel({
                 <span className="sr-only">{collapsed ? 'Expand section' : 'Collapse section'}</span>
               </button>
             ) : null}
-            <h2 className="text-[13px] font-bold uppercase tracking-[.12em] text-white">{title}</h2>
+            <h2 className="text-[13px] font-bold uppercase tracking-[.12em] text-[#111111]">
+              {title}
+            </h2>
           </div>
           {description && !collapsed ? (
-            <p className="mt-1.5 text-sm leading-relaxed text-[#b5b0a8]">{description}</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-[#555555]">{description}</p>
           ) : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -98,16 +102,16 @@ export function AdminButton({
       type="button"
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-1.5 rounded-lg font-bold uppercase tracking-[.08em] transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78] active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100',
+        'inline-flex items-center justify-center gap-1.5 rounded-[4px] font-bold uppercase tracking-[.08em] transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227] active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100',
         size === 'sm' ? 'px-2.5 py-1.5 text-[10px]' : 'px-3.5 py-2 text-[10px]',
         variant === 'primary' &&
-          'border border-[#efc677] bg-[#e5bd79] text-[#18120b] shadow-[0_2px_10px_-4px_rgba(229,189,121,.5)] hover:bg-[#eec98a]',
+          'border border-[#111111] bg-[#111111] text-white hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]',
         variant === 'secondary' &&
-          'border border-[#37332c] bg-white/[0.02] text-white hover:border-[#e3bb78]/60 hover:bg-white/[0.04]',
+          'border border-[#111111] bg-white text-[#111111] hover:bg-[#111111] hover:text-white',
         variant === 'ghost' &&
-          'border border-transparent bg-transparent text-[#d8d4cd] hover:bg-white/[0.05] hover:text-white',
+          'border border-transparent bg-transparent text-[#555555] hover:bg-[#FAFAFA] hover:text-[#111111]',
         variant === 'danger' &&
-          'border border-red-900/60 bg-red-950/40 text-red-200 hover:border-red-700 hover:bg-red-950/60',
+          'border border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100',
         className,
       )}
       {...props}
@@ -119,9 +123,9 @@ export function AdminButton({
 }
 
 const iconActionTones = {
-  neutral: 'hover:text-white',
-  gold: 'hover:text-[#e3bb78]',
-  danger: 'hover:border-red-900/60 hover:bg-red-950/40 hover:text-red-300',
+  neutral: 'hover:text-[#111111]',
+  gold: 'hover:text-[#C9A227]',
+  danger: 'hover:border-red-200 hover:bg-red-50 hover:text-red-700',
 } as const;
 
 /** Class builder for compact table row actions — usable on buttons and links. */
@@ -130,7 +134,7 @@ export function adminIconActionClass(
   className?: string,
 ) {
   return cn(
-    'rounded-lg border border-transparent p-1.5 text-[#b5b0a8] transition-colors hover:border-[#37332c] hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78] disabled:cursor-not-allowed disabled:opacity-50',
+    'rounded-lg border border-transparent p-1.5 text-[#555555] transition-colors hover:border-[#E5E7EB] hover:bg-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227] disabled:cursor-not-allowed disabled:opacity-50',
     iconActionTones[tone],
     className,
   );
@@ -148,12 +152,12 @@ export function AdminIconButton({
 
 export function AdminTable({ children }: PropsWithChildren) {
   return (
-    <div className="max-h-[70vh] overflow-auto rounded-lg border border-[#26231f]">
+    <div className="max-h-[70vh] overflow-auto rounded-lg border border-[#E5E7EB]">
       <table
         className={cn(
-          'min-w-full border-separate border-spacing-0 text-left text-sm text-[#e9e5de]',
-          '[&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-10 [&_thead_th]:bg-[#161513]',
-          '[&_tbody_tr]:transition-colors [&_tbody_tr:nth-child(odd)]:bg-white/[0.015] [&_tbody_tr:hover]:bg-[#e3bb78]/[0.05]',
+          'min-w-full border-separate border-spacing-0 text-left text-sm text-[#111111]',
+          '[&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-10 [&_thead_th]:bg-[#F4F4F5]',
+          '[&_tbody_tr]:transition-colors [&_tbody_tr:nth-child(odd)]:bg-[#FAFAFA] [&_tbody_tr:hover]:bg-[#C9A227]/[0.06]',
         )}
       >
         {children}
@@ -171,7 +175,7 @@ export function AdminTh({
     <th
       {...props}
       className={cn(
-        'border-b border-[#2d2a27] px-4 py-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]',
+        'border-b border-[#E5E7EB] px-4 py-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]',
         className,
       )}
     >
@@ -182,19 +186,17 @@ export function AdminTh({
 
 export function AdminTd({ children, className }: PropsWithChildren<{ className?: string }>) {
   return (
-    <td className={cn('border-b border-[#26231f]/70 px-4 py-3.5 align-top', className)}>
-      {children}
-    </td>
+    <td className={cn('border-b border-[#E5E7EB] px-4 py-3.5 align-top', className)}>{children}</td>
   );
 }
 
 export function AdminEmpty({ children }: PropsWithChildren) {
   return (
     <div className="flex flex-col items-center gap-3 py-12 text-center">
-      <span className="flex size-11 items-center justify-center rounded-xl border border-[#26231f] bg-[#161513] text-[#8b867d]">
+      <span className="flex size-11 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] text-[#555555]">
         <Inbox className="size-5" strokeWidth={1.6} />
       </span>
-      <p className="max-w-sm text-sm leading-relaxed text-[#b5b0a8]">{children}</p>
+      <p className="max-w-sm text-sm leading-relaxed text-[#555555]">{children}</p>
     </div>
   );
 }
@@ -203,7 +205,7 @@ export function AdminError({ children }: PropsWithChildren) {
   return (
     <p
       role="alert"
-      className="flex items-start gap-2.5 rounded-lg border border-red-900/50 bg-red-950/30 px-3.5 py-2.5 text-sm text-red-200"
+      className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700"
     >
       <AlertCircle className="mt-0.5 size-4 shrink-0" strokeWidth={1.7} />
       <span>{children}</span>
@@ -212,7 +214,7 @@ export function AdminError({ children }: PropsWithChildren) {
 }
 
 const inputStyles =
-  'w-full rounded-lg border border-[#37332c] bg-[#1a1815] px-3.5 py-2.5 text-sm text-white transition-colors outline-none placeholder:text-[#6f6a61] hover:border-[#4a4438] focus:border-[#e3bb78] focus:ring-2 focus:ring-[#e3bb78]/15 disabled:cursor-not-allowed disabled:opacity-50';
+  'w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3.5 py-2.5 text-sm text-[#111111] transition-colors outline-none placeholder:text-[#555555] hover:border-[#D1D5DB] focus:border-[#C9A227] focus:ring-2 focus:ring-[#C9A227]/20 disabled:cursor-not-allowed disabled:opacity-50';
 
 export function AdminInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cn(inputStyles, props.className)} />;
@@ -257,19 +259,19 @@ const toneByStatus: Record<string, StatusTone> = {
 };
 
 const toneStyles: Record<StatusTone, string> = {
-  success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-  info: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
-  warning: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-  error: 'border-red-500/30 bg-red-500/10 text-red-300',
-  neutral: 'border-[#37332c] bg-[#1a1815] text-[#b5b0a8]',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  info: 'border-sky-200 bg-sky-50 text-sky-800',
+  warning: 'border-[#E8D9A8] bg-[#FFF8E7] text-[#C9A227]',
+  error: 'border-red-200 bg-red-50 text-red-700',
+  neutral: 'border-[#E5E7EB] bg-[#FAFAFA] text-[#555555]',
 };
 
 const dotStyles: Record<StatusTone, string> = {
-  success: 'bg-emerald-400',
-  info: 'bg-sky-400',
-  warning: 'bg-amber-400',
-  error: 'bg-red-400',
-  neutral: 'bg-[#8b867d]',
+  success: 'bg-emerald-500',
+  info: 'bg-sky-500',
+  warning: 'bg-[#C9A227]',
+  error: 'bg-red-500',
+  neutral: 'bg-[#555555]',
 };
 
 function resolveTone(children: ReactNode): StatusTone {
@@ -297,7 +299,7 @@ export function StatusPill({ children }: PropsWithChildren) {
 }
 
 export function AdminSkeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cn('animate-pulse rounded-lg bg-white/[0.06]', className)} />;
+  return <div aria-hidden className={cn('animate-pulse rounded-lg bg-[#E5E7EB]', className)} />;
 }
 
 export function AdminField({
@@ -309,24 +311,24 @@ export function AdminField({
 }: PropsWithChildren<{ label: string; error?: string; hint?: string; className?: string }>) {
   return (
     <label className={cn('block', className)}>
-      <span className="mb-1.5 block text-sm font-medium text-[#d8d4cd]">{label}</span>
+      <span className="mb-1.5 block text-sm font-medium text-[#111111]">{label}</span>
       {children}
       {error ? (
-        <span className="mt-1 block text-xs text-red-400">{error}</span>
+        <span className="mt-1 block text-xs text-red-600">{error}</span>
       ) : hint ? (
-        <span className="mt-1 block text-xs text-[#8b867d]">{hint}</span>
+        <span className="mt-1 block text-xs text-[#555555]">{hint}</span>
       ) : null}
     </label>
   );
 }
 
 const statTones = {
-  gold: 'border-[#e3bb78]/25 bg-[#e3bb78]/10 text-[#e3bb78]',
-  emerald: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
-  amber: 'border-amber-500/25 bg-amber-500/10 text-amber-300',
-  rose: 'border-rose-500/25 bg-rose-500/10 text-rose-300',
-  orange: 'border-orange-500/25 bg-orange-500/10 text-orange-300',
-  sky: 'border-sky-500/25 bg-sky-500/10 text-sky-300',
+  gold: 'border-[#C9A227]/40 bg-[#C9A227]/10 text-[#C9A227]',
+  emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  amber: 'border-amber-200 bg-amber-50 text-amber-700',
+  rose: 'border-rose-200 bg-rose-50 text-rose-700',
+  orange: 'border-orange-200 bg-orange-50 text-orange-700',
+  sky: 'border-sky-200 bg-sky-50 text-sky-700',
 } as const;
 
 export function AdminStatCard({
@@ -353,14 +355,14 @@ export function AdminStatCard({
     <Wrapper
       {...(onClick ? { type: 'button' as const, onClick, 'aria-pressed': active } : {})}
       className={cn(
-        'rounded-xl border bg-[#111110] p-4 text-left shadow-[0_1px_2px_rgba(0,0,0,.35)] transition-all duration-150',
-        active ? 'border-[#e3bb78]/60 ring-1 ring-[#e3bb78]/20' : 'border-[#26231f]',
+        'rounded-xl border bg-white p-4 text-left shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-all duration-150',
+        active ? 'border-[#C9A227] ring-1 ring-[#C9A227]/25' : 'border-[#E5E7EB]',
         onClick &&
-          'hover:-translate-y-0.5 hover:border-[#e3bb78]/40 hover:shadow-[0_10px_28px_-14px_rgba(0,0,0,.7)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]',
+          'hover:-translate-y-0.5 hover:border-[#C9A227]/60 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]',
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#8b867d]">{label}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">{label}</p>
         <span
           className={cn(
             'flex size-8 shrink-0 items-center justify-center rounded-lg border',
@@ -373,9 +375,9 @@ export function AdminStatCard({
       {loading ? (
         <AdminSkeleton className="mt-2 h-7 w-16" />
       ) : (
-        <p className="mt-1.5 text-2xl font-extrabold tracking-[-.02em] text-white">{value}</p>
+        <p className="mt-1.5 text-2xl font-extrabold tracking-[-.02em] text-[#111111]">{value}</p>
       )}
-      {hint ? <p className="mt-1 text-xs text-[#8b867d]">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-xs text-[#555555]">{hint}</p> : null}
     </Wrapper>
   );
 }

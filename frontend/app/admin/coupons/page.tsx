@@ -101,28 +101,28 @@ function CouponRedemptionsPanel({
               {rows.map((row) => (
                 <tr key={row.id}>
                   <AdminTd>
-                    <span className="text-[#b5b0a8]">
+                    <span className="text-[#555555]">
                       {new Date(row.createdAt).toLocaleString()}
                     </span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="font-mono text-xs text-[#e9e5de]">
+                    <span className="font-mono text-xs text-[#111111]">
                       {row.orderId.slice(0, 8)}…
                     </span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="font-mono text-xs text-[#b5b0a8]">
+                    <span className="font-mono text-xs text-[#555555]">
                       {row.userId ? `${row.userId.slice(0, 8)}…` : 'Guest'}
                     </span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="text-[#e3bb78]">{formatTaka(row.discountTaka)}</span>
+                    <span className="text-[#C9A227]">{formatTaka(row.discountTaka)}</span>
                   </AdminTd>
                   <AdminTd>
                     {row.shippingWaived ? (
-                      <span className="text-emerald-300">Waived</span>
+                      <span className="text-emerald-700">Waived</span>
                     ) : (
-                      <span className="text-[#8b867d]">—</span>
+                      <span className="text-[#555555]">—</span>
                     )}
                   </AdminTd>
                 </tr>
@@ -131,7 +131,7 @@ function CouponRedemptionsPanel({
           </AdminTable>
           <div className="mt-4 flex justify-center">
             {redemptionsQuery.isFetching && cursor ? (
-              <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+              <p className="text-sm text-[#555555]">Loading more…</p>
             ) : nextCursor ? (
               <AdminButton type="button" variant="secondary" onClick={loadMore}>
                 Load more
@@ -317,7 +317,7 @@ export default function AdminCouponsPage() {
         {couponsQuery.isError ? <AdminError>Could not load coupons.</AdminError> : null}
         {actionError ? <AdminError>{actionError}</AdminError> : null}
         {success ? (
-          <p className="mb-3 rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
+          <p className="mb-3 rounded-[4px] border border-[#C9A227]/40 bg-[#FFFFFF] px-3 py-2 text-sm text-[#C9A227]">
             {success}
           </p>
         ) : null}
@@ -345,13 +345,13 @@ export default function AdminCouponsPage() {
               {coupons.map((coupon) => (
                 <tr key={coupon.id}>
                   <AdminTd>
-                    <span className="font-semibold text-white">{coupon.code}</span>
+                    <span className="font-semibold text-[#111111]">{coupon.code}</span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="text-[#e9e5de]">{coupon.title}</span>
+                    <span className="text-[#111111]">{coupon.title}</span>
                   </AdminTd>
                   <AdminTd>
-                    <span className="text-[#e3bb78]">
+                    <span className="text-[#C9A227]">
                       {coupon.rewardType === 'free_shipping'
                         ? 'Free shipping'
                         : coupon.rewardType === 'percent'
@@ -361,7 +361,7 @@ export default function AdminCouponsPage() {
                   </AdminTd>
                   <AdminTd>{formatTaka(coupon.minOrderTaka)}</AdminTd>
                   <AdminTd>
-                    <span className="text-xs text-[#b5b0a8]">
+                    <span className="text-xs text-[#555555]">
                       {new Date(coupon.startsAt).toLocaleDateString()}
                       {coupon.endsAt
                         ? ` – ${new Date(coupon.endsAt).toLocaleDateString()}`
@@ -399,7 +399,7 @@ export default function AdminCouponsPage() {
                           Deactivate
                         </AdminButton>
                       ) : (
-                        <span className="self-center text-xs text-[#8b867d]">—</span>
+                        <span className="self-center text-xs text-[#555555]">—</span>
                       )}
                     </div>
                   </AdminTd>
@@ -420,7 +420,7 @@ export default function AdminCouponsPage() {
       >
         <form onSubmit={(event) => void onSubmit(event)} className="grid gap-3 sm:grid-cols-2">
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Code
             </span>
             <AdminInput
@@ -432,7 +432,7 @@ export default function AdminCouponsPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Title
             </span>
             <AdminInput
@@ -442,7 +442,7 @@ export default function AdminCouponsPage() {
             />
           </label>
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Description
             </span>
             <AdminTextarea
@@ -453,7 +453,7 @@ export default function AdminCouponsPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Reward type
             </span>
             <AdminSelect
@@ -469,7 +469,7 @@ export default function AdminCouponsPage() {
             </AdminSelect>
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Value
             </span>
             <AdminInput
@@ -481,7 +481,7 @@ export default function AdminCouponsPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Min order (৳)
             </span>
             <AdminInput
@@ -493,7 +493,7 @@ export default function AdminCouponsPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Max per user
             </span>
             <AdminInput
@@ -506,7 +506,7 @@ export default function AdminCouponsPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Starts at
             </span>
             <AdminInput
@@ -517,7 +517,7 @@ export default function AdminCouponsPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Ends at (optional)
             </span>
             <AdminInput

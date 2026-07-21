@@ -67,7 +67,7 @@ export function AdminModal({
         aria-label="Close dialog"
         tabIndex={-1}
         onClick={() => !dismissDisabled && onClose()}
-        className="absolute inset-0 animate-[admin-fade-in_.15s_ease-out] cursor-default bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 animate-[admin-fade-in_.15s_ease-out] cursor-default bg-[#111111]/40 backdrop-blur-sm"
       />
       <div
         ref={panelRef}
@@ -76,20 +76,20 @@ export function AdminModal({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'relative flex max-h-[92dvh] w-full animate-[admin-modal-in_.18s_ease-out] flex-col overflow-hidden rounded-t-xl border border-[#26231f] bg-[#111110] shadow-[0_24px_80px_-24px_rgba(0,0,0,.9)] outline-none sm:rounded-xl',
+          'relative flex max-h-[92dvh] w-full animate-[admin-modal-in_.18s_ease-out] flex-col overflow-hidden rounded-t-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_24px_80px_-24px_rgba(0,0,0,.2)] outline-none sm:rounded-xl',
           sizeStyles[size],
         )}
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[#26231f] px-5 py-4 sm:px-6">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[#E5E7EB] px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <h2
               id={titleId}
-              className="text-[13px] font-bold uppercase tracking-[.12em] text-white"
+              className="text-[13px] font-bold uppercase tracking-[.12em] text-[#111111]"
             >
               {title}
             </h2>
             {description ? (
-              <p className="mt-1 text-sm leading-relaxed text-[#b5b0a8]">{description}</p>
+              <p className="mt-1 text-sm leading-relaxed text-[#555555]">{description}</p>
             ) : null}
           </div>
           <button
@@ -97,7 +97,7 @@ export function AdminModal({
             onClick={() => !dismissDisabled && onClose()}
             disabled={dismissDisabled}
             aria-label="Close dialog"
-            className="rounded-lg border border-transparent p-1.5 text-[#b5b0a8] transition-colors hover:border-[#37332c] hover:bg-white/[0.04] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78] disabled:opacity-50"
+            className="rounded-lg border border-transparent p-1.5 text-[#555555] transition-colors hover:border-[#E5E7EB] hover:bg-[#FAFAFA] hover:text-[#111111] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227] disabled:opacity-50"
           >
             <X className="size-4" strokeWidth={1.7} />
           </button>
@@ -106,7 +106,7 @@ export function AdminModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
         {footer ? (
-          <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[#26231f] bg-[#141312] px-5 py-4 sm:px-6">
+          <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[#E5E7EB] bg-[#FAFAFA] px-5 py-4 sm:px-6">
             {footer}
           </footer>
         ) : null}

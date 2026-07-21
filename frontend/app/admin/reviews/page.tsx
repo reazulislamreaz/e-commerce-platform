@@ -69,7 +69,7 @@ function ReviewsListBody({ status }: { status: string }) {
       <AdminPanel title="Moderation queue" description="Filter reviews by status.">
         <form onSubmit={applyFilters} className="mb-5 flex flex-wrap items-end gap-3">
           <label className="block min-w-[180px] flex-1 space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Status
             </span>
             <AdminSelect
@@ -95,9 +95,7 @@ function ReviewsListBody({ status }: { status: string }) {
 
         {query.isError ? <AdminError>Could not load reviews.</AdminError> : null}
 
-        {showInitialLoading ? (
-          <AdminTableSkeleton />
-        ) : null}
+        {showInitialLoading ? <AdminTableSkeleton /> : null}
 
         {!showInitialLoading && !query.isError && rows.length === 0 ? (
           <AdminEmpty>No reviews match this filter.</AdminEmpty>
@@ -121,29 +119,29 @@ function ReviewsListBody({ status }: { status: string }) {
                 {rows.map((review) => (
                   <tr key={review.id}>
                     <AdminTd>
-                      <span className="font-semibold text-white">{review.productName}</span>
+                      <span className="font-semibold text-[#111111]">{review.productName}</span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#e3bb78]">{review.rating}/5</span>
+                      <span className="text-[#C9A227]">{review.rating}/5</span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="line-clamp-1 text-[#e9e5de]">{review.title}</span>
+                      <span className="line-clamp-1 text-[#111111]">{review.title}</span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#b5b0a8]">{review.authorName}</span>
+                      <span className="text-[#555555]">{review.authorName}</span>
                     </AdminTd>
                     <AdminTd>
                       <StatusPill>{review.status}</StatusPill>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#b5b0a8]">
+                      <span className="text-[#555555]">
                         {new Date(review.createdAt).toLocaleString()}
                       </span>
                     </AdminTd>
                     <AdminTd className="text-right">
                       <Link
                         href={`/admin/reviews/${review.id}`}
-                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
                       >
                         View
                       </Link>
@@ -155,7 +153,7 @@ function ReviewsListBody({ status }: { status: string }) {
 
             <div className="mt-4 flex justify-center">
               {query.isFetching && cursor ? (
-                <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+                <p className="text-sm text-[#555555]">Loading more…</p>
               ) : nextCursor ? (
                 <AdminButton type="button" variant="secondary" onClick={loadMore}>
                   Load more
@@ -177,9 +175,7 @@ function ReviewsListInner() {
 
 export default function AdminReviewsPage() {
   return (
-    <Suspense
-      fallback={<AdminTableSkeleton />}
-    >
+    <Suspense fallback={<AdminTableSkeleton />}>
       <ReviewsListInner />
     </Suspense>
   );

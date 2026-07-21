@@ -64,22 +64,22 @@ export function AccountShell({ children }: PropsWithChildren) {
   const ready = hydrated && Boolean(user);
 
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
             My Account
           </p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-[-.03em] text-white sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-extrabold tracking-[-.03em] text-[#111111] sm:text-3xl">
             {ready && user ? displayName(user) : 'Your account'}
           </h1>
-          <p className="mt-1 text-sm text-[#b5b0a8]">
+          <p className="mt-1 text-sm text-[#555555]">
             {ready && user ? user.email : 'Loading your profile…'}
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-          <aside className="h-fit rounded-[4px] border border-[#2d2a27] bg-[#111110] p-2">
+          <aside className="h-fit rounded-[4px] border border-[#E5E7EB] bg-white p-2">
             <nav aria-label="Account" className="space-y-0.5">
               {nav.map((item) => {
                 const active = item.exact
@@ -93,8 +93,8 @@ export function AccountShell({ children }: PropsWithChildren) {
                     className={cn(
                       'flex items-center gap-2.5 rounded-[4px] px-3 py-2.5 text-[12px] font-semibold transition-colors',
                       active
-                        ? 'bg-[#1a1815] text-[#e3bb78]'
-                        : 'text-[#e9e5de] hover:bg-[#1a1815] hover:text-[#e3bb78]',
+                        ? 'bg-[#FAFAFA] text-[#C9A227]'
+                        : 'text-[#555555] hover:bg-[#FAFAFA] hover:text-[#C9A227]',
                       !ready && 'pointer-events-none opacity-60',
                     )}
                     tabIndex={ready ? undefined : -1}
@@ -102,7 +102,7 @@ export function AccountShell({ children }: PropsWithChildren) {
                     <Icon className="size-3.5 shrink-0" strokeWidth={1.6} />
                     <span className="flex-1">{item.label}</span>
                     {item.href === '/account/notifications' && unreadCount > 0 ? (
-                      <span className="rounded-[4px] bg-[#e5bd79] px-1.5 py-0.5 text-[9px] font-bold text-[#18120b]">
+                      <span className="rounded-[4px] bg-[#C9A227] px-1.5 py-0.5 text-[9px] font-bold text-[#111111]">
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     ) : null}
@@ -113,7 +113,7 @@ export function AccountShell({ children }: PropsWithChildren) {
                 type="button"
                 disabled={!ready}
                 onClick={() => logout.mutate(undefined, { onSuccess: () => router.push('/') })}
-                className="flex w-full items-center gap-2.5 rounded-[4px] px-3 py-2.5 text-left text-[12px] font-semibold text-[#e9e5de] transition-colors hover:bg-[#1a1815] hover:text-red-300 disabled:opacity-50"
+                className="flex w-full items-center gap-2.5 rounded-[4px] px-3 py-2.5 text-left text-[12px] font-semibold text-[#555555] transition-colors hover:bg-[#FAFAFA] hover:text-red-700 disabled:opacity-50"
               >
                 <LogOut className="size-3.5 shrink-0" strokeWidth={1.6} />
                 Logout

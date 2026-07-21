@@ -59,12 +59,7 @@ const SEARCH_DEBOUNCE_MS = 350;
 const TAXONOMY_INVALIDATE = [adminKeys.brands(), adminKeys.categories(), adminKeys.collections()];
 
 type TaxonomySort =
-  | 'UPDATED_DESC'
-  | 'CREATED_DESC'
-  | 'CREATED_ASC'
-  | 'NAME_ASC'
-  | 'NAME_DESC'
-  | 'PRODUCTS_DESC';
+  'UPDATED_DESC' | 'CREATED_DESC' | 'CREATED_ASC' | 'NAME_ASC' | 'NAME_DESC' | 'PRODUCTS_DESC';
 
 const SORT_OPTIONS: Array<{ value: TaxonomySort; label: string }> = [
   { value: 'UPDATED_DESC', label: 'Recently updated' },
@@ -377,7 +372,7 @@ export default function AdminTaxonomyPage() {
         ) : (
           <p
             role="status"
-            className="rounded-lg border border-[#e5bd79]/40 bg-[#1a1815] px-3.5 py-2.5 text-sm text-[#e3bb78]"
+            className="rounded-lg border border-[#C9A227]/40 bg-[#FFFFFF] px-3.5 py-2.5 text-sm text-[#C9A227]"
           >
             {notice.text}
           </p>
@@ -400,7 +395,7 @@ export default function AdminTaxonomyPage() {
           <div className="relative">
             <Search
               aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8b867d]"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#555555]"
               strokeWidth={1.7}
             />
             <AdminInput
@@ -427,9 +422,7 @@ export default function AdminTaxonomyPage() {
           <AdminSelect
             aria-label="Filter by status"
             value={filters.status}
-            onChange={(event) =>
-              patchFilters({ status: event.target.value as Filters['status'] })
-            }
+            onChange={(event) => patchFilters({ status: event.target.value as Filters['status'] })}
           >
             <option value="">All statuses</option>
             <option value="ACTIVE">Active</option>
@@ -439,7 +432,9 @@ export default function AdminTaxonomyPage() {
             aria-label="Filter by parent category"
             value={filters.parentId}
             onChange={(event) => patchFilters({ parentId: event.target.value })}
-            disabled={categories.isLoading || filters.type === 'BRAND' || filters.type === 'COLLECTION'}
+            disabled={
+              categories.isLoading || filters.type === 'BRAND' || filters.type === 'COLLECTION'
+            }
           >
             <option value="">All parents</option>
             {categories.data?.map((category) => (
@@ -462,8 +457,8 @@ export default function AdminTaxonomyPage() {
         </div>
 
         {selected.size > 0 ? (
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#e3bb78]/35 bg-[#e3bb78]/6 px-3.5 py-2.5">
-            <p className="mr-auto text-sm font-semibold text-[#e3bb78]">{selected.size} selected</p>
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#C9A227]/35 bg-[#C9A227]/6 px-3.5 py-2.5">
+            <p className="mr-auto text-sm font-semibold text-[#C9A227]">{selected.size} selected</p>
             <AdminButton
               size="sm"
               variant="secondary"
@@ -528,7 +523,7 @@ export default function AdminTaxonomyPage() {
                       aria-label="Select all items on this page"
                       checked={allSelected}
                       onChange={toggleAll}
-                      className="accent-[#e3bb78]"
+                      className="accent-[#C9A227]"
                     />
                   </AdminTh>
                   <AdminTh>Name</AdminTh>
@@ -557,7 +552,7 @@ export default function AdminTaxonomyPage() {
               </tbody>
             </AdminTable>
             <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-[#8b867d]">
+              <p className="text-xs text-[#555555]">
                 Showing {rows.length} of {filteredRows.length} item
                 {filteredRows.length === 1 ? '' : 's'}
               </p>
@@ -592,13 +587,14 @@ export default function AdminTaxonomyPage() {
         message={
           pendingDelete && pendingDelete.length > 1 ? (
             <>
-              Delete <strong className="text-white">{pendingDelete.length} taxonomy items</strong>?
+              Delete{' '}
+              <strong className="text-[#111111]">{pendingDelete.length} taxonomy items</strong>?
               They will be removed from the storefront. This cannot be undone.
             </>
           ) : (
             <>
-              Delete <strong className="text-white">“{pendingDelete?.[0]?.name}”</strong>? It will
-              be removed from the storefront. This cannot be undone.
+              Delete <strong className="text-[#111111]">“{pendingDelete?.[0]?.name}”</strong>? It
+              will be removed from the storefront. This cannot be undone.
             </>
           )
         }
@@ -626,21 +622,21 @@ function TaxonomyTableRow({
   onDelete: () => void;
 }) {
   return (
-    <tr className={cn(selected && 'bg-[#e3bb78]/6')}>
+    <tr className={cn(selected && 'bg-[#C9A227]/6')}>
       <AdminTd>
         <input
           type="checkbox"
           aria-label={`Select ${row.name}`}
           checked={selected}
           onChange={onToggle}
-          className="accent-[#e3bb78]"
+          className="accent-[#C9A227]"
         />
       </AdminTd>
       <AdminTd>
         <button
           type="button"
           onClick={onView}
-          className="block max-w-56 truncate text-left font-semibold text-white transition-colors hover:text-[#e3bb78] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+          className="block max-w-56 truncate text-left font-semibold text-[#111111] transition-colors hover:text-[#C9A227] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]"
         >
           {row.name}
         </button>
@@ -652,25 +648,25 @@ function TaxonomyTableRow({
         <StatusPill>{row.isActive ? 'Active' : 'Inactive'}</StatusPill>
       </AdminTd>
       <AdminTd>
-        <span className="font-mono text-xs text-[#d8d4cd]">/{row.slug}</span>
+        <span className="font-mono text-xs text-[#555555]">/{row.slug}</span>
       </AdminTd>
       <AdminTd>{row.parentName ?? '—'}</AdminTd>
       <AdminTd>
         {row.productCount > 0 ? (
-          <span className="text-white">
+          <span className="text-[#111111]">
             {row.productCount}
-            <span className="ml-1 text-xs text-[#8b867d]">
+            <span className="ml-1 text-xs text-[#555555]">
               product{row.productCount === 1 ? '' : 's'}
             </span>
           </span>
         ) : (
-          <span className="text-[#8b867d]">—</span>
+          <span className="text-[#555555]">—</span>
         )}
       </AdminTd>
-      <AdminTd className="whitespace-nowrap text-[#b5b0a8]">
+      <AdminTd className="whitespace-nowrap text-[#555555]">
         {new Date(row.createdAt).toLocaleDateString()}
       </AdminTd>
-      <AdminTd className="whitespace-nowrap text-[#b5b0a8]">
+      <AdminTd className="whitespace-nowrap text-[#555555]">
         {new Date(row.updatedAt).toLocaleDateString()}
       </AdminTd>
       <AdminTd>

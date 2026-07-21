@@ -63,14 +63,11 @@ function ReturnsListBody({ status }: { status: string }) {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Returns"
-        description="Moderate return and exchange requests."
-      />
+      <AdminPageHeader title="Returns" description="Moderate return and exchange requests." />
       <AdminPanel title="Return requests" description="Filter the queue by status.">
         <form onSubmit={applyFilters} className="mb-5 flex flex-wrap items-end gap-3">
           <label className="block min-w-[180px] flex-1 space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Status
             </span>
             <AdminSelect
@@ -96,9 +93,7 @@ function ReturnsListBody({ status }: { status: string }) {
 
         {query.isError ? <AdminError>Could not load returns.</AdminError> : null}
 
-        {showInitialLoading ? (
-          <AdminTableSkeleton />
-        ) : null}
+        {showInitialLoading ? <AdminTableSkeleton /> : null}
 
         {!showInitialLoading && !query.isError && rows.length === 0 ? (
           <AdminEmpty>No returns match this filter.</AdminEmpty>
@@ -121,26 +116,26 @@ function ReturnsListBody({ status }: { status: string }) {
                 {rows.map((item) => (
                   <tr key={item.id}>
                     <AdminTd>
-                      <span className="font-semibold text-white">#{item.orderNumber}</span>
+                      <span className="font-semibold text-[#111111]">#{item.orderNumber}</span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="capitalize text-[#e9e5de]">{item.type}</span>
+                      <span className="capitalize text-[#111111]">{item.type}</span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="line-clamp-2 text-[#b5b0a8]">{item.reason}</span>
+                      <span className="line-clamp-2 text-[#555555]">{item.reason}</span>
                     </AdminTd>
                     <AdminTd>
                       <StatusPill>{item.status}</StatusPill>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#b5b0a8]">
+                      <span className="text-[#555555]">
                         {new Date(item.createdAt).toLocaleString()}
                       </span>
                     </AdminTd>
                     <AdminTd className="text-right">
                       <Link
                         href={`/admin/returns/${item.id}`}
-                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
                       >
                         View
                       </Link>
@@ -152,7 +147,7 @@ function ReturnsListBody({ status }: { status: string }) {
 
             <div className="mt-4 flex justify-center">
               {query.isFetching && cursor ? (
-                <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+                <p className="text-sm text-[#555555]">Loading more…</p>
               ) : nextCursor ? (
                 <AdminButton type="button" variant="secondary" onClick={loadMore}>
                   Load more
@@ -174,9 +169,7 @@ function ReturnsListInner() {
 
 export default function AdminReturnsPage() {
   return (
-    <Suspense
-      fallback={<AdminTableSkeleton />}
-    >
+    <Suspense fallback={<AdminTableSkeleton />}>
       <ReturnsListInner />
     </Suspense>
   );

@@ -66,7 +66,7 @@ export default function AdminReviewDetailPage() {
         <AdminError>Review not found or failed to load.</AdminError>
         <Link
           href="/admin/reviews"
-          className="inline-block text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78]"
+          className="inline-block text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227]"
         >
           Back to reviews
         </Link>
@@ -81,7 +81,7 @@ export default function AdminReviewDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/admin/reviews?status=PENDING"
-          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
         >
           ← Reviews
         </Link>
@@ -94,42 +94,42 @@ export default function AdminReviewDetailPage() {
       >
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Rating
             </dt>
-            <dd className="mt-1 text-[#e3bb78]">{review.rating}/5</dd>
+            <dd className="mt-1 text-[#C9A227]">{review.rating}/5</dd>
           </div>
           <div>
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Author
             </dt>
-            <dd className="mt-1 text-white">
+            <dd className="mt-1 text-[#111111]">
               {review.authorName}
               {review.verified ? (
-                <span className="ml-2 text-[10px] font-bold uppercase tracking-[.1em] text-[#e3bb78]">
+                <span className="ml-2 text-[10px] font-bold uppercase tracking-[.1em] text-[#C9A227]">
                   Verified
                 </span>
               ) : null}
             </dd>
           </div>
           <div className="sm:col-span-2">
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Product
             </dt>
             <dd className="mt-1">
               <Link
                 href={`/product/${review.productSlug}`}
-                className="text-[#e3bb78] hover:text-[#eec98a]"
+                className="text-[#C9A227] hover:text-[#D4B03A]"
               >
                 {review.productName}
               </Link>
             </dd>
           </div>
           <div className="sm:col-span-2">
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Body
             </dt>
-            <dd className="mt-1 whitespace-pre-wrap text-[#e9e5de]">{review.body}</dd>
+            <dd className="mt-1 whitespace-pre-wrap text-[#111111]">{review.body}</dd>
           </div>
         </dl>
       </AdminPanel>
@@ -138,13 +138,13 @@ export default function AdminReviewDetailPage() {
         <AdminPanel title="Moderation" description="Publish to the storefront or reject.">
           {actionError ? <AdminError>{actionError}</AdminError> : null}
           {success ? (
-            <p className="rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
+            <p className="rounded-[4px] border border-[#C9A227]/40 bg-[#FFFFFF] px-3 py-2 text-sm text-[#C9A227]">
               {success}
             </p>
           ) : null}
 
           <label className="mt-3 block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Note (optional)
             </span>
             <AdminTextarea

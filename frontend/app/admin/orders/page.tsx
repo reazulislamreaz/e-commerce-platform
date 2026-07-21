@@ -86,20 +86,14 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Orders"
-        description="Track, filter, and fulfill customer orders."
-      />
+      <AdminPageHeader title="Orders" description="Track, filter, and fulfill customer orders." />
       <AdminPanel
         title="Order queue"
         description="Filter fulfillment queue by status, order number, or customer email."
       >
-        <form
-          onSubmit={applyFilters}
-          className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-        >
+        <form onSubmit={applyFilters} className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Status
             </span>
             <AdminSelect
@@ -114,7 +108,7 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
             </AdminSelect>
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Order number
             </span>
             <AdminInput
@@ -125,7 +119,7 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Email
             </span>
             <AdminInput
@@ -169,10 +163,10 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
                 {rows.map((order) => (
                   <tr key={order.id}>
                     <AdminTd>
-                      <span className="font-semibold text-white">#{order.number}</span>
+                      <span className="font-semibold text-[#111111]">#{order.number}</span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#e9e5de]">
+                      <span className="text-[#111111]">
                         {order.email ?? order.shippingAddress.fullName}
                       </span>
                     </AdminTd>
@@ -180,10 +174,10 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
                       <StatusPill>{order.status}</StatusPill>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#e3bb78]">{formatTaka(order.total)}</span>
+                      <span className="text-[#C9A227]">{formatTaka(order.total)}</span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#b5b0a8]">
+                      <span className="text-[#555555]">
                         {new Date(order.createdAt).toLocaleString()}
                       </span>
                     </AdminTd>
@@ -192,7 +186,7 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
                         href={`/admin/orders/${order.id}`}
                         prefetch
                         onMouseEnter={() => router.prefetch(`/admin/orders/${order.id}`)}
-                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+                        className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
                       >
                         View
                       </Link>
@@ -204,7 +198,7 @@ function OrdersListBody({ status, number, email }: OrdersListBodyProps) {
 
             <div className="mt-4 flex justify-center">
               {query.isFetching && cursor ? (
-                <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+                <p className="text-sm text-[#555555]">Loading more…</p>
               ) : nextCursor ? (
                 <AdminButton type="button" variant="secondary" onClick={loadMore}>
                   Load more
@@ -236,9 +230,7 @@ function OrdersListInner() {
 
 export default function AdminOrdersPage() {
   return (
-    <Suspense
-      fallback={<AdminTableSkeleton />}
-    >
+    <Suspense fallback={<AdminTableSkeleton />}>
       <OrdersListInner />
     </Suspense>
   );

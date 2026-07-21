@@ -188,7 +188,7 @@ When implementing one, create a focused NestJS module with controller, service, 
 - `frontend/services/api-client.ts` — shared Axios client
 - `frontend/store/` — Redux store and client-only slices
 
-The storefront now has a working Elevate Apparel shopping experience on top of the existing dark + gold brand UI. Auth, catalog, cart/wishlist (server-backed with Redux projection), checkout (COD), account commerce (addresses, orders, returns, coupons, notifications, preferences, moderated reviews), contact, and newsletter are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. A role-gated `/admin` shell (ADMIN/SUPER_ADMIN) covers overview, analytics/exports, orders, returns, review moderation, inventory/stock alerts, coupons, banners, catalog/taxonomy, CRM customers, contact, newsletter, and users; storefront chrome is isolated from admin routes. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Online payment methods remain deferred.
+The storefront and admin console share the Elevate Apparel **light** brand UI (`#FAFAFA` background, `#111111` text, `#C9A227` accent — see [CLAUDE.md — Elevate Apparel Brand Theme](./CLAUDE.md#elevate-apparel-brand-theme-mandatory); tokens in `frontend/app/globals.css` and `frontend/lib/design-system.ts`). Storefront footer remains dark by design. Auth, catalog, cart/wishlist (server-backed with Redux projection), checkout (COD), account commerce (addresses, orders, returns, coupons, notifications, preferences, moderated reviews), contact, and newsletter are API-backed. Homepage rails, shop/category/search server filtering, PDP variants/stock/reviews/related products, header autocomplete, cart product resolution, wishlist, recently viewed, sitemap, new arrivals, and sale read from the Nest catalog API. A role-gated `/admin` shell (ADMIN/SUPER_ADMIN) covers overview, analytics/exports, orders, returns, review moderation, inventory/stock alerts, coupons, banners, catalog/taxonomy, CRM customers, contact, newsletter, and users; storefront chrome is isolated from admin routes. `frontend/features/products/data.ts` remains only as the idempotent database seed fixture and local adapter for isolated tests. Online payment methods remain deferred.
 
 ### State rules
 
@@ -228,6 +228,25 @@ Premium perceived performance is **mandatory** for all storefront work. Authorit
 
 **New routes:** ship `loading.tsx` + a matching skeleton in the **same change** as the page. Never defer loading UX to a follow-up task.
 
+### Brand design system
+
+Authoritative theme rules: [CLAUDE.md — Elevate Apparel Brand Theme (Mandatory)](./CLAUDE.md#elevate-apparel-brand-theme-mandatory). Quick agents summary: [AGENTS.md](./AGENTS.md).
+
+| Token          | Hex       |
+| -------------- | --------- |
+| Background     | `#FAFAFA` |
+| Primary text   | `#111111` |
+| Secondary text | `#555555` |
+| Accent         | `#C9A227` |
+| Accent hover   | `#D4B03A` |
+| Border         | `#E5E7EB` |
+| Cards          | `#FFFFFF` |
+
+- **Primary button:** black fill → gold hover; **Secondary:** white outline → black fill
+- **Scope:** storefront + `/admin` (same light system)
+- **Exception:** storefront footer stays dark (black bg, white text, gold headings)
+- **Code:** `frontend/app/globals.css`, `frontend/lib/design-system.ts`, admin shared UI under `frontend/components/admin/`
+
 ## Quality gates
 
 Before handing off a change, run the relevant commands:
@@ -258,4 +277,4 @@ Both apps have multi-stage Dockerfiles pinned to Node 20 (matching `.nvmrc`) tha
 2. Inspect existing files and avoid replacing foundations without a migration plan.
 3. Implement vertically by feature, including schema, DTOs, service, API contract, frontend query hooks, **loading skeletons**, and tests as applicable.
 4. Keep security-sensitive values out of commits and logs.
-5. Update this document whenever architecture, routes, infrastructure, loading patterns, or run commands materially change.
+5. Update this document whenever architecture, routes, infrastructure, loading patterns, brand theme, or run commands materially change.

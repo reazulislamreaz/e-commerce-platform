@@ -100,7 +100,7 @@ function NewsletterListBody({ status }: { status: string }) {
       >
         <form onSubmit={applyFilters} className="mb-5 flex flex-wrap items-end gap-3">
           <label className="block min-w-[180px] flex-1 space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Status
             </span>
             <AdminSelect
@@ -127,7 +127,7 @@ function NewsletterListBody({ status }: { status: string }) {
         {query.isError ? <AdminError>Could not load subscriptions.</AdminError> : null}
         {actionError ? <AdminError>{actionError}</AdminError> : null}
         {success ? (
-          <p className="mb-3 rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
+          <p className="mb-3 rounded-[4px] border border-[#C9A227]/40 bg-[#FFFFFF] px-3 py-2 text-sm text-[#C9A227]">
             {success}
           </p>
         ) : null}
@@ -154,18 +154,18 @@ function NewsletterListBody({ status }: { status: string }) {
                 {rows.map((sub) => (
                   <tr key={sub.id}>
                     <AdminTd>
-                      <span className="font-semibold text-white">{sub.email}</span>
+                      <span className="font-semibold text-[#111111]">{sub.email}</span>
                     </AdminTd>
                     <AdminTd>
                       <StatusPill>{sub.status}</StatusPill>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#b5b0a8]">
+                      <span className="text-[#555555]">
                         {new Date(sub.createdAt).toLocaleString()}
                       </span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-[#b5b0a8]">
+                      <span className="text-[#555555]">
                         {sub.unsubscribedAt ? new Date(sub.unsubscribedAt).toLocaleString() : '—'}
                       </span>
                     </AdminTd>
@@ -180,7 +180,7 @@ function NewsletterListBody({ status }: { status: string }) {
                           Force unsubscribe
                         </AdminButton>
                       ) : (
-                        <span className="text-xs text-[#8b867d]">—</span>
+                        <span className="text-xs text-[#555555]">—</span>
                       )}
                     </AdminTd>
                   </tr>
@@ -190,7 +190,7 @@ function NewsletterListBody({ status }: { status: string }) {
 
             <div className="mt-4 flex justify-center">
               {query.isFetching && cursor ? (
-                <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+                <p className="text-sm text-[#555555]">Loading more…</p>
               ) : nextCursor ? (
                 <AdminButton type="button" variant="secondary" onClick={loadMore}>
                   Load more

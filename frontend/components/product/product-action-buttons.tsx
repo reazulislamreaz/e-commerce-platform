@@ -27,7 +27,7 @@ export function ProductActionButtons({
       type="button"
       disabled={!inStock}
       onClick={onAddToBag}
-      className={`${actionBtn} border border-[#37332c] bg-[#111110] text-white hover:border-[#e3bb78] hover:bg-[#1a1815] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
+      className={`${actionBtn} border border-[#111111] bg-white text-[#111111] hover:bg-[#111111] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]`}
     >
       {inStock ? 'Add to Bag' : 'Out of Stock'}
     </button>
@@ -38,7 +38,7 @@ export function ProductActionButtons({
       type="button"
       disabled={!inStock}
       onClick={onOrderNow}
-      className={`${actionBtn} border border-[#efc677] bg-[#e5bd79] text-[#18120b] hover:bg-[#eec98a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
+      className={`${actionBtn} border border-[#111111] bg-[#111111] text-white hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]`}
     >
       Order Now
     </button>
@@ -50,7 +50,7 @@ export function ProductActionButtons({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Order ${productName} on WhatsApp`}
-      className={`${actionBtn} border border-[#1fa855] bg-[#25D366] text-white hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
+      className={`${actionBtn} border border-[#1fa855] bg-[#25D366] text-[#111111] hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]`}
     >
       <WhatsAppIcon className="size-4 shrink-0" />
       WhatsApp Order
@@ -61,9 +61,9 @@ export function ProductActionButtons({
     <a
       href={callOrderHref}
       aria-label={`Call to order ${productName}`}
-      className={`${actionBtn} border border-[#37332c] bg-[#111110] text-white hover:border-[#e3bb78] hover:bg-[#1a1815] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
+      className={`${actionBtn} border border-[#111111] bg-white text-[#111111] hover:bg-[#111111] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]`}
     >
-      <PhoneIcon className="size-4 shrink-0 text-[#e3bb78]" />
+      <PhoneIcon className="size-4 shrink-0 text-[#C9A227]" />
       Call for Order
     </a>
   );

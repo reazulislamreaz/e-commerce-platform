@@ -10,7 +10,7 @@ export function ProductGrid({
   emptyMessage?: string;
 }) {
   if (products.length === 0) {
-    return <p className="py-16 text-center text-sm text-[#b5b0a8]">{emptyMessage}</p>;
+    return <p className="py-16 text-center text-sm text-[#555555]">{emptyMessage}</p>;
   }
 
   return (
@@ -34,10 +34,10 @@ export function CatalogToolbar({
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h2 className="text-base font-bold uppercase tracking-tight text-white sm:text-[17px]">
+        <h2 className="text-base font-bold uppercase tracking-tight text-[#111111] sm:text-[17px]">
           {title}
         </h2>
-        <p className="mt-0.5 text-[11px] text-[#b5b0a8]">
+        <p className="mt-0.5 text-[11px] text-[#555555]">
           {count} {count === 1 ? 'piece' : 'pieces'}
         </p>
       </div>

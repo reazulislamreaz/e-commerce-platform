@@ -26,29 +26,32 @@ function UnsubscribeInner() {
   }, [token]);
 
   return (
-    <main id="main-content" className="flex flex-1 items-center justify-center bg-black px-5 py-20">
-      <div className="max-w-md rounded-[4px] border border-[#2d2a27] bg-[#111110] p-8 text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+    <main
+      id="main-content"
+      className="flex flex-1 items-center justify-center bg-[#FAFAFA] px-5 py-20"
+    >
+      <div className="max-w-md rounded-[4px] border border-[#E5E7EB] bg-white p-8 text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Newsletter
         </p>
-        <h1 className="mt-2 text-2xl font-extrabold text-white">Unsubscribe</h1>
+        <h1 className="mt-2 text-2xl font-extrabold text-[#111111]">Unsubscribe</h1>
         {status === 'loading' && (
-          <p className="mt-4 text-sm text-[#b5b0a8]">Updating your preferences…</p>
+          <p className="mt-4 text-sm text-[#555555]">Updating your preferences…</p>
         )}
         {status === 'missing' && (
-          <p className="mt-4 text-sm text-[#b5b0a8]">
+          <p className="mt-4 text-sm text-[#555555]">
             This unsubscribe link is incomplete. Use the link from your email, or contact support.
           </p>
         )}
         {status === 'done' && (
-          <p className="mt-4 text-sm text-[#b5b0a8]">
+          <p className="mt-4 text-sm text-[#555555]">
             You have been unsubscribed from marketing emails. Transactional order updates are
             unaffected.
           </p>
         )}
         <Link
           href="/"
-          className="mt-6 inline-block text-[11px] font-bold uppercase text-[#e3bb78] hover:text-[#eec98a]"
+          className="mt-6 inline-block text-[11px] font-bold uppercase text-[#C9A227] hover:text-[#D4B03A]"
         >
           Back to Elevate
         </Link>
@@ -61,8 +64,8 @@ export default function UnsubscribePage() {
   return (
     <Suspense
       fallback={
-        <main className="flex flex-1 items-center justify-center bg-black">
-          <p className="text-sm text-[#b5b0a8]">Loading…</p>
+        <main className="flex flex-1 items-center justify-center bg-[#FAFAFA]">
+          <p className="text-sm text-[#555555]">Loading…</p>
         </main>
       }
     >

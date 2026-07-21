@@ -71,21 +71,24 @@ export default function AdminCustomersPage() {
             }}
             className={`rounded-lg border p-4 text-left transition-colors ${
               segment === key
-                ? 'border-[#e3bb78] bg-[#e3bb78]/10'
-                : 'border-[#26231f] bg-[#111110] hover:border-[#e3bb78]/50'
+                ? 'border-[#C9A227] bg-[#C9A227]/10'
+                : 'border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#C9A227]/50'
             }`}
           >
-            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               {key.replaceAll('_', ' ')}
             </p>
-            <p className="mt-2 text-2xl font-extrabold text-white">
+            <p className="mt-2 text-2xl font-extrabold text-[#111111]">
               {summary.data?.find((item) => item.segment === key)?.count ?? '—'}
             </p>
           </button>
         ))}
       </div>
 
-      <AdminPanel title="Customer directory" description="Search profiles or focus on a lifecycle segment.">
+      <AdminPanel
+        title="Customer directory"
+        description="Search profiles or focus on a lifecycle segment."
+      >
         <form
           className="mb-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px_auto]"
           onSubmit={(event) => {
@@ -153,17 +156,19 @@ export default function AdminCustomersPage() {
                     <AdminTd>
                       <Link
                         href={`/admin/customers/${customer.id}`}
-                        className="font-semibold text-white hover:text-[#e3bb78]"
+                        className="font-semibold text-[#111111] hover:text-[#C9A227]"
                       >
                         {[customer.firstName, customer.lastName].filter(Boolean).join(' ') ||
                           'Unnamed customer'}
                       </Link>
-                      <p className="text-xs text-[#b5b0a8]">{customer.email}</p>
-                      <p className="text-xs text-[#8b867d]">{customer.phone}</p>
+                      <p className="text-xs text-[#555555]">{customer.email}</p>
+                      <p className="text-xs text-[#555555]">{customer.phone}</p>
                     </AdminTd>
-                    <AdminTd><StatusPill>{customer.metrics.segment.replaceAll('_', ' ')}</StatusPill></AdminTd>
+                    <AdminTd>
+                      <StatusPill>{customer.metrics.segment.replaceAll('_', ' ')}</StatusPill>
+                    </AdminTd>
                     <AdminTd>{customer.metrics.orderCount}</AdminTd>
-                    <AdminTd className="font-semibold text-[#e3bb78]">
+                    <AdminTd className="font-semibold text-[#C9A227]">
                       {formatTaka(customer.metrics.lifetimeValue)}
                     </AdminTd>
                     <AdminTd>
@@ -171,7 +176,9 @@ export default function AdminCustomersPage() {
                         ? new Date(customer.metrics.lastOrderAt).toLocaleDateString()
                         : 'Never'}
                     </AdminTd>
-                    <AdminTd><StatusPill>{customer.status.replaceAll('_', ' ')}</StatusPill></AdminTd>
+                    <AdminTd>
+                      <StatusPill>{customer.status.replaceAll('_', ' ')}</StatusPill>
+                    </AdminTd>
                   </tr>
                 ))}
               </tbody>

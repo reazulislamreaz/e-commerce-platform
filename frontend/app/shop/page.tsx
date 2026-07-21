@@ -7,7 +7,11 @@ import { dehydrateProductList } from '@/features/products';
 import { QueryHydration } from '@/providers/query-hydration';
 import { PAGE_SIZE } from '@/features/products/constants';
 import { marketingApi } from '@/features/marketing/api';
-import { bannerToPageHero, FALLBACK_BANNERS, pickPrimaryBanner } from '@/features/marketing/banners';
+import {
+  bannerToPageHero,
+  FALLBACK_BANNERS,
+  pickPrimaryBanner,
+} from '@/features/marketing/banners';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +56,7 @@ async function ShopCatalogSection() {
 
 export default function ShopPage() {
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <Suspense fallback={<PageHeroSkeleton variant="asymmetric" />}>
         <ShopHeroSection />
       </Suspense>

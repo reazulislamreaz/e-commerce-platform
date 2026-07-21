@@ -47,12 +47,12 @@ export default async function SearchPage({ searchParams }: Props) {
   const query = q?.trim() ?? '';
 
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section className="mx-auto max-w-[1400px] px-3 py-8 sm:px-6 sm:py-10">
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Search
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-white">
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-.03em] text-[#111111]">
           {query ? `Results for “${query}”` : 'Search'}
         </h1>
         <div className="mt-8">

@@ -18,13 +18,13 @@ export default function ShippingPage() {
 
 function InfoPage({ title, body }: { title: string; body: string[] }) {
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section className="mx-auto max-w-3xl px-5 py-12 sm:px-7">
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Customer Service
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold text-white">{title}</h1>
-        <div className="mt-6 space-y-4 text-sm leading-relaxed text-[#b5b0a8]">
+        <h1 className="mt-2 text-3xl font-extrabold text-[#111111]">{title}</h1>
+        <div className="mt-6 space-y-4 text-sm leading-relaxed text-[#555555]">
           {body.map((p) => (
             <p key={p}>{p}</p>
           ))}

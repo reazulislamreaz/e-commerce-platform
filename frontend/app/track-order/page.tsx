@@ -39,13 +39,13 @@ function TrackOrderInner() {
   };
 
   return (
-    <main id="main-content" className="flex-1 bg-black">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section className="mx-auto max-w-xl px-5 py-12 sm:px-7">
-        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
           Customer Service
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold text-white">Track Order</h1>
-        <p className="mt-2 text-sm text-[#b5b0a8]">
+        <h1 className="mt-2 text-3xl font-extrabold text-[#111111]">Track Order</h1>
+        <p className="mt-2 text-sm text-[#555555]">
           Enter your order number and the email used at checkout.
         </p>
 
@@ -68,34 +68,34 @@ function TrackOrderInner() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-5 py-3 text-[11px] font-bold uppercase text-[#18120b] disabled:opacity-50"
+            className="rounded-[4px] border border-[#111111] bg-[#111111] px-5 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:opacity-50"
           >
             {loading ? 'Tracking…' : 'Track'}
           </button>
         </form>
 
         {submitted && (
-          <div className="mt-8 rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5">
-            {error && <p className="text-sm text-[#b5b0a8]">{error}</p>}
+          <div className="mt-8 rounded-[4px] border border-[#E5E7EB] bg-white p-5">
+            {error && <p className="text-sm text-[#555555]">{error}</p>}
             {order && (
               <div>
-                <p className="font-semibold text-white">Order #{order.number}</p>
-                <p className="mt-1 capitalize text-[#e3bb78]">{order.status}</p>
+                <p className="font-semibold text-[#111111]">Order #{order.number}</p>
+                <p className="mt-1 capitalize text-[#C9A227]">{order.status}</p>
                 {trackQuery.isFetching ? (
-                  <p className="mt-1 text-[11px] text-[#8b867d]">Refreshing status…</p>
+                  <p className="mt-1 text-[11px] text-[#555555]">Refreshing status…</p>
                 ) : (
-                  <p className="mt-1 text-[11px] text-[#8b867d]">
+                  <p className="mt-1 text-[11px] text-[#555555]">
                     Active orders refresh automatically.
                   </p>
                 )}
                 {order.trackingNumber && (
-                  <p className="mt-1 text-sm text-[#b5b0a8]">Courier: {order.trackingNumber}</p>
+                  <p className="mt-1 text-sm text-[#555555]">Courier: {order.trackingNumber}</p>
                 )}
                 <ol className="mt-4 space-y-2">
                   {order.timeline.map((step) => (
                     <li
                       key={step.label}
-                      className={`text-sm ${step.done ? 'text-[#e3bb78]' : 'text-[#8b867d]'}`}
+                      className={`text-sm ${step.done ? 'text-[#C9A227]' : 'text-[#555555]'}`}
                     >
                       {step.done ? '●' : '○'} {step.label}
                     </li>
@@ -114,8 +114,8 @@ export default function TrackOrderPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex flex-1 items-center justify-center bg-black">
-          <p className="text-sm text-[#b5b0a8]">Loading…</p>
+        <main className="flex flex-1 items-center justify-center bg-[#FAFAFA]">
+          <p className="text-sm text-[#555555]">Loading…</p>
         </main>
       }
     >

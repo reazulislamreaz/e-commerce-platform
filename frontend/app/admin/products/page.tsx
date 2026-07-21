@@ -178,8 +178,9 @@ export default function AdminProductsPage() {
   const rows = cursor ? [...priorRows, ...pageRows] : pageRows;
   const nextCursor = products.data?.meta.nextCursor ?? null;
   const filtersActive =
-    Boolean(filters.q || filters.status || filters.stock || filters.brandId || filters.categoryId) ||
-    filters.sort !== 'UPDATED_DESC';
+    Boolean(
+      filters.q || filters.status || filters.stock || filters.brandId || filters.categoryId,
+    ) || filters.sort !== 'UPDATED_DESC';
 
   const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
 
@@ -226,7 +227,10 @@ export default function AdminProductsPage() {
       const verb =
         action === 'publish' ? 'published' : action === 'unpublish' ? 'unpublished' : 'archived';
       if (result.failed === 0) {
-        setNotice({ tone: 'success', text: `${result.done} product${result.done > 1 ? 's' : ''} ${verb}.` });
+        setNotice({
+          tone: 'success',
+          text: `${result.done} product${result.done > 1 ? 's' : ''} ${verb}.`,
+        });
       } else {
         setNotice({
           tone: 'error',
@@ -318,7 +322,7 @@ export default function AdminProductsPage() {
         ) : (
           <p
             role="status"
-            className="rounded-lg border border-[#e5bd79]/40 bg-[#1a1815] px-3.5 py-2.5 text-sm text-[#e3bb78]"
+            className="rounded-lg border border-[#C9A227]/40 bg-[#FFFFFF] px-3.5 py-2.5 text-sm text-[#C9A227]"
           >
             {notice.text}
           </p>
@@ -341,7 +345,7 @@ export default function AdminProductsPage() {
           <div className="relative">
             <Search
               aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8b867d]"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#555555]"
               strokeWidth={1.7}
             />
             <AdminInput
@@ -414,10 +418,8 @@ export default function AdminProductsPage() {
         </div>
 
         {selected.size > 0 ? (
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#e3bb78]/35 bg-[#e3bb78]/[0.06] px-3.5 py-2.5">
-            <p className="mr-auto text-sm font-semibold text-[#e3bb78]">
-              {selected.size} selected
-            </p>
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#C9A227]/35 bg-[#C9A227]/[0.06] px-3.5 py-2.5">
+            <p className="mr-auto text-sm font-semibold text-[#C9A227]">{selected.size} selected</p>
             <AdminButton
               size="sm"
               variant="secondary"
@@ -481,7 +483,7 @@ export default function AdminProductsPage() {
                       aria-label="Select all products on this page"
                       checked={allSelected}
                       onChange={toggleAll}
-                      className="accent-[#e3bb78]"
+                      className="accent-[#C9A227]"
                     />
                   </AdminTh>
                   <SortableTh column="name" sort={filters.sort} onToggle={toggleColumnSort}>
@@ -515,7 +517,7 @@ export default function AdminProductsPage() {
               </tbody>
             </AdminTable>
             <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-[#8b867d]">
+              <p className="text-xs text-[#555555]">
                 Showing {rows.length} product{rows.length === 1 ? '' : 's'}
                 {products.isFetching ? ' · refreshing…' : ''}
               </p>
@@ -564,15 +566,16 @@ function SortableTh({
 }) {
   const { asc, desc } = SORTABLE_COLUMNS[column];
   const direction = sort === asc ? 'ascending' : sort === desc ? 'descending' : undefined;
-  const Icon = direction === 'ascending' ? ArrowUp : direction === 'descending' ? ArrowDown : ArrowUpDown;
+  const Icon =
+    direction === 'ascending' ? ArrowUp : direction === 'descending' ? ArrowDown : ArrowUpDown;
   return (
     <AdminTh aria-sort={direction} className="p-0">
       <button
         type="button"
         onClick={() => onToggle(column)}
         className={cn(
-          'flex w-full items-center gap-1.5 px-4 py-3 text-[10px] font-bold uppercase tracking-[.12em] transition-colors hover:text-[#e3bb78] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#e3bb78]',
-          direction ? 'text-[#e3bb78]' : 'text-[#b5b0a8]',
+          'flex w-full items-center gap-1.5 px-4 py-3 text-[10px] font-bold uppercase tracking-[.12em] transition-colors hover:text-[#C9A227] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#C9A227]',
+          direction ? 'text-[#C9A227]' : 'text-[#555555]',
         )}
       >
         {children}
@@ -595,29 +598,23 @@ function ProductRow({
 }) {
   const stock = product.totalStock ?? 0;
   return (
-    <tr className={cn(selected && 'bg-[#e3bb78]/[0.06]')}>
+    <tr className={cn(selected && 'bg-[#C9A227]/[0.06]')}>
       <AdminTd>
         <input
           type="checkbox"
           aria-label={`Select ${product.name}`}
           checked={selected}
           onChange={onToggle}
-          className="accent-[#e3bb78]"
+          className="accent-[#C9A227]"
         />
       </AdminTd>
       <AdminTd>
         <div className="flex items-center gap-3">
-          <div className="relative size-10 shrink-0 overflow-hidden rounded-md border border-[#26231f] bg-[#e4e3e1]">
+          <div className="relative size-10 shrink-0 overflow-hidden rounded-md border border-[#E5E7EB] bg-[#e4e3e1]">
             {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt=""
-                fill
-                sizes="40px"
-                className="object-cover"
-              />
+              <Image src={product.imageUrl} alt="" fill sizes="40px" className="object-cover" />
             ) : (
-              <span className="flex size-full items-center justify-center text-[#8b867d]">
+              <span className="flex size-full items-center justify-center text-[#555555]">
                 <ImageIcon className="size-4" strokeWidth={1.5} />
               </span>
             )}
@@ -625,40 +622,40 @@ function ProductRow({
           <div className="min-w-0">
             <Link
               href={`/admin/products/${product.id}`}
-              className="block truncate font-semibold text-white transition-colors hover:text-[#e3bb78]"
+              className="block truncate font-semibold text-[#111111] transition-colors hover:text-[#C9A227]"
             >
               {product.name}
             </Link>
-            <p className="truncate text-xs text-[#8b867d]">/{product.slug}</p>
+            <p className="truncate text-xs text-[#555555]">/{product.slug}</p>
           </div>
         </div>
       </AdminTd>
       <AdminTd>
-        <span className="font-mono text-xs text-[#d8d4cd]">{product.sku ?? '—'}</span>
+        <span className="font-mono text-xs text-[#555555]">{product.sku ?? '—'}</span>
         {product.variantCount > 1 ? (
-          <p className="text-xs text-[#8b867d]">+{product.variantCount - 1} more</p>
+          <p className="text-xs text-[#555555]">+{product.variantCount - 1} more</p>
         ) : null}
       </AdminTd>
       <AdminTd>{product.categoryName ?? '—'}</AdminTd>
       <AdminTd>{product.brandName}</AdminTd>
-      <AdminTd className="font-semibold text-[#e3bb78]">{formatTaka(product.priceTaka)}</AdminTd>
+      <AdminTd className="font-semibold text-[#C9A227]">{formatTaka(product.priceTaka)}</AdminTd>
       <AdminTd>
         {stock <= 0 ? (
           <StatusPill>OUT</StatusPill>
         ) : (
-          <span className="text-white">
+          <span className="text-[#111111]">
             {stock}
-            <span className="ml-1 text-xs text-[#8b867d]">units</span>
+            <span className="ml-1 text-xs text-[#555555]">units</span>
           </span>
         )}
       </AdminTd>
       <AdminTd>
         <StatusPill>{product.status}</StatusPill>
       </AdminTd>
-      <AdminTd className="whitespace-nowrap text-[#b5b0a8]">
+      <AdminTd className="whitespace-nowrap text-[#555555]">
         {new Date(product.createdAt).toLocaleDateString()}
       </AdminTd>
-      <AdminTd className="whitespace-nowrap text-[#b5b0a8]">
+      <AdminTd className="whitespace-nowrap text-[#555555]">
         {new Date(product.updatedAt).toLocaleDateString()}
       </AdminTd>
       <AdminTd>

@@ -38,14 +38,14 @@ const REPORTS: Array<{ type: ReportExportType; label: string }> = [
 ];
 
 function Delta({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-xs text-[#8b867d]">No prior data</span>;
+  if (value === null) return <span className="text-xs text-[#555555]">No prior data</span>;
   const positive = value >= 0;
   const Icon = positive ? TrendingUp : TrendingDown;
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1 text-xs font-bold',
-        positive ? 'text-emerald-300' : 'text-red-300',
+        positive ? 'text-emerald-700' : 'text-red-700',
       )}
     >
       <Icon className="size-3.5" strokeWidth={2} />
@@ -63,14 +63,14 @@ function ExportControl({ type, label }: { type: ReportExportType; label: string 
   const status = job.data?.status;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[#2d2a27] bg-[#0d0c0b] p-3">
-      <FileSpreadsheet className="size-4 text-[#e3bb78]" strokeWidth={1.6} />
-      <span className="min-w-[90px] flex-1 text-sm font-semibold text-white">{label}</span>
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] p-3">
+      <FileSpreadsheet className="size-4 text-[#C9A227]" strokeWidth={1.6} />
+      <span className="min-w-[90px] flex-1 text-sm font-semibold text-[#111111]">{label}</span>
       <select
         aria-label={`${label} export format`}
         value={format}
         onChange={(event) => setFormat(event.target.value as ReportExportFormat)}
-        className="rounded-[4px] border border-[#37332c] bg-[#1a1815] px-2 py-1.5 text-xs text-white outline-none focus:border-[#e3bb78]"
+        className="rounded-[4px] border border-[#E5E7EB] bg-[#FFFFFF] px-2 py-1.5 text-xs text-[#111111] outline-none focus:border-[#C9A227]"
       >
         <option value="CSV">CSV</option>
         <option value="XLSX">XLSX</option>
@@ -100,9 +100,11 @@ function ExportControl({ type, label }: { type: ReportExportType; label: string 
         </AdminButton>
       )}
       {status === 'FAILED' ? (
-        <p className="w-full text-xs text-red-300">{job.data?.errorMessage ?? 'Export failed.'}</p>
+        <p className="w-full text-xs text-red-700">{job.data?.errorMessage ?? 'Export failed.'}</p>
       ) : null}
-      {create.isError ? <p className="w-full text-xs text-red-300">Could not queue export.</p> : null}
+      {create.isError ? (
+        <p className="w-full text-xs text-red-700">Could not queue export.</p>
+      ) : null}
     </div>
   );
 }
@@ -114,7 +116,11 @@ export default function AdminAnalyticsPage() {
   const customers = useCustomerAnalytics();
   const inventory = useInventoryAnalytics();
   const hasError =
-    overview.isError || sales.isError || bestsellers.isError || customers.isError || inventory.isError;
+    overview.isError ||
+    sales.isError ||
+    bestsellers.isError ||
+    customers.isError ||
+    inventory.isError;
 
   const cards = overview.data
     ? [
@@ -154,20 +160,24 @@ export default function AdminAnalyticsPage() {
         description="Database-backed revenue, sales, customer, product, and inventory intelligence."
       />
 
-      {hasError ? <AdminError>Some analytics could not be loaded. Try refreshing the page.</AdminError> : null}
+      {hasError ? (
+        <AdminError>Some analytics could not be loaded. Try refreshing the page.</AdminError>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {overview.isLoading
           ? Array.from({ length: 4 }, (_, index) => <AdminSkeleton key={index} className="h-32" />)
           : cards.map((card) => (
-              <div key={card.label} className="rounded-lg border border-[#2d2a27] bg-[#111110] p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#b5b0a8]">
+              <div key={card.label} className="rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#555555]">
                   {card.label}
                 </p>
-                <p className="mt-2 text-2xl font-extrabold tracking-tight text-white">{card.value}</p>
+                <p className="mt-2 text-2xl font-extrabold tracking-tight text-[#111111]">
+                  {card.value}
+                </p>
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <Delta value={card.delta} />
-                  <span className="text-[10px] text-[#8b867d]">{card.hint}</span>
+                  <span className="text-[10px] text-[#555555]">{card.hint}</span>
                 </div>
               </div>
             ))}
@@ -203,26 +213,29 @@ export default function AdminAnalyticsPage() {
                   <p className="text-2xl font-extrabold text-amber-200">
                     {inventory.data?.lowStockCount ?? 0}
                   </p>
-                  <p className="text-[10px] font-bold uppercase tracking-[.1em] text-amber-300/70">
+                  <p className="text-[10px] font-bold uppercase tracking-[.1em] text-amber-700/70">
                     Low stock
                   </p>
                 </div>
                 <div className="rounded-[4px] border border-red-800/30 bg-red-950/20 p-3">
-                  <p className="text-2xl font-extrabold text-red-200">
+                  <p className="text-2xl font-extrabold text-red-700">
                     {inventory.data?.outOfStockCount ?? 0}
                   </p>
-                  <p className="text-[10px] font-bold uppercase tracking-[.1em] text-red-300/70">
+                  <p className="text-[10px] font-bold uppercase tracking-[.1em] text-red-700/70">
                     Out of stock
                   </p>
                 </div>
               </div>
               {(inventory.data?.topLowSkus ?? []).slice(0, 5).map((item) => (
-                <div key={item.variantId} className="flex items-center justify-between gap-3 text-sm">
+                <div
+                  key={item.variantId}
+                  className="flex items-center justify-between gap-3 text-sm"
+                >
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-white">{item.productName}</p>
-                    <p className="text-xs text-[#8b867d]">{item.sku}</p>
+                    <p className="truncate font-semibold text-[#111111]">{item.productName}</p>
+                    <p className="text-xs text-[#555555]">{item.sku}</p>
                   </div>
-                  <span className={item.available <= 0 ? 'text-red-300' : 'text-amber-200'}>
+                  <span className={item.available <= 0 ? 'text-red-700' : 'text-amber-200'}>
                     {item.available} available
                   </span>
                 </div>
@@ -241,8 +254,8 @@ export default function AdminAnalyticsPage() {
               {bestsellers.data.map((item) => (
                 <div key={item.productId}>
                   <div className="flex items-baseline justify-between gap-3">
-                    <p className="truncate text-sm font-semibold text-white">{item.name}</p>
-                    <p className="shrink-0 text-xs text-[#e3bb78]">
+                    <p className="truncate text-sm font-semibold text-[#111111]">{item.name}</p>
+                    <p className="shrink-0 text-xs text-[#C9A227]">
                       {item.units} units · {formatTaka(item.revenue)}
                     </p>
                   </div>
@@ -274,12 +287,12 @@ export default function AdminAnalyticsPage() {
                 {customers.data.topCustomers.map((customer) => (
                   <tr key={customer.id}>
                     <AdminTd>
-                      <p className="font-semibold text-white">{customer.name}</p>
-                      <p className="text-xs text-[#8b867d]">{customer.email}</p>
+                      <p className="font-semibold text-[#111111]">{customer.name}</p>
+                      <p className="text-xs text-[#555555]">{customer.email}</p>
                     </AdminTd>
                     <AdminTd>{customer.orderCount}</AdminTd>
                     <AdminTd>
-                      <span className="font-semibold text-[#e3bb78]">
+                      <span className="font-semibold text-[#C9A227]">
                         {formatTaka(customer.lifetimeValue)}
                       </span>
                     </AdminTd>
@@ -293,7 +306,10 @@ export default function AdminAnalyticsPage() {
         </AdminPanel>
       </div>
 
-      <AdminPanel title="Report exports" description="Generate expiring CSV or XLSX files asynchronously.">
+      <AdminPanel
+        title="Report exports"
+        description="Generate expiring CSV or XLSX files asynchronously."
+      >
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {REPORTS.map((report) => (
             <ExportControl key={report.type} {...report} />

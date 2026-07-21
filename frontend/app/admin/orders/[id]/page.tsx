@@ -113,7 +113,7 @@ export default function AdminOrderDetailPage() {
         <AdminError>Order not found or failed to load.</AdminError>
         <Link
           href="/admin/orders"
-          className="inline-block text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78]"
+          className="inline-block text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227]"
         >
           Back to orders
         </Link>
@@ -134,7 +134,7 @@ export default function AdminOrderDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/admin/orders"
-          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
         >
           ← Orders
         </Link>
@@ -147,16 +147,16 @@ export default function AdminOrderDetailPage() {
       >
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Buyer email
             </dt>
-            <dd className="mt-1 text-white">{order.email ?? '—'}</dd>
+            <dd className="mt-1 text-[#111111]">{order.email ?? '—'}</dd>
           </div>
           <div>
-            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+            <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
               Tracking
             </dt>
-            <dd className="mt-1 text-[#e3bb78]">{order.trackingNumber ?? 'Not set'}</dd>
+            <dd className="mt-1 text-[#C9A227]">{order.trackingNumber ?? 'Not set'}</dd>
           </div>
         </dl>
 
@@ -168,14 +168,14 @@ export default function AdminOrderDetailPage() {
                 <span
                   aria-hidden
                   className={`flex size-3 shrink-0 items-center justify-center rounded-full border-2 ${
-                    step.done ? 'border-[#e5bd79] bg-[#e5bd79]' : 'border-[#37332c] bg-transparent'
+                    step.done ? 'border-[#C9A227] bg-[#C9A227]' : 'border-[#E5E7EB] bg-transparent'
                   }`}
                 />
                 {index < order.timeline.length - 1 ? (
                   <span
                     aria-hidden
                     className={`min-h-6 w-0.5 flex-1 sm:h-0.5 sm:min-h-0 sm:w-full ${
-                      step.done ? 'bg-[#e5bd79]/50' : 'bg-[#2d2a27]'
+                      step.done ? 'bg-[#C9A227]/50' : 'bg-[#E5E7EB]'
                     }`}
                   />
                 ) : null}
@@ -183,12 +183,12 @@ export default function AdminOrderDetailPage() {
               <div className="-mt-0.5 pb-5 pl-3 sm:mt-2 sm:pb-0 sm:pl-0">
                 <p
                   className={`text-[11px] font-semibold ${
-                    step.done ? 'text-[#e3bb78]' : 'text-[#8b867d]'
+                    step.done ? 'text-[#C9A227]' : 'text-[#555555]'
                   }`}
                 >
                   {step.label}
                 </p>
-                <p className="mt-0.5 text-[10px] text-[#6f6a61]">
+                <p className="mt-0.5 text-[10px] text-[#555555]">
                   {step.at ? new Date(step.at).toLocaleString() : '—'}
                 </p>
               </div>
@@ -198,17 +198,17 @@ export default function AdminOrderDetailPage() {
       </AdminPanel>
 
       <AdminPanel title="Shipping address">
-        <div className="text-sm text-[#e9e5de]">
-          <p className="font-semibold text-white">{address.fullName}</p>
-          <p className="mt-1 text-[#b5b0a8]">{address.phone}</p>
-          <p className="mt-2 text-[#b5b0a8]">
+        <div className="text-sm text-[#111111]">
+          <p className="font-semibold text-[#111111]">{address.fullName}</p>
+          <p className="mt-1 text-[#555555]">{address.phone}</p>
+          <p className="mt-2 text-[#555555]">
             {address.line1}
             {address.line2 ? `, ${address.line2}` : ''}
           </p>
-          <p className="text-[#b5b0a8]">
+          <p className="text-[#555555]">
             {address.city}, {address.district} {address.postalCode}
           </p>
-          <p className="text-[#b5b0a8]">{address.country}</p>
+          <p className="text-[#555555]">{address.country}</p>
         </div>
       </AdminPanel>
 
@@ -217,7 +217,7 @@ export default function AdminOrderDetailPage() {
           {order.items.map((item) => (
             <li
               key={`${item.productId}-${item.size}-${item.color}`}
-              className="flex gap-3 border-b border-[#2d2a27]/60 pb-3 last:border-0 last:pb-0"
+              className="flex gap-3 border-b border-[#E5E7EB]/60 pb-3 last:border-0 last:pb-0"
             >
               <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-[4px] bg-[#e4e3e1]">
                 {item.image ? (
@@ -231,36 +231,36 @@ export default function AdminOrderDetailPage() {
                 ) : null}
               </div>
               <div className="min-w-0 flex-1 text-sm">
-                <p className="font-medium text-white">{item.name}</p>
-                <p className="text-[12px] text-[#8b867d]">
+                <p className="font-medium text-[#111111]">{item.name}</p>
+                <p className="text-[12px] text-[#555555]">
                   {item.color} / {item.size} × {item.quantity}
                 </p>
               </div>
-              <p className="text-sm font-semibold text-[#e3bb78]">
+              <p className="text-sm font-semibold text-[#C9A227]">
                 {formatTaka(item.unitPrice * item.quantity)}
               </p>
             </li>
           ))}
         </ul>
 
-        <dl className="mt-5 space-y-1 border-t border-[#2d2a27] pt-4 text-sm">
-          <div className="flex justify-between text-[#b5b0a8]">
+        <dl className="mt-5 space-y-1 border-t border-[#E5E7EB] pt-4 text-sm">
+          <div className="flex justify-between text-[#555555]">
             <dt>Subtotal</dt>
             <dd>{formatTaka(order.subtotal)}</dd>
           </div>
           {order.discount > 0 ? (
-            <div className="flex justify-between text-[#b5b0a8]">
+            <div className="flex justify-between text-[#555555]">
               <dt>Discount{order.couponCode ? ` (${order.couponCode})` : ''}</dt>
               <dd className="text-[#8fbf8f]">−{formatTaka(order.discount)}</dd>
             </div>
           ) : null}
-          <div className="flex justify-between text-[#b5b0a8]">
+          <div className="flex justify-between text-[#555555]">
             <dt>Shipping</dt>
             <dd>{order.shipping === 0 ? 'Free' : formatTaka(order.shipping)}</dd>
           </div>
-          <div className="flex justify-between pt-2 font-semibold text-white">
+          <div className="flex justify-between pt-2 font-semibold text-[#111111]">
             <dt>Total</dt>
-            <dd className="text-[#e3bb78]">{formatTaka(order.total)}</dd>
+            <dd className="text-[#C9A227]">{formatTaka(order.total)}</dd>
           </div>
         </dl>
       </AdminPanel>
@@ -310,7 +310,7 @@ export default function AdminOrderDetailPage() {
           {canShip ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
               <label className="block space-y-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+                <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
                   Tracking number
                 </span>
                 <AdminInput
@@ -333,9 +333,9 @@ export default function AdminOrderDetailPage() {
           ) : null}
 
           {canCancel ? (
-            <div className="mt-4 space-y-3 border-t border-[#2d2a27] pt-4">
+            <div className="mt-4 space-y-3 border-t border-[#E5E7EB] pt-4">
               <label className="block space-y-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b5b0a8]">
+                <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#555555]">
                   Cancel reason
                 </span>
                 <AdminTextarea

@@ -12,14 +12,12 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { productViewed } from '@/store/slices/recently-viewed-slice';
 
 const InlineSizeGuide = dynamic(
-  () =>
-    import('@/components/product/inline-size-guide').then((mod) => mod.InlineSizeGuide),
+  () => import('@/components/product/inline-size-guide').then((mod) => mod.InlineSizeGuide),
   { ssr: false, loading: () => null },
 );
 
 const EasyReturnsExchange = dynamic(
-  () =>
-    import('@/components/product/easy-returns-exchange').then((mod) => mod.EasyReturnsExchange),
+  () => import('@/components/product/easy-returns-exchange').then((mod) => mod.EasyReturnsExchange),
   { ssr: false, loading: () => null },
 );
 
@@ -34,8 +32,8 @@ function ProductRail({
 }) {
   if (!loading && products.length === 0) return null;
   return (
-    <section className="mx-auto max-w-[1400px] border-t border-[#2d2a27] px-3 py-8 sm:px-6 sm:py-10">
-      <h2 className="mb-5 text-base font-bold uppercase tracking-tight text-white">{title}</h2>
+    <section className="mx-auto max-w-[1400px] border-t border-[#E5E7EB] px-3 py-8 sm:px-6 sm:py-10">
+      <h2 className="mb-5 text-base font-bold uppercase tracking-tight text-[#111111]">{title}</h2>
       {loading ? (
         <ProductGridSkeleton count={4} />
       ) : (
@@ -82,7 +80,10 @@ export function ProductBelowFold({ product }: { product: CatalogProduct }) {
   }, [dispatch, p.id]);
 
   const related = useRelatedProducts(product.slug, deferred);
-  const recentProducts = useProductsByIds(recentProductIds, deferred && recentProductIds.length > 0);
+  const recentProducts = useProductsByIds(
+    recentProductIds,
+    deferred && recentProductIds.length > 0,
+  );
 
   const recentlyViewed = recentProductIds.flatMap((id) => {
     const item = recentProducts.data?.find(
@@ -99,31 +100,31 @@ export function ProductBelowFold({ product }: { product: CatalogProduct }) {
       </div>
 
       {p.reviews.length > 0 && (
-        <section className="mx-auto max-w-[1400px] border-t border-[#2d2a27] px-5 pt-8 sm:px-7">
-          <h2 className="text-base font-bold uppercase tracking-tight text-white">
+        <section className="mx-auto max-w-[1400px] border-t border-[#E5E7EB] px-5 pt-8 sm:px-7">
+          <h2 className="text-base font-bold uppercase tracking-tight text-[#111111]">
             Reviews & Ratings
           </h2>
           <div className="mt-5 space-y-4">
             {p.reviews.map((review) => (
               <article
                 key={review.id}
-                className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-4"
+                className="rounded-[4px] border border-[#E5E7EB] bg-white p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 text-[#e5c17d]">
+                  <span className="inline-flex items-center gap-1 text-[#C9A227]">
                     {Array.from({ length: review.rating }).map((_, i) => (
-                      <Star key={i} className="size-3 fill-[#e5c17d]" strokeWidth={0} />
+                      <Star key={i} className="size-3 fill-[#C9A227]" strokeWidth={0} />
                     ))}
                   </span>
-                  <h3 className="text-sm font-semibold text-white">{review.title}</h3>
+                  <h3 className="text-sm font-semibold text-[#111111]">{review.title}</h3>
                   {review.verified && (
-                    <span className="text-[10px] uppercase tracking-wide text-[#8fbf8f]">
+                    <span className="text-[10px] uppercase tracking-wide text-green-700">
                       Verified
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-[#b5b0a8]">{review.body}</p>
-                <p className="mt-2 text-[11px] text-[#8b867d]">
+                <p className="mt-2 text-sm text-[#555555]">{review.body}</p>
+                <p className="mt-2 text-[11px] text-[#555555]">
                   {review.author} · {review.createdAt}
                 </p>
               </article>

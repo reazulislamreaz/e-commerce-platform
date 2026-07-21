@@ -71,8 +71,8 @@ export function ContactWidget() {
       actionLabel: 'Call now',
       href: telHref,
       icon: PhoneIcon,
-      iconClassName: 'text-[#e3bb78]',
-      tileClassName: 'bg-[#111110]',
+      iconClassName: 'text-[#C9A227]',
+      tileClassName: 'bg-white',
     },
   ];
 
@@ -138,17 +138,17 @@ export function ContactWidget() {
           const content = (
             <>
               <span
-                className={`pointer-events-none absolute right-[calc(100%+0.65rem)] top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded-[4px] border border-[#2d2a27] bg-[#111110] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[.08em] text-[#eee9e1] shadow-[0_4px_14px_rgba(0,0,0,0.35)] transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 sm:block ${
+                className={`pointer-events-none absolute right-[calc(100%+0.65rem)] top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded-[4px] border border-[#E5E7EB] bg-white px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[.08em] text-[#555555] shadow-[0_4px_14px_rgba(0,0,0,0.35)] transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 sm:block ${
                   open ? 'opacity-100' : 'opacity-0'
                 }`}
               >
                 {channel.label}
-                <span className="ml-1.5 font-normal normal-case tracking-normal text-[#b5b0a8]">
+                <span className="ml-1.5 font-normal normal-case tracking-normal text-[#555555]">
                   · {channel.actionLabel}
                 </span>
               </span>
               <span
-                className={`flex size-11 items-center justify-center rounded-[4px] border border-[#2d2a27] shadow-[0_4px_14px_rgba(0,0,0,0.35)] transition-[transform,box-shadow,border-color] duration-200 ease-out group-hover:scale-[1.03] group-hover:border-[#37332c] group-focus-visible:scale-[1.03] group-focus-visible:border-[#e3bb78] group-active:scale-[0.98] sm:size-12 ${channel.tileClassName}`}
+                className={`flex size-11 items-center justify-center rounded-[4px] border border-[#E5E7EB] shadow-[0_4px_14px_rgba(0,0,0,0.35)] transition-[transform,box-shadow,border-color] duration-200 ease-out group-hover:scale-[1.03] group-hover:border-[#E5E7EB] group-focus-visible:scale-[1.03] group-focus-visible:border-[#C9A227] group-active:scale-[0.98] sm:size-12 ${channel.tileClassName}`}
               >
                 <Icon className={`size-5 sm:size-[22px] ${channel.iconClassName}`} />
               </span>
@@ -185,9 +185,7 @@ export function ContactWidget() {
               role="menuitem"
               style={style}
               href={channel.href}
-              {...(channel.external
-                ? { target: '_blank', rel: 'noopener noreferrer' }
-                : {})}
+              {...(channel.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               aria-label={`${channel.label} — ${channel.actionLabel}`}
               onClick={() => handleChannelClick(channel)}
               className="group relative outline-none"
@@ -204,7 +202,7 @@ export function ContactWidget() {
         aria-controls={menuId}
         aria-label={open ? 'Close contact menu' : 'Open contact menu'}
         onClick={() => setOpen((value) => !value)}
-        className="flex size-12 items-center justify-center rounded-full border border-[#37332c] bg-[#111110] text-[#e3bb78] shadow-[0_4px_18px_rgba(0,0,0,0.45)] outline-none transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out hover:border-[#e3bb78]/60 hover:bg-[#1a1815] hover:shadow-[0_6px_22px_rgba(0,0,0,0.5)] focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95 sm:size-[52px]"
+        className="flex size-12 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#C9A227] shadow-[0_4px_18px_rgba(0,0,0,0.45)] outline-none transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out hover:border-[#C9A227]/60 hover:bg-white hover:shadow-[0_6px_22px_rgba(0,0,0,0.5)] focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA] active:scale-95 sm:size-[52px]"
       >
         <span
           className={`absolute transition-all duration-200 ease-out ${

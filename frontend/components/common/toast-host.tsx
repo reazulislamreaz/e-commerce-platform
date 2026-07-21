@@ -14,26 +14,30 @@ import {
 
 const VARIANT_STYLES: Record<
   ToastVariant,
-  { border: string; accent: string; icon: typeof CheckCircle2 }
+  { border: string; accent: string; bg: string; icon: typeof CheckCircle2 }
 > = {
   success: {
-    border: 'border-[#2d4a2d]/80',
-    accent: 'text-[#8fbf8f]',
+    border: 'border-green-200',
+    accent: 'text-green-700',
+    bg: 'bg-green-50',
     icon: CheckCircle2,
   },
   error: {
-    border: 'border-red-900/60',
-    accent: 'text-red-300',
+    border: 'border-red-200',
+    accent: 'text-red-700',
+    bg: 'bg-red-50',
     icon: AlertCircle,
   },
   warning: {
-    border: 'border-[#5c4a2a]/80',
-    accent: 'text-[#e0bd7d]',
+    border: 'border-[#E8D9A8]',
+    accent: 'text-[#C9A227]',
+    bg: 'bg-[#FFF8E7]',
     icon: AlertTriangle,
   },
   info: {
-    border: 'border-[#37332c]',
-    accent: 'text-[#e3bb78]',
+    border: 'border-blue-200',
+    accent: 'text-blue-700',
+    bg: 'bg-blue-50',
     icon: Info,
   },
 };
@@ -53,10 +57,11 @@ const ToastItem = memo(function ToastItem({ toast }: { toast: ToastRecord }) {
       onFocus={() => pauseToast(toast.id)}
       onBlur={() => resumeToast(toast.id)}
       className={cn(
-        'pointer-events-auto flex w-full max-w-[min(92vw,380px)] items-start gap-3 rounded-[4px] border bg-[#111110]/95 px-3.5 py-3 text-[13px] text-[#eee9e1] shadow-[0_12px_40px_-12px_rgba(0,0,0,.75)] backdrop-blur-sm',
+        'pointer-events-auto flex w-full max-w-[min(92vw,380px)] items-start gap-3 rounded-[4px] border px-3.5 py-3 text-[13px] text-[#111111] shadow-[0_8px_30px_-12px_rgba(0,0,0,.2)] backdrop-blur-sm',
         'motion-safe:animate-[toast-in_220ms_cubic-bezier(.21,1.02,.73,1)_both]',
         'data-[dismissing=true]:motion-safe:animate-[toast-out_180ms_ease-in_both]',
         'will-change-[transform,opacity]',
+        styles.bg,
         styles.border,
       )}
     >
@@ -70,7 +75,7 @@ const ToastItem = memo(function ToastItem({ toast }: { toast: ToastRecord }) {
         type="button"
         aria-label="Dismiss notification"
         onClick={() => dismissToast(toast.id)}
-        className="shrink-0 rounded-[4px] p-0.5 text-[#8b867d] transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78]/40"
+        className="shrink-0 rounded-[4px] p-0.5 text-[#555555] transition-colors hover:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227]/40"
       >
         <X className="size-3.5" strokeWidth={1.75} />
       </button>

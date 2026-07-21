@@ -37,15 +37,15 @@ function FilterSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-b border-[#2d2a27] py-4">
+    <div className="border-b border-[#E5E7EB] py-4">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between text-left text-[11px] font-bold uppercase tracking-[.12em] text-white"
+        className="flex w-full items-center justify-between text-left text-[11px] font-bold uppercase tracking-[.12em] text-[#111111]"
         aria-expanded={open}
       >
         {title}
-        <span className="text-[#e3bb78]">{open ? '−' : '+'}</span>
+        <span className="text-[#C9A227]">{open ? '−' : '+'}</span>
       </button>
       {open && <div className="mt-3 space-y-2">{children}</div>}
     </div>
@@ -62,12 +62,12 @@ function CheckboxRow({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-[12px] text-[#e9e5de]">
+    <label className="flex cursor-pointer items-center gap-2.5 text-[12px] text-[#555555]">
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="size-3.5 accent-[#e5bd79]"
+        className="size-3.5 accent-[#C9A227]"
       />
       {label}
     </label>
@@ -104,14 +104,14 @@ export function FilterPanel({
   return (
     <aside className={className}>
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
           Filters{active > 0 ? ` (${active})` : ''}
         </h2>
         {active > 0 && (
           <button
             type="button"
             onClick={onClear}
-            className="text-[10px] font-semibold uppercase tracking-wide text-[#e3bb78] hover:text-[#eec98a]"
+            className="text-[10px] font-semibold uppercase tracking-wide text-[#C9A227] hover:text-[#D4B03A]"
           >
             Clear All
           </button>
@@ -190,21 +190,21 @@ export function FilterPanel({
             placeholder="Min"
             value={minInput}
             onChange={(e) => setMinInput(e.target.value)}
-            className="w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-2.5 py-2 text-xs text-white outline-none focus:border-[#e3bb78]"
+            className="w-full rounded-[4px] border border-[#E5E7EB] bg-white px-2.5 py-2 text-xs text-[#111111] outline-none focus:border-[#C9A227]"
           />
-          <span className="text-[#8b867d]">–</span>
+          <span className="text-[#555555]">–</span>
           <input
             type="number"
             inputMode="numeric"
             placeholder="Max"
             value={maxInput}
             onChange={(e) => setMaxInput(e.target.value)}
-            className="w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-2.5 py-2 text-xs text-white outline-none focus:border-[#e3bb78]"
+            className="w-full rounded-[4px] border border-[#E5E7EB] bg-white px-2.5 py-2 text-xs text-[#111111] outline-none focus:border-[#C9A227]"
           />
           <button
             type="button"
             onClick={applyPrice}
-            className="shrink-0 rounded-[4px] border border-[#efc677] bg-[#e5bd79] px-2.5 py-2 text-[10px] font-bold uppercase text-[#18120b]"
+            className="shrink-0 rounded-[4px] border border-[#111111] bg-[#111111] px-2.5 py-2 text-[10px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
           >
             Go
           </button>
@@ -223,7 +223,7 @@ export function FilterPanel({
                   maxPrice: preset.max,
                 });
               }}
-              className="block text-left text-[12px] text-[#b5b0a8] transition-colors hover:text-[#e3bb78]"
+              className="block text-left text-[12px] text-[#555555] transition-colors hover:text-[#C9A227]"
             >
               {preset.label}
             </button>
@@ -239,13 +239,11 @@ export function FilterPanel({
               <button
                 key={size}
                 type="button"
-                onClick={() =>
-                  onChange({ ...filters, sizes: toggleValue(filters.sizes, size) })
-                }
+                onClick={() => onChange({ ...filters, sizes: toggleValue(filters.sizes, size) })}
                 className={`min-w-9 rounded-[4px] border px-2 py-1.5 text-[11px] font-semibold ${
                   activeSize
-                    ? 'border-[#e5bd79] bg-[#e5bd79] text-[#18120b]'
-                    : 'border-[#37332c] text-[#eee9e1] hover:border-[#e3bb78]'
+                    ? 'border-[#C9A227] bg-[#C9A227] text-[#111111]'
+                    : 'border-[#E5E7EB] text-[#555555] hover:border-[#C9A227]'
                 }`}
               >
                 {size}
@@ -261,9 +259,7 @@ export function FilterPanel({
             key={color}
             label={color}
             checked={filters.colors.includes(color)}
-            onChange={() =>
-              onChange({ ...filters, colors: toggleValue(filters.colors, color) })
-            }
+            onChange={() => onChange({ ...filters, colors: toggleValue(filters.colors, color) })}
           />
         ))}
       </FilterSection>
@@ -276,13 +272,16 @@ export function FilterPanel({
             ['out-of-stock', 'Out of Stock'],
           ] as const
         ).map(([value, label]) => (
-          <label key={value} className="flex cursor-pointer items-center gap-2.5 text-[12px] text-[#e9e5de]">
+          <label
+            key={value}
+            className="flex cursor-pointer items-center gap-2.5 text-[12px] text-[#555555]"
+          >
             <input
               type="radio"
               name="availability"
               checked={filters.availability === value}
               onChange={() => onChange({ ...filters, availability: value })}
-              className="accent-[#e5bd79]"
+              className="accent-[#C9A227]"
             />
             {label}
           </label>
@@ -337,29 +336,29 @@ export function MobileFilterDrawer({
       <button
         type="button"
         aria-label="Close filters"
-        className="absolute inset-0 bg-black/70"
+        className="absolute inset-0 bg-[#111111]/40"
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Product filters"
-        className="absolute inset-y-0 left-0 flex w-[min(100%,340px)] flex-col bg-[#0a0a0b] shadow-2xl"
+        className="absolute inset-y-0 left-0 flex w-[min(100%,340px)] flex-col bg-[#FAFAFA] shadow-2xl"
       >
-        <div className="flex items-center justify-between border-b border-[#2d2a27] px-4 py-3">
-          <p className="text-[12px] font-bold uppercase tracking-[.14em] text-white">Filters</p>
-          <button type="button" aria-label="Close" onClick={onClose} className="p-1 text-white">
+        <div className="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
+          <p className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">Filters</p>
+          <button type="button" aria-label="Close" onClick={onClose} className="p-1 text-[#111111]">
             <X className="size-5" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 pb-24">
           <FilterPanel filters={filters} facets={facets} onChange={onChange} onClear={onClear} />
         </div>
-        <div className="absolute inset-x-0 bottom-0 border-t border-[#2d2a27] bg-[#0a0a0b] p-4">
+        <div className="absolute inset-x-0 bottom-0 border-t border-[#E5E7EB] bg-[#FAFAFA] p-4">
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-[4px] border border-[#efc677] bg-[#e5bd79] py-3 text-[11px] font-bold uppercase text-[#18120b]"
+            className="w-full rounded-[4px] border border-[#111111] bg-[#111111] py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
           >
             Show Results
           </button>

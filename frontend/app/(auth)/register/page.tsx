@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 export default function RegisterPage() {
   return (
     <>
-      <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+      <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
         Join the movement
       </p>
-      <h1 className="mb-8 mt-1.5 text-4xl font-extrabold uppercase tracking-[-.03em] text-white">
+      <h1 className="mb-8 mt-1.5 text-4xl font-extrabold uppercase tracking-[-.03em] text-[#111111]">
         Sign Up
       </h1>
       <RegisterForm />

@@ -155,7 +155,7 @@ export default function AdminProductDetailPage() {
         <AdminError>Product not found or failed to load.</AdminError>
         <Link
           href="/admin/products"
-          className="inline-block text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78]"
+          className="inline-block text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227]"
         >
           Back to products
         </Link>
@@ -172,7 +172,7 @@ export default function AdminProductDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/admin/products"
-          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#e3bb78] hover:text-[#eec98a]"
+          className="text-[10px] font-bold uppercase tracking-[.08em] text-[#C9A227] hover:text-[#D4B03A]"
         >
           ← Products
         </Link>
@@ -181,7 +181,7 @@ export default function AdminProductDetailPage() {
 
       {actionError ? <AdminError>{actionError}</AdminError> : null}
       {success ? (
-        <p className="rounded-[4px] border border-[#e5bd79]/40 bg-[#1a1815] px-3 py-2 text-sm text-[#e3bb78]">
+        <p className="rounded-[4px] border border-[#C9A227]/40 bg-[#FFFFFF] px-3 py-2 text-sm text-[#C9A227]">
           {success}
         </p>
       ) : null}
@@ -221,11 +221,11 @@ export default function AdminProductDetailPage() {
             {item.media.map((media) => (
               <li
                 key={media.id}
-                className="relative size-20 overflow-hidden rounded-lg border border-[#26231f] bg-[#e4e3e1]"
+                className="relative size-20 overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#e4e3e1]"
               >
                 <Image src={media.url} alt={media.alt} fill sizes="80px" className="object-cover" />
                 {media.isPrimary ? (
-                  <span className="absolute bottom-1 left-1 rounded-[3px] bg-[#e5bd79] px-1 text-[9px] font-bold uppercase tracking-[.08em] text-[#18120b]">
+                  <span className="absolute bottom-1 left-1 rounded-[3px] bg-[#C9A227] px-1 text-[9px] font-bold uppercase tracking-[.08em] text-[#111111]">
                     Primary
                   </span>
                 ) : null}
@@ -234,7 +234,7 @@ export default function AdminProductDetailPage() {
           </ul>
         ) : null}
 
-        <p className="mb-5 max-w-3xl text-sm leading-relaxed text-[#b5b0a8]">{item.description}</p>
+        <p className="mb-5 max-w-3xl text-sm leading-relaxed text-[#555555]">{item.description}</p>
 
         <dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <Summary
@@ -247,7 +247,10 @@ export default function AdminProductDetailPage() {
             accent
           />
           <Summary label="Variants" value={String(item.variantCount)} />
-          <Summary label="Colors" value={item.colors.map((color) => color.name).join(', ') || '—'} />
+          <Summary
+            label="Colors"
+            value={item.colors.map((color) => color.name).join(', ') || '—'}
+          />
           <Summary
             label="Categories"
             value={
@@ -273,7 +276,9 @@ export default function AdminProductDetailPage() {
             value={item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : 'Not yet'}
           />
           <Summary label="Last updated" value={new Date(item.updatedAt).toLocaleString()} />
-          {item.onSale ? <Summary label="Discount" value={`${item.discountPercent}% off`} accent /> : null}
+          {item.onSale ? (
+            <Summary label="Discount" value={`${item.discountPercent}% off`} accent />
+          ) : null}
         </dl>
       </AdminPanel>
 
@@ -342,23 +347,27 @@ export default function AdminProductDetailPage() {
   );
 }
 
-function Summary({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+function Summary({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
     <div>
-      <dt className="text-[#8b867d]">{label}</dt>
-      <dd className={accent ? 'font-semibold text-[#e3bb78]' : 'text-white'}>{value}</dd>
+      <dt className="text-[#555555]">{label}</dt>
+      <dd className={accent ? 'font-semibold text-[#C9A227]' : 'text-[#111111]'}>{value}</dd>
     </div>
   );
 }
 
-function Field({
-  label,
-  error,
-  children,
-}: PropsWithChildren<{ label: string; error?: string }>) {
+function Field({ label, error, children }: PropsWithChildren<{ label: string; error?: string }>) {
   return (
     <label>
-      <span className="mb-1.5 block text-sm font-medium text-[#d8d4cd]">{label}</span>
+      <span className="mb-1.5 block text-sm font-medium text-[#555555]">{label}</span>
       {children}
       {error ? <span className="mt-1 block text-xs text-red-400">{error}</span> : null}
     </label>

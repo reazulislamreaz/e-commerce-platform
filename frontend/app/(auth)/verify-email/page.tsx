@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function VerifyEmailPage() {
   return (
     <>
-      <p className="text-center text-[11px] font-semibold uppercase tracking-[.18em] text-[#e0bd7d]">
+      <p className="text-center text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">
         Account verification
       </p>
       <div className="mt-6">

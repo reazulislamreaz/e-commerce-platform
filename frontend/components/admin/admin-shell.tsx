@@ -67,17 +67,17 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
           return (
             <Fragment key={crumb.href}>
               {index > 0 ? (
-                <ChevronRight aria-hidden className="size-3 shrink-0 text-[#57534b]" />
+                <ChevronRight aria-hidden className="size-3 shrink-0 text-[#555555]" />
               ) : null}
               <li className="min-w-0">
                 {last ? (
-                  <span aria-current="page" className="block truncate text-[#e3bb78]">
+                  <span aria-current="page" className="block truncate text-[#C9A227]">
                     {crumb.label}
                   </span>
                 ) : (
                   <Link
                     href={crumb.href}
-                    className="block truncate text-[#8b867d] transition-colors hover:text-white"
+                    className="block truncate text-[#555555] transition-colors hover:text-[#111111]"
                   >
                     {crumb.label}
                   </Link>
@@ -96,7 +96,7 @@ function NavBadge({ badge }: { badge: QueueBadge }) {
     <span
       className={cn(
         'ml-auto min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold leading-none',
-        badge.count > 0 ? 'bg-[#e5bd79] text-[#18120b]' : 'bg-white/[0.06] text-[#8b867d]',
+        badge.count > 0 ? 'bg-[#C9A227] text-[#111111]' : 'bg-[#F4F4F5] text-[#555555]',
       )}
     >
       {badge.count}
@@ -121,7 +121,7 @@ function NavLinks({
       {adminNavGroups.map((group) => (
         <div key={group.label}>
           {!collapsed ? (
-            <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-[#6f6a61]">
+            <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-[#555555]">
               {group.label}
             </p>
           ) : null}
@@ -140,23 +140,23 @@ function NavLinks({
                   title={collapsed ? item.label : undefined}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] font-semibold tracking-[.02em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]',
+                    'group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] font-semibold tracking-[.02em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]',
                     collapsed && 'justify-center px-0',
                     active
-                      ? 'bg-[#e3bb78]/10 text-[#e3bb78]'
-                      : 'text-[#c9c4bb] hover:bg-white/[0.04] hover:text-white',
+                      ? 'bg-[#C9A227]/10 text-[#C9A227]'
+                      : 'text-[#555555] hover:bg-[#FAFAFA] hover:text-[#111111]',
                   )}
                 >
                   {active ? (
                     <span
                       aria-hidden
-                      className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-[#e3bb78]"
+                      className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-[#C9A227]"
                     />
                   ) : null}
                   <Icon
                     className={cn(
                       'size-4 shrink-0 transition-colors',
-                      active ? 'text-[#e3bb78]' : 'text-[#8b867d] group-hover:text-[#e3bb78]',
+                      active ? 'text-[#C9A227]' : 'text-[#555555] group-hover:text-[#C9A227]',
                     )}
                     strokeWidth={1.6}
                   />
@@ -178,17 +178,17 @@ function NavLinks({
 
 function ProTipCard() {
   return (
-    <div className="mx-3 mb-2 rounded-xl border border-[#e3bb78]/20 bg-gradient-to-b from-[#e3bb78]/[0.08] to-transparent p-3.5">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-[#e5bd79] text-[#18120b]">
+    <div className="mx-3 mb-2 rounded-xl border border-[#C9A227]/20 bg-gradient-to-b from-[#C9A227]/[0.08] to-transparent p-3.5">
+      <span className="flex size-8 items-center justify-center rounded-lg bg-[#C9A227] text-[#111111]">
         <Lightbulb className="size-4" strokeWidth={1.7} />
       </span>
-      <p className="mt-2.5 text-[12px] font-bold text-white">Pro Tip</p>
-      <p className="mt-1 text-[11px] leading-relaxed text-[#b5b0a8]">
+      <p className="mt-2.5 text-[12px] font-bold text-[#111111]">Pro Tip</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-[#555555]">
         Keep your store updated and monitor orders regularly.
       </p>
       <Link
         href="/admin"
-        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#efc677] bg-[#e5bd79] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#18120b] transition-colors hover:bg-[#eec98a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#111111] bg-[#111111] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]"
       >
         View analytics
         <ArrowUpRight className="size-3.5" strokeWidth={2} />
@@ -225,7 +225,7 @@ function AdminNotifications({
         aria-expanded={open}
         aria-label={`Notifications, ${total}${hasMore ? ' or more' : ''} pending`}
         onClick={onToggle}
-        className="relative rounded-lg border border-[#37332c] p-2 text-[#d8d4cd] transition-colors hover:border-[#e3bb78]/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+        className="relative rounded-lg border border-[#E5E7EB] p-2 text-[#555555] transition-colors hover:border-[#C9A227]/60 hover:text-[#111111] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]"
       >
         <Bell className="size-4" strokeWidth={1.7} />
         {total > 0 ? (
@@ -248,16 +248,16 @@ function AdminNotifications({
           />
           <div
             role="menu"
-            className="absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-xl border border-[#26231f] bg-[#12110f] shadow-[0_16px_48px_-12px_rgba(0,0,0,.7)]"
+            className="absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_16px_48px_-12px_rgba(0,0,0,.15)]"
           >
-            <div className="border-b border-[#26231f] px-4 py-3">
-              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-white">
+            <div className="border-b border-[#E5E7EB] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#111111]">
                 Needs attention
               </p>
             </div>
             <div className="p-1.5">
               {total === 0 ? (
-                <p className="px-3 py-4 text-center text-sm text-[#b5b0a8]">
+                <p className="px-3 py-4 text-center text-sm text-[#555555]">
                   All caught up — nothing pending.
                 </p>
               ) : (
@@ -271,16 +271,16 @@ function AdminNotifications({
                         href={queue.href}
                         role="menuitem"
                         onClick={onClose}
-                        className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.05]"
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-[#FAFAFA]"
                       >
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#37332c] bg-[#1a1815] text-[#e3bb78]">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] text-[#C9A227]">
                           <Icon className="size-3.5" strokeWidth={1.7} />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-white">
+                          <span className="block truncate text-sm font-semibold text-[#111111]">
                             {queue.label}
                           </span>
-                          <span className="block text-xs text-[#8b867d]">{queue.hint}</span>
+                          <span className="block text-xs text-[#555555]">{queue.hint}</span>
                         </span>
                         <NavBadge badge={queue.badge!} />
                       </Link>
@@ -376,19 +376,19 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
   const brand = (
     <div
       className={cn(
-        'flex h-14 shrink-0 items-center gap-2 border-b border-[#26231f] px-4',
+        'flex h-14 shrink-0 items-center gap-2 border-b border-[#E5E7EB] px-4',
         collapsed && 'justify-center px-0',
       )}
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#e5bd79] text-[12px] font-extrabold text-[#18120b]">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#C9A227] text-[12px] font-extrabold text-[#111111]">
         E
       </span>
       {!collapsed ? (
         <div className="min-w-0 leading-tight">
-          <p className="truncate text-[12px] font-extrabold tracking-[-.01em] text-white">
+          <p className="truncate text-[12px] font-extrabold tracking-[-.01em] text-[#111111]">
             Elevate Apparel
           </p>
-          <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#e0bd7d]">
+          <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
             Admin Console
           </p>
         </div>
@@ -397,11 +397,11 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
   );
 
   return (
-    <div className="flex min-h-screen bg-[#0a0a0b]">
+    <div className="flex min-h-screen bg-[#FAFAFA]">
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'sticky top-0 hidden h-screen shrink-0 flex-col border-r border-[#26231f] bg-[#0d0c0b] transition-[width] duration-200 lg:flex',
+          'sticky top-0 hidden h-screen shrink-0 flex-col border-r border-[#E5E7EB] bg-[#FFFFFF] transition-[width] duration-200 lg:flex',
           collapsed ? 'w-[68px]' : 'w-60',
         )}
       >
@@ -413,12 +413,12 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
           onNavigate={() => setMenuOpen(false)}
         />
         {!collapsed ? <ProTipCard /> : null}
-        <div className="shrink-0 border-t border-[#26231f] p-3">
+        <div className="shrink-0 border-t border-[#E5E7EB] p-3">
           <button
             type="button"
             onClick={() => setCollapsed((value) => !value)}
             className={cn(
-              'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[11px] font-semibold uppercase tracking-[.08em] text-[#8b867d] transition-colors hover:bg-white/[0.04] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]',
+              'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[11px] font-semibold uppercase tracking-[.08em] text-[#555555] transition-colors hover:bg-[#FAFAFA] hover:text-[#111111] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]',
               collapsed && 'justify-center px-0',
             )}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -441,21 +441,21 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
           <button
             type="button"
             aria-label="Close menu"
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#111111]/40 backdrop-blur-sm"
             onClick={() => setDrawerOpen(false)}
           />
           <aside
             role="dialog"
             aria-modal="true"
             aria-label="Admin navigation"
-            className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-[#26231f] bg-[#0d0c0b] shadow-2xl"
+            className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-[#E5E7EB] bg-[#FFFFFF] shadow-2xl"
           >
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#26231f] px-4">
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4">
               <div className="flex items-center gap-2">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-[#e5bd79] text-[12px] font-extrabold text-[#18120b]">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-[#C9A227] text-[12px] font-extrabold text-[#111111]">
                   E
                 </span>
-                <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#e0bd7d]">
+                <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
                   Admin Console
                 </p>
               </div>
@@ -463,7 +463,7 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
                 type="button"
                 aria-label="Close menu"
                 onClick={() => setDrawerOpen(false)}
-                className="rounded-lg p-1.5 text-[#b5b0a8] transition-colors hover:bg-white/[0.05] hover:text-white"
+                className="rounded-lg p-1.5 text-[#555555] transition-colors hover:bg-[#FAFAFA] hover:text-[#111111]"
               >
                 <X className="size-4" />
               </button>
@@ -481,12 +481,12 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Sticky top bar */}
-        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-[#26231f] bg-[#0a0a0b]/85 px-4 backdrop-blur-md sm:px-6">
+        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-[#E5E7EB] bg-[#FAFAFA]/95 px-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-md sm:px-6">
           <button
             type="button"
             aria-label="Open menu"
             onClick={() => setDrawerOpen(true)}
-            className="rounded-lg border border-[#37332c] p-2 text-white transition-colors hover:border-[#e3bb78]/60 lg:hidden"
+            className="rounded-lg border border-[#E5E7EB] p-2 text-[#111111] transition-colors hover:border-[#C9A227]/60 lg:hidden"
           >
             <Menu className="size-4" />
           </button>
@@ -498,7 +498,7 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
 
             <Link
               href="/"
-              className="hidden items-center gap-1.5 rounded-lg border border-[#37332c] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#d8d4cd] transition-colors hover:border-[#e3bb78]/60 hover:text-white xl:inline-flex"
+              className="hidden items-center gap-1.5 rounded-lg border border-[#E5E7EB] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#555555] transition-colors hover:border-[#C9A227]/60 hover:text-[#111111] xl:inline-flex"
             >
               <Store className="size-3.5" strokeWidth={1.7} />
               View store
@@ -524,22 +524,22 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
                   setMenuOpen((value) => !value);
                   setNotifOpen(false);
                 }}
-                className="flex items-center gap-2 rounded-lg p-1 pr-2 transition-colors hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e3bb78]"
+                className="flex items-center gap-2 rounded-lg p-1 pr-2 transition-colors hover:bg-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]"
               >
-                <span className="flex size-7 items-center justify-center rounded-full border border-[#e3bb78]/40 bg-[#1a1815] text-[11px] font-bold text-[#e3bb78]">
+                <span className="flex size-7 items-center justify-center rounded-full border border-[#C9A227]/40 bg-[#FFFFFF] text-[11px] font-bold text-[#C9A227]">
                   {initial}
                 </span>
                 <span className="hidden min-w-0 text-left leading-tight md:block">
-                  <span className="block max-w-[140px] truncate text-[12px] font-semibold text-white">
+                  <span className="block max-w-[140px] truncate text-[12px] font-semibold text-[#111111]">
                     {displayName}
                   </span>
-                  <span className="block text-[10px] font-semibold uppercase tracking-[.08em] text-[#8b867d]">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[.08em] text-[#555555]">
                     {displayRole}
                   </span>
                 </span>
                 <ChevronDown
                   className={cn(
-                    'size-3.5 text-[#8b867d] transition-transform duration-150',
+                    'size-3.5 text-[#555555] transition-transform duration-150',
                     menuOpen && 'rotate-180',
                   )}
                   strokeWidth={1.7}
@@ -555,11 +555,11 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
                   />
                   <div
                     role="menu"
-                    className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-xl border border-[#26231f] bg-[#12110f] shadow-[0_16px_48px_-12px_rgba(0,0,0,.7)]"
+                    className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_16px_48px_-12px_rgba(0,0,0,.15)]"
                   >
-                    <div className="border-b border-[#26231f] px-4 py-3">
-                      <p className="truncate text-sm font-semibold text-white">{user.email}</p>
-                      <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[.12em] text-[#e0bd7d]">
+                    <div className="border-b border-[#E5E7EB] px-4 py-3">
+                      <p className="truncate text-sm font-semibold text-[#111111]">{user.email}</p>
+                      <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[.12em] text-[#C9A227]">
                         {displayRole}
                       </p>
                     </div>
@@ -568,9 +568,9 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
                         href="/"
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#d8d4cd] transition-colors hover:bg-white/[0.05] hover:text-white"
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#555555] transition-colors hover:bg-[#FAFAFA] hover:text-[#111111]"
                       >
-                        <Store className="size-4 text-[#8b867d]" strokeWidth={1.6} />
+                        <Store className="size-4 text-[#555555]" strokeWidth={1.6} />
                         View storefront
                       </Link>
                       <button
@@ -580,7 +580,7 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
                         onClick={() =>
                           logout.mutate(undefined, { onSuccess: () => router.push('/login') })
                         }
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-red-300 transition-colors hover:bg-red-950/40 disabled:opacity-50"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
                       >
                         {logout.isPending ? (
                           <Loader2 className="size-4 animate-spin" strokeWidth={1.7} />
@@ -633,30 +633,30 @@ export function AdminShell({ children }: PropsWithChildren) {
 
   if (!ready || !user) {
     return (
-      <div className="flex min-h-screen bg-[#0a0a0b]">
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[#26231f] bg-[#0d0c0b] lg:flex">
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-[#26231f] px-4">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#e5bd79] text-[12px] font-extrabold text-[#18120b]">
+      <div className="flex min-h-screen bg-[#FAFAFA]">
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[#E5E7EB] bg-[#FFFFFF] lg:flex">
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-[#E5E7EB] px-4">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#C9A227] text-[12px] font-extrabold text-[#111111]">
               E
             </span>
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-[12px] font-extrabold tracking-[-.01em] text-white">
+              <p className="truncate text-[12px] font-extrabold tracking-[-.01em] text-[#111111]">
                 Elevate Apparel
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#e0bd7d]">
+              <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
                 Admin Console
               </p>
             </div>
           </div>
           <div className="flex-1 space-y-2 p-3">
             {Array.from({ length: 8 }, (_, i) => (
-              <div key={i} className="h-9 animate-pulse rounded-lg bg-white/[0.04]" />
+              <div key={i} className="h-9 animate-pulse rounded-lg bg-[#E5E7EB]" />
             ))}
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center border-b border-[#26231f] bg-[#0a0a0b]/85 px-4 backdrop-blur-md sm:px-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#b5b0a8]">
+          <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center border-b border-[#E5E7EB] bg-[#FAFAFA]/95 px-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-md sm:px-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#555555]">
               Checking admin access…
             </p>
           </header>

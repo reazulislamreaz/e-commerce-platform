@@ -1,4 +1,5 @@
 'use client';
+
 import { forwardRef, useId, useState, type InputHTMLAttributes } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,7 +25,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
     <div>
       <label
         htmlFor={id}
-        className={cn('mb-1.5 block text-sm font-medium text-[#d8d4cd]', hideLabel && 'sr-only')}
+        className={cn('mb-1.5 block text-sm font-medium text-[#111111]', hideLabel && 'sr-only')}
       >
         {label}
       </label>
@@ -36,9 +37,9 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           className={cn(
-            'w-full rounded-[4px] border border-[#37332c] bg-[#1a1815] px-3.5 py-3 text-sm text-white outline-none transition-colors placeholder:text-[#8b867d] focus:border-[#e3bb78] focus:ring-2 focus:ring-[#e3bb78]/15',
+            'w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3.5 py-3 text-sm text-[#111111] outline-none transition-colors placeholder:text-[#555555] focus:border-[#C9A227] focus:ring-2 focus:ring-[#C9A227]/20',
             isPassword && 'pr-11',
-            error && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/15',
+            error && 'border-red-400 focus:border-red-500 focus:ring-red-500/15',
             className,
           )}
           {...props}
@@ -48,19 +49,19 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
             type="button"
             onClick={() => setShowPassword((visible) => !visible)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-[#8b867d] transition-colors hover:text-[#e3bb78] focus-visible:outline-2 focus-visible:outline-[#e3bb78]"
+            className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-[#555555] transition-colors hover:text-[#C9A227] focus-visible:outline-2 focus-visible:outline-[#C9A227]"
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         )}
       </div>
       {error ? (
-        <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs text-red-400">
+        <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs text-red-600">
           {error}
         </p>
       ) : (
         hint && (
-          <p id={`${id}-hint`} className="mt-1.5 text-xs text-[#8b867d]">
+          <p id={`${id}-hint`} className="mt-1.5 text-xs text-[#555555]">
             {hint}
           </p>
         )

@@ -51,13 +51,13 @@ export function WishlistButton({
         aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         aria-pressed={wishlisted}
         className={cn(
-          'inline-flex w-full items-center justify-center gap-2 rounded-[4px] border border-[#37332c] bg-[#111110] px-4 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#e3bb78] hover:bg-[#1a1815] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-          wishlisted && 'border-[#e3bb78]/60 text-[#e3bb78]',
+          'inline-flex w-full items-center justify-center gap-2 rounded-[4px] border border-[#E5E7EB] bg-white px-4 py-3 text-[11px] font-bold uppercase text-[#111111] transition-colors hover:border-[#C9A227] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]',
+          wishlisted && 'border-[#C9A227]/60 text-[#C9A227]',
           className,
         )}
       >
         <Heart
-          className={cn('size-4 shrink-0', wishlisted && 'fill-[#e3bb78] stroke-[#e3bb78]')}
+          className={cn('size-4 shrink-0', wishlisted && 'fill-[#C9A227] stroke-[#C9A227]')}
           strokeWidth={1.5}
         />
         {wishlisted ? 'In Wishlist' : 'Add to Wishlist'}
@@ -76,14 +76,14 @@ export function WishlistButton({
         toggle();
       }}
       className={cn(
-        'absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full border border-[#37332c]/50 bg-[#111110]/85 text-white shadow-[0_4px_14px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:border-[#e3bb78]/60 hover:bg-[#111110] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e3bb78] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-11',
+        'absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full border border-[#E5E7EB]/50 bg-white/85 text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:border-[#C9A227]/60 hover:bg-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-11',
         className,
       )}
     >
       <Heart
         className={cn(
           'size-4 transition-colors sm:size-[18px]',
-          wishlisted ? 'fill-[#e3bb78] stroke-[#e3bb78]' : 'stroke-white',
+          wishlisted ? 'fill-[#C9A227] stroke-[#C9A227]' : 'stroke-current',
         )}
         strokeWidth={1.5}
       />

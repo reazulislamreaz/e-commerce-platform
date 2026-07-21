@@ -88,7 +88,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-white">
+        <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
           Notifications
         </h2>
         {items.length > 0 ? (
@@ -96,7 +96,7 @@ export default function NotificationsPage() {
             type="button"
             disabled={markAll.isPending}
             onClick={() => void markAllRead()}
-            className="text-[10px] font-semibold uppercase text-[#e3bb78] disabled:opacity-50"
+            className="text-[10px] font-semibold uppercase text-[#C9A227] disabled:opacity-50"
           >
             {markAll.isPending ? 'Marking…' : 'Mark all read'}
           </button>
@@ -104,13 +104,13 @@ export default function NotificationsPage() {
       </div>
 
       {actionError ? (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-red-600">
           {actionError}
         </p>
       ) : null}
 
       {items.length === 0 ? (
-        <p className="rounded-[4px] border border-[#2d2a27] bg-[#111110] p-5 text-sm text-[#b5b0a8]">
+        <p className="rounded-[4px] border border-[#E5E7EB] bg-white p-5 text-sm text-[#555555]">
           No notifications yet.
         </p>
       ) : (
@@ -120,13 +120,13 @@ export default function NotificationsPage() {
               <li
                 key={item.id}
                 className={`rounded-[4px] border p-4 ${
-                  item.read ? 'border-[#2d2a27] bg-[#111110]' : 'border-[#e3bb78]/30 bg-[#1a1815]'
+                  item.read ? 'border-[#E5E7EB] bg-white' : 'border-[#C9A227]/30 bg-white'
                 }`}
               >
-                <p className="text-sm font-semibold text-white">{item.title}</p>
-                <p className="mt-1 text-sm text-[#b5b0a8]">{item.body}</p>
+                <p className="text-sm font-semibold text-[#111111]">{item.title}</p>
+                <p className="mt-1 text-sm text-[#555555]">{item.body}</p>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] text-[#8b867d]">
+                  <p className="text-[11px] text-[#555555]">
                     {new Date(item.createdAt).toLocaleString()}
                   </p>
                   <div className="flex items-center gap-3">
@@ -135,7 +135,7 @@ export default function NotificationsPage() {
                         type="button"
                         disabled={markOne.isPending}
                         onClick={() => void markRead(item)}
-                        className="text-[10px] font-semibold uppercase tracking-wide text-[#e3bb78] hover:text-[#eec98a] disabled:opacity-50"
+                        className="text-[10px] font-semibold uppercase tracking-wide text-[#C9A227] hover:text-[#D4B03A] disabled:opacity-50"
                       >
                         Mark read
                       </button>
@@ -146,7 +146,7 @@ export default function NotificationsPage() {
                         onClick={() => {
                           if (!item.read) void markRead(item);
                         }}
-                        className="text-[11px] text-[#e3bb78] hover:text-[#eec98a]"
+                        className="text-[11px] text-[#C9A227] hover:text-[#D4B03A]"
                       >
                         View
                       </Link>
@@ -159,12 +159,12 @@ export default function NotificationsPage() {
 
           <div className="flex justify-center">
             {notificationsQuery.isFetching && cursor ? (
-              <p className="text-sm text-[#b5b0a8]">Loading more…</p>
+              <p className="text-sm text-[#555555]">Loading more…</p>
             ) : nextCursor ? (
               <button
                 type="button"
                 onClick={loadMore}
-                className="rounded-[4px] border border-[#37332c] px-4 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-white hover:border-[#e3bb78]"
+                className="rounded-[4px] border border-[#E5E7EB] px-4 py-2 text-[10px] font-bold uppercase tracking-[.08em] text-[#111111] hover:border-[#C9A227]"
               >
                 Load more
               </button>
