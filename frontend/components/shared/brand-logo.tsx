@@ -9,8 +9,18 @@ export const BRAND_LOGO = {
   /** Transparent monogram only (sidebar collapsed, compact chrome) */
   markOnLight: '/images/brand/elevate-apparel-mark-on-light.webp',
   markOnDark: '/images/brand/elevate-apparel-mark-on-dark.webp',
+  /** 3D EA mark + Elevate wordmark — navbar (horizontal) and auth (stacked) */
+  elevate3dHorizontal: '/images/brand/elevate-logo-nav-3d.webp',
+  elevate3dStacked: '/images/brand/elevate-logo-stacked-3d.webp',
+  elevate3dMark: '/images/brand/elevate-mark-3d.webp',
   width: 1248,
   height: 179,
+  elevate3dHorizontalWidth: 422,
+  elevate3dHorizontalHeight: 130,
+  elevate3dStackedWidth: 631,
+  elevate3dStackedHeight: 438,
+  elevate3dMarkWidth: 141,
+  elevate3dMarkHeight: 94,
 } as const;
 
 type BrandLogoProps = {
@@ -22,6 +32,13 @@ type BrandLogoProps = {
   on?: 'light' | 'dark';
   /** Full wordmark (default) or monogram mark only */
   variant?: 'full' | 'mark';
+  /**
+   * Classic flat wordmark (default) or 3D EA mark + Elevate artwork.
+   * Use `elevate3d` for navbar and auth surfaces.
+   */
+  style?: 'classic' | 'elevate3d';
+  /** Layout for `elevate3d` — horizontal navbar row or stacked auth hero */
+  layout?: 'horizontal' | 'stacked' | 'mark';
   className?: string;
   /** Tailwind height utility, e.g. `h-7` / `h-[37px]`. Width stays auto. */
   heightClassName?: string;
@@ -36,11 +53,52 @@ type BrandLogoProps = {
 export function BrandLogo({
   on = 'light',
   variant = 'full',
+  style = 'classic',
+  layout = 'horizontal',
   className,
   heightClassName = 'h-7',
   priority = false,
   quality = 90,
 }: BrandLogoProps) {
+  if (style === 'elevate3d') {
+    const isMark = layout === 'mark';
+    const isStacked = layout === 'stacked';
+    const src = isMark
+      ? BRAND_LOGO.elevate3dMark
+      : isStacked
+        ? BRAND_LOGO.elevate3dStacked
+        : BRAND_LOGO.elevate3dHorizontal;
+    const width = isMark
+      ? BRAND_LOGO.elevate3dMarkWidth
+      : isStacked
+        ? BRAND_LOGO.elevate3dStackedWidth
+        : BRAND_LOGO.elevate3dHorizontalWidth;
+    const height = isMark
+      ? BRAND_LOGO.elevate3dMarkHeight
+      : isStacked
+        ? BRAND_LOGO.elevate3dStackedHeight
+        : BRAND_LOGO.elevate3dHorizontalHeight;
+
+    return (
+      <Image
+        src={src}
+        alt="Elevate"
+        width={width}
+        height={height}
+        priority={priority}
+        quality={quality}
+        className={cn(
+          'w-auto max-w-full object-contain',
+          // Navbar horizontal: clip residual 1–2px resize halo above the mark
+          // (left/right/bottom shadows stay inside the visible area).
+          layout === 'horizontal' && '[clip-path:inset(3px_0_0_0)]',
+          heightClassName,
+          className,
+        )}
+      />
+    );
+  }
+
   const isMark = variant === 'mark';
   const src = isMark
     ? on === 'dark'

@@ -62,7 +62,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       />
       <div className="relative grid w-full max-w-5xl overflow-hidden rounded-lg border border-[#E5E7EB] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.08)] lg:min-h-[600px] lg:grid-cols-[1fr_.9fr]">
         <div className="relative flex flex-col px-6 py-7 sm:px-12">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center text-xs">
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 font-semibold tracking-wide text-[#555555] transition-colors hover:text-[#C9A227]"
@@ -70,11 +70,24 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               <ArrowLeft className="size-4" />
               BACK
             </Link>
-            <Link href="/" aria-label="Elevate Apparel home">
-              <BrandLogo on="light" heightClassName="h-6" />
-            </Link>
           </div>
-          <div className="flex flex-1 flex-col justify-center py-8">{children}</div>
+
+          <div className="flex flex-1 flex-col justify-center py-6 sm:py-8">
+            <Link
+              href="/"
+              aria-label="Elevate Apparel home"
+              className="mx-auto mb-8 flex justify-center sm:mb-10"
+            >
+              <BrandLogo
+                style="elevate3d"
+                layout="stacked"
+                priority
+                heightClassName="h-[120px] sm:h-[140px]"
+                className="drop-shadow-[0_18px_32px_rgba(17,17,17,0.12)]"
+              />
+            </Link>
+            {children}
+          </div>
         </div>
         <ArtPanel />
       </div>

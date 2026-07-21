@@ -132,7 +132,7 @@ export function SiteHeader() {
       {/* Desktop header */}
       <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#E5E7EB] px-4 sm:px-7 lg:flex">
         <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">
-          <BrandLogo on="light" priority heightClassName="h-7 sm:h-[37px]" />
+          <BrandLogo style="elevate3d" layout="horizontal" priority heightClassName="h-8 sm:h-9" />
         </Link>
         <nav aria-label="Main navigation" className="mx-auto flex items-center gap-[27px]">
           {MAIN_NAV.map(([name, href]) => {
@@ -202,7 +202,7 @@ export function SiteHeader() {
       {/* Tablet header */}
       <div className="mx-auto hidden h-[56px] max-w-[1400px] items-center border-b border-[#E5E7EB] px-4 sm:px-7 md:flex lg:hidden">
         <Link href="/" className="shrink-0" aria-label="Elevate Apparel home">
-          <BrandLogo on="light" priority heightClassName="h-7 sm:h-[37px]" />
+          <BrandLogo style="elevate3d" layout="horizontal" priority heightClassName="h-8 sm:h-9" />
         </Link>
         <div className="ml-auto flex items-center gap-3 pl-3 sm:gap-5 sm:pl-5">
           <button
