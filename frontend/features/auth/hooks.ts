@@ -20,7 +20,7 @@ import {
   updateProfile,
   verifyEmail,
 } from './api';
-import type { LoginInput } from './schemas';
+import type { LoginInput, RegisterInput } from './schemas';
 
 async function mergeGuestCommerceState(dispatch: ReturnType<typeof useAppDispatch>): Promise<void> {
   try {
@@ -63,10 +63,29 @@ export function useLogin() {
 }
 
 export function useRegister() {
+  const dispatch = useAppDispatch();
   return useMutation({
-    mutationFn: register,
-    onSuccess: () => {
-      toast.success('Account created. Check your email to verify.', { dedupeKey: 'auth:register' });
+    mutationFn: async (input: RegisterInput) => {
+      await register(input);
+      // Sign in immediately so the shopper lands authenticated after signup.
+      const rememberMe = true;
+      const result = await login({
+        email: input.email,
+        password: input.password,
+        rememberMe,
+      });
+      return { ...result, rememberMe };
+    },
+    onSuccess: async (result) => {
+      dispatch(
+        authenticated({
+          user: result.user,
+          accessToken: result.accessToken,
+          rememberMe: result.rememberMe,
+        }),
+      );
+      await mergeGuestCommerceState(dispatch);
+      toast.success('Account created. Welcome!', { dedupeKey: 'auth:register' });
     },
   });
 }

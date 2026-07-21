@@ -7,19 +7,11 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export const BD_PHONE_PATTERN = /^(?:\+?880|0)1[3-9]\d{8}$/;
 
 /** Account password policy shared by register, reset, and change flows. */
-export const passwordSchema = z
-  .string()
-  .min(12, 'Password must be at least 12 characters')
-  .max(128)
-  .regex(
-    /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-    'Password must include an uppercase letter, a lowercase letter, and a digit',
-  );
+export const passwordSchema = z.string().min(6, 'Password must be at least 6 characters').max(128);
 
 export const registerSchema = z
   .object({
-    firstName: z.string().min(1, 'First name is required').max(80),
-    lastName: z.string().min(1, 'Last name is required').max(80),
+    fullName: z.string().min(1, 'Full name is required').max(160),
     email: z.email(),
     phone: z
       .string()

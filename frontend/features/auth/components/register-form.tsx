@@ -1,57 +1,18 @@
 'use client';
-import { useState } from 'react';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MailCheck } from 'lucide-react';
 import { FormField } from '@/components/common/form-field';
 import { GoogleLoginButton } from '@/features/auth/components/google-login-button';
-import { useRegister, useResendVerification } from '@/features/auth/hooks';
+import { useRegister } from '@/features/auth/hooks';
 import { registerSchema, type RegisterInput } from '@/features/auth/schemas';
 import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
 
-function CheckInbox({ email }: { email: string }) {
-  const resend = useResendVerification();
-  return (
-    <div className="space-y-5 text-center" role="status">
-      <MailCheck aria-hidden className="mx-auto size-12 text-[#e3bb78]" strokeWidth={1.5} />
-      <div>
-        <h2 className="text-xl font-bold uppercase tracking-[-.02em] text-white">
-          Check your inbox
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-[#b5b0a8]">
-          We sent a verification link to <span className="font-semibold text-white">{email}</span>.
-          Click the link to activate your account, then sign in.
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={() => resend.mutate(email)}
-        disabled={resend.isPending || resend.isSuccess}
-        className="text-sm font-semibold text-[#e3bb78] transition-colors hover:text-[#eec98a] disabled:opacity-60"
-      >
-        {resend.isSuccess
-          ? 'Verification email re-sent'
-          : resend.isPending
-            ? 'Sending…'
-            : 'Resend verification email'}
-      </button>
-      <p className="text-sm text-[#b5b0a8]">
-        Already verified?{' '}
-        <Link
-          href="/login"
-          className="font-semibold text-[#e3bb78] transition-colors hover:text-[#eec98a]"
-        >
-          Sign In
-        </Link>
-      </p>
-    </div>
-  );
-}
-
 export function RegisterForm() {
+  const router = useRouter();
   const registerMutation = useRegister();
-  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -61,13 +22,11 @@ export function RegisterForm() {
   const onSubmit = handleSubmit(async (input) => {
     try {
       await registerMutation.mutateAsync(input);
-      setSubmittedEmail(input.email);
+      router.replace('/');
     } catch {
       // Inline alert below shows a user-facing message.
     }
   });
-
-  if (submittedEmail) return <CheckInbox email={submittedEmail} />;
 
   const serverError =
     registerMutation.isError &&
@@ -75,39 +34,29 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField
-          label="First name"
-          hideLabel
-          autoComplete="given-name"
-          placeholder="First name"
-          error={errors.firstName?.message}
-          {...register('firstName')}
-        />
-        <FormField
-          label="Last name"
-          hideLabel
-          autoComplete="family-name"
-          placeholder="Last name"
-          error={errors.lastName?.message}
-          {...register('lastName')}
-        />
-      </div>
       <FormField
-        label="Email"
+        label="Full name"
+        hideLabel
+        autoComplete="name"
+        placeholder="Full name"
+        error={errors.fullName?.message}
+        {...register('fullName')}
+      />
+      <FormField
+        label="Email address"
         hideLabel
         type="email"
         autoComplete="email"
-        placeholder="Email"
+        placeholder="Email address"
         error={errors.email?.message}
         {...register('email')}
       />
       <FormField
-        label="Mobile number"
+        label="Phone number"
         hideLabel
         type="tel"
         autoComplete="tel"
-        placeholder="Mobile number (e.g. 01712345678)"
+        placeholder="Phone number (e.g. 01712345678)"
         hint="Bangladeshi mobile number — 01712345678 or +8801712345678."
         error={errors.phone?.message}
         {...register('phone')}
@@ -118,7 +67,7 @@ export function RegisterForm() {
         type="password"
         autoComplete="new-password"
         placeholder="Password"
-        hint="12+ characters with an uppercase letter, a lowercase letter, and a digit."
+        hint="At least 6 characters."
         error={errors.password?.message}
         {...register('password')}
       />

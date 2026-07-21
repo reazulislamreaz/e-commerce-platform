@@ -15,8 +15,7 @@ export async function login(input: LoginInput & { rememberMe?: boolean }): Promi
 
 export async function register(input: RegisterInput): Promise<AuthUser> {
   const payload = {
-    firstName: input.firstName,
-    lastName: input.lastName,
+    fullName: input.fullName,
     email: input.email,
     phone: input.phone,
     password: input.password,

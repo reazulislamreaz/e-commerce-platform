@@ -73,8 +73,7 @@ export function loadSeedConfig(): SeedConfig {
   if (isProduction && !enableProductionSeed) {
     return {
       skip: true,
-      skipReason:
-        'NODE_ENV=production and ENABLE_PRODUCTION_SEED=false — refusing to seed',
+      skipReason: 'NODE_ENV=production and ENABLE_PRODUCTION_SEED=false — refusing to seed',
       nodeEnv,
       isProduction,
       profile: 'core',
@@ -86,25 +85,22 @@ export function loadSeedConfig(): SeedConfig {
   }
 
   const superAdminPassword = requireEnv('SEED_SUPER_ADMIN_PASSWORD');
-  if (superAdminPassword.length < 12) {
-    throw new Error('SEED_SUPER_ADMIN_PASSWORD must be at least 12 characters');
+  if (superAdminPassword.length < 6) {
+    throw new Error('SEED_SUPER_ADMIN_PASSWORD must be at least 6 characters');
   }
 
-  const adminPassword =
-    process.env.SEED_ADMIN_PASSWORD?.trim() || 'AdminDemoPass123';
-  if (adminPassword.length < 12) {
-    throw new Error('SEED_ADMIN_PASSWORD must be at least 12 characters');
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD?.trim() || 'AdminDemoPass123';
+  if (adminPassword.length < 6) {
+    throw new Error('SEED_ADMIN_PASSWORD must be at least 6 characters');
   }
 
-  const demoCustomerPassword =
-    process.env.SEED_DEMO_PASSWORD?.trim() || 'CustomerDemoPass123';
-  if (demoCustomerPassword.length < 12) {
-    throw new Error('SEED_DEMO_PASSWORD must be at least 12 characters');
+  const demoCustomerPassword = process.env.SEED_DEMO_PASSWORD?.trim() || 'CustomerDemoPass123';
+  if (demoCustomerPassword.length < 6) {
+    throw new Error('SEED_DEMO_PASSWORD must be at least 6 characters');
   }
 
   const profile = parseProfile(process.env.SEED_PROFILE);
-  const includeCommerceDemo =
-    profile === 'full' && process.env.SEED_COMMERCE_DEMO !== 'false';
+  const includeCommerceDemo = profile === 'full' && process.env.SEED_COMMERCE_DEMO !== 'false';
 
   return {
     skip: false,

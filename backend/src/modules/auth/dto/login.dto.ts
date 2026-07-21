@@ -7,7 +7,7 @@ export class LoginDto {
   @MaxLength(320)
   email!: string;
 
-  @ApiProperty({ example: 'StrongPassw0rd!', minLength: 1, maxLength: 128 })
+  @ApiProperty({ example: 'password', minLength: 1, maxLength: 128 })
   @IsString()
   @MinLength(1)
   @MaxLength(128)

@@ -10,9 +10,9 @@ export class ChangePasswordDto {
   currentPassword!: string;
 
   @ApiProperty({
-    description: '12-128 characters with at least one lowercase, uppercase, and digit',
-    example: 'NewStrongPassw0rd!',
-    minLength: 12,
+    description: '6–128 characters; any letters, numbers, or symbols',
+    example: 'password',
+    minLength: 6,
     maxLength: 128,
   })
   @IsAccountPassword()

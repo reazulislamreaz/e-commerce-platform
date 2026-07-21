@@ -37,7 +37,7 @@ const createAdminSchema = z.object({
   lastName: z.string().trim().min(1).max(80),
   email: z.string().email().max(320),
   phone: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, 'Use a valid Bangladeshi mobile number'),
-  password: z.string().min(12).max(128).regex(/[a-z]/).regex(/[A-Z]/).regex(/\d/),
+  password: z.string().min(6, 'Password must be at least 6 characters').max(128),
 });
 
 type CreateAdminValues = z.infer<typeof createAdminSchema>;

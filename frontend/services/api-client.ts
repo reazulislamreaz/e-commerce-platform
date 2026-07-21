@@ -1,6 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import type { AppStore } from '@/store/store';
 import { accessTokenRefreshed, signedOut } from '@/store/slices/auth-slice';
+
 /**
  * Server-side rendering inside Docker reaches the backend over the internal
  * network (API_URL_INTERNAL, runtime env); browsers use the public URL, which
@@ -15,16 +16,39 @@ export const apiClient = axios.create({
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
+
 let store: AppStore | undefined;
 let refreshPromise: Promise<string> | undefined;
+
 export function configureApiClient(appStore: AppStore): void {
   store = appStore;
 }
+
+/**
+ * Public auth routes that return 401 for bad input (wrong password, etc.).
+ * Must not trigger the access-token refresh flow — that would replace the real
+ * error with a misleading "session ended" message from /auth/refresh.
+ */
+const AUTH_401_NO_REFRESH = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+  '/auth/resend-verification',
+] as const;
+
+function shouldSkipTokenRefresh(url: string | undefined): boolean {
+  if (!url) return false;
+  return AUTH_401_NO_REFRESH.some((path) => url.includes(path));
+}
+
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = store?.getState().auth.accessToken;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: unknown) => {
@@ -33,9 +57,11 @@ apiClient.interceptors.response.use(
       error.response?.status !== 401 ||
       !error.config ||
       error.config.url?.endsWith('/auth/refresh') ||
+      shouldSkipTokenRefresh(error.config.url) ||
       (error.config as InternalAxiosRequestConfig & { _retry?: boolean })._retry
     )
       return Promise.reject(error);
+
     const request = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     request._retry = true;
     try {

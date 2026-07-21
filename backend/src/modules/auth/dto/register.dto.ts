@@ -5,6 +5,13 @@ import { IsAccountPassword } from '@/common/decorators/is-account-password.decor
 import { IsBdPhone } from '@/common/decorators/is-bd-phone.decorator';
 
 export class RegisterDto {
+  @ApiProperty({ example: 'Rahim Khan', minLength: 1, maxLength: 160 })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : (value as string)))
+  @IsString()
+  @MinLength(1)
+  @MaxLength(160)
+  fullName!: string;
+
   @ApiProperty({ example: 'customer@example.com', maxLength: 320 })
   @IsEmail()
   @MaxLength(320)
@@ -20,25 +27,11 @@ export class RegisterDto {
   phone!: string;
 
   @ApiProperty({
-    description: '12-128 characters with at least one lowercase, uppercase, and digit',
-    example: 'StrongPassw0rd!',
-    minLength: 12,
+    description: '6–128 characters; any letters, numbers, or symbols',
+    example: 'password',
+    minLength: 6,
     maxLength: 128,
   })
   @IsAccountPassword()
   password!: string;
-
-  @ApiProperty({ example: 'Rahim', minLength: 1, maxLength: 80 })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : (value as string)))
-  @IsString()
-  @MinLength(1)
-  @MaxLength(80)
-  firstName!: string;
-
-  @ApiProperty({ example: 'Khan', minLength: 1, maxLength: 80 })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : (value as string)))
-  @IsString()
-  @MinLength(1)
-  @MaxLength(80)
-  lastName!: string;
 }

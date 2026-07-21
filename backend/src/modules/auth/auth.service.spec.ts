@@ -70,9 +70,8 @@ const baseUser = {
 const registerInput = {
   email: 'new@example.com',
   phone: '01712345679',
-  password: 'StrongPassw0rd!',
-  firstName: 'A',
-  lastName: 'B',
+  password: '123456',
+  fullName: 'A B',
 };
 
 describe('AuthService', () => {
@@ -114,29 +113,43 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('creates a PENDING_VERIFICATION user with a normalized E.164 phone and sends the link', async () => {
+    it('creates an ACTIVE user with a normalized E.164 phone and sends welcome email', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
-      prisma.user.create.mockResolvedValue({ ...baseUser, id: 'new-user' });
-      prisma.verificationToken.create.mockResolvedValue({ id: 'vt-1' });
+      prisma.user.create.mockResolvedValue({
+        ...baseUser,
+        id: 'new-user',
+        email: registerInput.email,
+        firstName: 'A',
+        lastName: 'B',
+      });
 
       await service.register(registerInput);
 
       const createArgs = prisma.user.create.mock.calls[0][0] as {
-        data: { phone: string; status: UserStatus };
+        data: {
+          phone: string;
+          status: UserStatus;
+          firstName: string;
+          lastName: string;
+          emailVerifiedAt: Date;
+        };
       };
       expect(createArgs.data.phone).toBe('+8801712345679');
-      expect(createArgs.data.status).toBe(UserStatus.PENDING_VERIFICATION);
-      const tokenArgs = prisma.verificationToken.create.mock.calls[0][0] as {
-        data: { tokenHash: string; type: VerificationTokenType };
-      };
-      expect(tokenArgs.data.tokenHash).toMatch(/^[0-9a-f]{64}$/);
-      expect(tokenArgs.data.type).toBe(VerificationTokenType.EMAIL_VERIFICATION);
-      const email = mail.sendEmailVerification.mock.calls[0][0] as { verifyUrl: string };
-      expect(email.verifyUrl).toMatch(/^http:\/\/localhost:3000\/verify-email\?token=/);
-      expect(email.verifyUrl).not.toContain(tokenArgs.data.tokenHash);
+      expect(createArgs.data.status).toBe(UserStatus.ACTIVE);
+      expect(createArgs.data.firstName).toBe('A');
+      expect(createArgs.data.lastName).toBe('B');
+      expect(createArgs.data.emailVerifiedAt).toBeInstanceOf(Date);
+      expect(prisma.verificationToken.create).not.toHaveBeenCalled();
+      expect(mail.sendEmailVerification).not.toHaveBeenCalled();
+      expect(mail.sendWelcome).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: registerInput.email,
+          firstName: 'A',
+        }),
+      );
     });
 
-    it('re-sends verification when the email is pending and does not change the password', async () => {
+    it('activates a legacy pending account and does not require email verification', async () => {
       prisma.user.findUnique.mockImplementation(
         ({ where }: { where: { email?: string; phone?: string } }) => {
           if (where.email) {
@@ -149,20 +162,22 @@ describe('AuthService', () => {
           return Promise.resolve(null);
         },
       );
-      prisma.user.findUniqueOrThrow.mockResolvedValue({
+      prisma.user.update.mockResolvedValue({
         ...baseUser,
         id: 'pending-1',
         email: registerInput.email,
-        status: UserStatus.PENDING_VERIFICATION,
+        status: UserStatus.ACTIVE,
+        firstName: 'A',
+        lastName: 'B',
       });
-      prisma.verificationToken.create.mockResolvedValue({ id: 'vt-2' });
 
       const result = await service.register(registerInput);
 
       expect(result.id).toBe('pending-1');
       expect(prisma.user.create).not.toHaveBeenCalled();
-      expect(argon2.hash).not.toHaveBeenCalled();
-      expect(mail.sendEmailVerification).toHaveBeenCalled();
+      expect(argon2.hash).toHaveBeenCalledWith(registerInput.password);
+      expect(mail.sendEmailVerification).not.toHaveBeenCalled();
+      expect(mail.sendWelcome).toHaveBeenCalled();
     });
 
     it('maps a duplicate active email to a clear 409', async () => {
@@ -233,7 +248,13 @@ describe('AuthService', () => {
       type: VerificationTokenType.EMAIL_VERIFICATION,
       expiresAt: new Date(Date.now() + 60_000),
       usedAt: null,
-      user: { id: 'user-1', status: UserStatus.PENDING_VERIFICATION, deletedAt: null },
+      user: {
+        id: 'user-1',
+        email: 'user@example.com',
+        firstName: 'Test',
+        status: UserStatus.PENDING_VERIFICATION,
+        deletedAt: null,
+      },
     };
 
     it('activates the account and stamps emailVerifiedAt', async () => {
@@ -475,7 +496,7 @@ describe('AuthService', () => {
       argonVerify.mockResolvedValue(false);
       await expect(
         service.changePassword(baseUser.id, 'session-1', 'wrong', 'NewStrongPassw0rd!'),
-      ).rejects.toThrow('Current password is incorrect');
+      ).rejects.toThrow('The current password you entered is incorrect. Please try again.');
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
 
@@ -484,7 +505,7 @@ describe('AuthService', () => {
       argonVerify.mockResolvedValue(true);
       await expect(
         service.changePassword(baseUser.id, 'session-1', 'SamePassw0rd!!', 'SamePassw0rd!!'),
-      ).rejects.toThrow('New password must be different');
+      ).rejects.toThrow('Your new password must be different from your current password.');
     });
 
     it('updates the hash and revokes every other session', async () => {

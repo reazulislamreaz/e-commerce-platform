@@ -217,10 +217,9 @@ export function toUserFacingValidationDetail(detail: string): string {
 
   const replacements: Array<[RegExp, string]> = [
     [/^email must be an email$/i, 'Enter a valid email address.'],
-    [/^password must be longer than or equal to \d+ characters$/i, 'Password is too short.'],
     [
-      /^password must contain a lowercase letter, an uppercase letter, and a digit$/i,
-      'Password must include an uppercase letter, a lowercase letter, and a digit.',
+      /^password must be longer than or equal to \d+ characters$/i,
+      'Password must be at least 6 characters.',
     ],
     [
       /^phone must be a valid Bangladeshi mobile number.*$/i,

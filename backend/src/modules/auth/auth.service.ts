@@ -11,6 +11,7 @@ import { Prisma, type User, UserStatus, VerificationTokenType } from '@/generate
 import * as argon2 from 'argon2';
 import { normalizeBdPhone } from '@/common/utils/bd-phone';
 import { uniqueConflictIncludes } from '@/common/utils/prisma-unique-conflict';
+import { splitFullName } from '@/common/utils/split-full-name';
 import { MailService } from '@/modules/mail/mail.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -66,13 +67,17 @@ export class AuthService {
   ) {}
 
   /**
-   * Creates a PENDING_VERIFICATION account and emails a single-use
-   * verification link. The account can log in only after the link is used.
+   * Creates an ACTIVE customer account immediately and sends the welcome email.
+   * Email verification is no longer part of signup; legacy PENDING accounts that
+   * re-register with the same email are activated with the new credentials.
    */
   async register(dto: RegisterDto) {
     const email = dto.email.trim().toLowerCase();
     // DTO validation guarantees the format; normalization cannot fail here.
     const phone = normalizeBdPhone(dto.phone) as string;
+    const { firstName, lastName } = splitFullName(dto.fullName);
+    const passwordHash = await argon2.hash(dto.password);
+    const now = new Date();
 
     // Clear, field-accurate conflicts before create. Soft-deleted rows still
     // hold unique phones until anonymized — free those so re-registration works.
@@ -89,14 +94,34 @@ export class AuthService {
 
     if (byEmail && !byEmail.deletedAt) {
       if (byEmail.status === UserStatus.PENDING_VERIFICATION) {
-        // Same email tried again before verify: re-send the link instead of a
-        // confusing "already registered" dead-end (password is not changed).
-        const pending = await this.prisma.user.findUniqueOrThrow({
+        // Legacy pending signup: activate with the new password/name/phone.
+        if (byPhone && !byPhone.deletedAt && byPhone.email !== email) {
+          throw new ConflictException(PHONE_ALREADY_REGISTERED);
+        }
+        if (byPhone?.deletedAt) {
+          await this.prisma.user.update({
+            where: { id: byPhone.id },
+            data: { phone: `deleted+${byPhone.id}` },
+          });
+        }
+        const activated = await this.prisma.user.update({
           where: { id: byEmail.id },
+          data: {
+            phone,
+            passwordHash,
+            firstName,
+            lastName,
+            status: UserStatus.ACTIVE,
+            emailVerifiedAt: now,
+          },
           select: userSelect,
         });
-        await this.issueEmailVerification(pending.id, pending.email, pending.firstName);
-        return pending;
+        await this.mail.sendWelcome({
+          to: activated.email,
+          firstName: activated.firstName ?? '',
+          shopUrl: `${this.config.getOrThrow<string>('FRONTEND_ORIGIN')}/shop`,
+        });
+        return activated;
       }
       throw new ConflictException(EMAIL_ALREADY_REGISTERED);
     }
@@ -118,10 +143,11 @@ export class AuthService {
         data: {
           email,
           phone,
-          passwordHash: await argon2.hash(dto.password),
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          status: UserStatus.PENDING_VERIFICATION,
+          passwordHash,
+          firstName,
+          lastName,
+          status: UserStatus.ACTIVE,
+          emailVerifiedAt: now,
         },
         select: userSelect,
       });
@@ -137,7 +163,11 @@ export class AuthService {
       throw error;
     }
 
-    await this.issueEmailVerification(user.id, user.email, user.firstName);
+    await this.mail.sendWelcome({
+      to: user.email,
+      firstName: user.firstName ?? '',
+      shopUrl: `${this.config.getOrThrow<string>('FRONTEND_ORIGIN')}/shop`,
+    });
     await this.customerMetrics.recordActivity(
       user.id,
       'ACCOUNT_REGISTERED',
@@ -241,8 +271,8 @@ export class AuthService {
   /**
    * Sends a password reset link. Responds identically whether or not the
    * email belongs to an account, so account presence is never leaked.
-   * Only ACTIVE accounts receive a link: pending accounts must verify their
-   * email first and suspended accounts must not regain access via reset.
+   * Only ACTIVE accounts receive a link; suspended (and any legacy pending)
+   * accounts must not regain access via reset.
    */
   async forgotPassword(rawEmail: string): Promise<void> {
     const user = await this.prisma.user.findUnique({

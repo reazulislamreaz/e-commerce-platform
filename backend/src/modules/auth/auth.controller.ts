@@ -59,7 +59,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Create a customer account',
     description:
-      'Creates the account in PENDING_VERIFICATION status and sends an email verification link. Login is possible only after the email is verified.',
+      'Creates an ACTIVE account immediately and sends a welcome email. The user can sign in right away.',
   })
   @ApiCreatedResponse({ type: AuthUserDto })
   @ApiConflictResponse({ description: 'Email or phone number is already registered' })
@@ -67,7 +67,7 @@ export class AuthController {
     const user = await this.auth.register(dto);
     return {
       data: user,
-      message: 'Account created. Check your email for the verification link.',
+      message: 'Account created. You can sign in now.',
     };
   }
 

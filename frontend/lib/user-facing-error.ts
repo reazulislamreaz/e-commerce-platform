@@ -50,6 +50,8 @@ const MESSAGE_MAP: Record<string, string> = {
   'Invalid email or password': USER_FACING_ERRORS.INVALID_CREDENTIALS,
   'Email and password do not match.': USER_FACING_ERRORS.INVALID_CREDENTIALS,
   'Email and password do not match': USER_FACING_ERRORS.INVALID_CREDENTIALS,
+  'The email or password you entered is incorrect. Please try again.':
+    USER_FACING_ERRORS.INVALID_CREDENTIALS,
   'Invalid refresh token': USER_FACING_ERRORS.SESSION_ENDED,
   'Refresh token has been revoked': USER_FACING_ERRORS.SESSION_ENDED,
   'Refresh token is required': USER_FACING_ERRORS.SESSION_ENDED,
