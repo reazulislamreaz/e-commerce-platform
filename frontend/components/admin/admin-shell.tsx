@@ -384,10 +384,10 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
       aria-label="Elevate Apparel admin home"
     >
       {collapsed ? (
-        <BrandLogo on="light" variant="mark" heightClassName="h-7 w-7" />
+        <BrandLogo on="light" variant="mark" quality={95} heightClassName="h-7 w-7" />
       ) : (
         <div className="min-w-0">
-          <BrandLogo on="light" heightClassName="h-6" />
+          <BrandLogo on="light" priority quality={95} heightClassName="h-7" />
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
             Admin Console
           </p>
@@ -452,7 +452,7 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
           >
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4">
               <div className="min-w-0">
-                <BrandLogo on="light" heightClassName="h-6" />
+                <BrandLogo on="light" priority quality={95} heightClassName="h-7" />
                 <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
                   Admin Console
                 </p>
@@ -635,7 +635,7 @@ export function AdminShell({ children }: PropsWithChildren) {
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[#E5E7EB] bg-[#FFFFFF] lg:flex">
           <div className="flex h-14 shrink-0 items-center border-b border-[#E5E7EB] px-4">
             <div className="min-w-0">
-              <BrandLogo on="light" heightClassName="h-6" />
+              <BrandLogo on="light" priority quality={95} heightClassName="h-7" />
               <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#C9A227]">
                 Admin Console
               </p>
