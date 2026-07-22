@@ -47,7 +47,7 @@ Optional knobs:
 ### Core (always when seed runs)
 
 - **Users:** Super Admin (env), Admin (`admin@elevateapparel.demo`), 6 demo customers
-- **Catalog:** 15 products from `frontend/features/products/data.ts` (Elevate shirts + Ubaid wallet; variants, media, prices, fixture reviews)
+- **Catalog:** 25 products from `frontend/features/products/data.ts` (men, women, kids, accessories; variants, media, prices, fixture reviews)
 - **Inventory:** `MAIN` location, opening balances/movements (`seed:opening:v1:{sku}`), stock alerts
 - **Promotions:** `ELEVATE10`, `FREESHIP`, `MIDWEEK200`
 - **Marketing:** HOME_HERO / SHOP_BANNER / SALE_BANNER (Elevate lifestyle photography)

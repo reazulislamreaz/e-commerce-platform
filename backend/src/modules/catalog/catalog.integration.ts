@@ -65,6 +65,6 @@ describe('Catalog + Inventory integration', () => {
       page: 1,
       pageSize: 100,
     });
-    expect(result.data.map(({ slug }) => slug)).toContain('city-jogger');
+    expect(result.data.map(({ slug }) => slug)).toContain('elevate-signature-rust-floral-shirt');
   });
 });

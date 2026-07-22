@@ -214,6 +214,13 @@ export async function seedCatalog(ctx: SeedContext): Promise<void> {
           deletedAt: null,
         },
       });
+      // Opening balances are create-once so demo order reservations survive re-seed.
+      // Exception: fixture stock 0 must stay authoritative when nothing is reserved,
+      // so out-of-stock catalog filters (and CI) stay correct after catalog refreshes.
+      const existingBalance = await prisma.inventoryBalance.findUnique({
+        where: { variantId_locationId: { variantId: variant.id, locationId: location.id } },
+        select: { reserved: true },
+      });
       await prisma.inventoryBalance.upsert({
         where: { variantId_locationId: { variantId: variant.id, locationId: location.id } },
         create: {
@@ -221,7 +228,8 @@ export async function seedCatalog(ctx: SeedContext): Promise<void> {
           locationId: location.id,
           onHand: sourceVariant.stock,
         },
-        update: {},
+        update:
+          sourceVariant.stock === 0 && (existingBalance?.reserved ?? 0) === 0 ? { onHand: 0 } : {},
       });
       if (sourceVariant.stock > 0) {
         await prisma.inventoryMovement.upsert({

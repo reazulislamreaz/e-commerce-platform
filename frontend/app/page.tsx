@@ -58,7 +58,7 @@ const DESKTOP_HERO_SLIDES: DesktopHeroSlide[] = [
     eyebrow: 'ACCESSORIES OVERVIEW',
     title: 'LEATHER ESSENTIALS',
     description: 'Premium Ubaid wallets and finishing touches for every carry.',
-    href: '/product/ubaid-classic-pebbled-leather-wallet',
+    href: '/shop?categories=Accessories',
     ctaLabel: 'SHOP ACCESSORIES',
     image: '/images/products/ubaid-wallet-brown.webp',
     imageAlt: 'Ubaid dark brown pebbled leather bi-fold wallet',
