@@ -10,7 +10,7 @@ const product = {
   brandId: '22222222-2222-4222-8222-222222222222',
   legacyKey: 'p1',
   name: 'Elevate Oversized Tee',
-  slug: 'elevate-oversized-tee',
+  slug: 'urban-horizon-distressed-stripe-shirt',
   description: 'Heavyweight cotton',
   status: ProductStatus.ACTIVE,
   primaryColor: 'Black',
@@ -96,7 +96,7 @@ const product = {
       id: 'm1',
       productId: '11111111-1111-4111-8111-111111111111',
       url: '/product.webp',
-      alt: 'Elevate Oversized Tee',
+      alt: 'Urban Horizon Distressed Stripe Shirt',
       position: 0,
       isPrimary: true,
     },
@@ -177,6 +177,7 @@ describe('CatalogService', () => {
         collection: 'men',
         inStock: true,
         rating: 4.7,
+        imageAlts: ['Urban Horizon Distressed Stripe Shirt'],
       }),
     );
     expect(result.variants[0].stock).toBe(7);

@@ -101,7 +101,7 @@ describe('Review moderation smoke (HTTP)', () => {
     });
 
     const product = await prisma.product.findFirst({
-      where: { slug: 'elevate-oversized-tee', deletedAt: null },
+      where: { slug: 'urban-horizon-distressed-stripe-shirt', deletedAt: null },
       include: {
         variants: {
           where: { isActive: true, deletedAt: null },
@@ -212,9 +212,9 @@ describe('Review moderation smoke (HTTP)', () => {
       .get(`/api/v1/products/${product!.slug}`)
       .expect(200);
 
-    const published = (afterPublish.body.data.reviews as Array<{ id: string; rating: number }>).find(
-      (row) => row.id === reviewId,
-    );
+    const published = (
+      afterPublish.body.data.reviews as Array<{ id: string; rating: number }>
+    ).find((row) => row.id === reviewId);
     expect(published).toBeTruthy();
     expect(published!.rating).toBe(5);
     expect(afterPublish.body.data.rating).toBeGreaterThan(0);

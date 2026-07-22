@@ -10,9 +10,17 @@ export type HeroSlide = {
 export const MOBILE_HERO_IMAGE = '/images/home/hero-mobile.jpg';
 
 export const FALLBACK_HERO_SLIDES: HeroSlide[] = [
-  { id: 'fallback-hero-1', src: MOBILE_HERO_IMAGE, alt: 'Elevate Apparel hero' },
-  { id: 'fallback-hero-2', src: '/images/home/collection-women.webp', alt: "Men's collection" },
-  { id: 'fallback-hero-3', src: '/images/home/collection-new.webp', alt: 'New arrivals' },
+  { id: 'fallback-hero-1', src: MOBILE_HERO_IMAGE, alt: 'Elevate Apparel urban rooftop hero' },
+  {
+    id: 'fallback-hero-2',
+    src: '/images/products/blue-essentials-stack.webp',
+    alt: 'Elevate blue essentials dress shirt collection',
+  },
+  {
+    id: 'fallback-hero-3',
+    src: '/images/products/patterned-collection-stack.webp',
+    alt: 'Elevate patterned shirt new arrivals',
+  },
 ];
 
 export function bannerToHeroSlide(
@@ -110,8 +118,8 @@ export const FALLBACK_BANNERS: Record<Exclude<BannerPlacement, 'HOME_PROMO'>, Ma
     id: 'fallback-home-hero',
     placement: 'HOME_HERO',
     status: 'ACTIVE',
-    title: 'ELEVATE EVERYDAY',
-    subtitle: 'Premium quality apparel designed to elevate your style.',
+    title: 'URBAN SOPHISTICATION',
+    subtitle: 'Premium Elevate shirts and accessories — redefine your everyday.',
     ctaLabel: 'SHOP NOW',
     ctaHref: '/shop',
     imageUrl: '/images/home/hero.webp',
@@ -125,7 +133,7 @@ export const FALLBACK_BANNERS: Record<Exclude<BannerPlacement, 'HOME_PROMO'>, Ma
     placement: 'SHOP_BANNER',
     status: 'ACTIVE',
     title: 'SHOP ALL',
-    subtitle: 'Premium Elevate Apparel — tees, hoodies, joggers, and essentials.',
+    subtitle: 'Premium Elevate Apparel — dress shirts, prints, and leather essentials.',
     ctaLabel: 'NEW ARRIVALS',
     ctaHref: '/new-arrivals',
     imageUrl: '/images/home/collection-men.webp',
@@ -138,7 +146,7 @@ export const FALLBACK_BANNERS: Record<Exclude<BannerPlacement, 'HOME_PROMO'>, Ma
     placement: 'SALE_BANNER',
     status: 'ACTIVE',
     title: 'SALE UP TO 40% OFF',
-    subtitle: 'Select essentials at sharper prices. Elevate more — spend less.',
+    subtitle: 'Select Elevate styles at sharper prices. Elevate more — spend less.',
     ctaLabel: 'SHOP ALL',
     ctaHref: '/shop',
     imageUrl: '/images/home/collection-sale.webp',

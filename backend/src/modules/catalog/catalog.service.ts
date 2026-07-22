@@ -137,7 +137,9 @@ export class CatalogService {
   private toResponse(product: CatalogProductRecord, availability: Map<string, number>) {
     const category = product.categories[0]?.category;
     const collection = product.collections[0]?.collection.slug;
-    const media = product.media.map(({ url }) => url);
+    const media = product.media.map(({ url, alt }) => ({ url, alt }));
+    const mediaUrls = media.map(({ url }) => url);
+    const imageAlts = media.map(({ alt }) => alt || product.name);
     const variants = product.variants.map((variant) => ({
       id: variant.id,
       size: variant.size,
@@ -161,8 +163,9 @@ export class CatalogService {
       color: product.primaryColor,
       colors: product.colors.map(({ name, hex }) => ({ name, hex })),
       sizes: [...new Set(product.variants.map(({ size }) => size))],
-      image: media[0] ?? '',
-      images: media,
+      image: mediaUrls[0] ?? '',
+      images: mediaUrls,
+      imageAlts,
       description: product.description,
       variants,
       inStock: variants.some(({ stock }) => stock > 0),

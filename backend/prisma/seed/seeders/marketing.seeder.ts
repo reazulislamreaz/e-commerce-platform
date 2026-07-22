@@ -7,8 +7,8 @@ const BANNERS = [
   {
     key: 'banner:home-hero',
     placement: BannerPlacement.HOME_HERO,
-    title: 'ELEVATE EVERYDAY',
-    subtitle: 'Premium quality apparel designed to elevate your style.',
+    title: 'URBAN SOPHISTICATION',
+    subtitle: 'Premium Elevate shirts and accessories — redefine your everyday.',
     ctaLabel: 'SHOP NOW',
     ctaHref: '/shop',
     imageUrl: '/images/home/hero.webp',
@@ -19,28 +19,30 @@ const BANNERS = [
     key: 'banner:shop',
     placement: BannerPlacement.SHOP_BANNER,
     title: 'SHOP THE DROP',
-    subtitle: 'Filter by size, color, and collection — stock updates live.',
+    subtitle: 'Dress shirts, printed casuals, and leather essentials — stock updates live.',
     ctaLabel: 'VIEW ALL',
     ctaHref: '/shop',
-    imageUrl: '/images/home/instagram-4.webp',
+    imageUrl: '/images/products/blue-essentials-stack.webp',
     position: 0,
   },
   {
     key: 'banner:sale',
     placement: BannerPlacement.SALE_BANNER,
     title: 'SALE EDIT',
-    subtitle: 'Select styles marked down while stocks last.',
+    subtitle: 'Select Elevate styles marked down while stocks last.',
     ctaLabel: 'SHOP SALE',
     ctaHref: '/shop?onSale=true',
-    imageUrl: '/images/home/instagram-6.webp',
+    imageUrl: '/images/products/urban-horizon-stripe.webp',
     position: 0,
   },
 ] as const;
 
 export async function seedMarketing(ctx: SeedContext): Promise<void> {
   const { prisma } = ctx;
+  const seededIds: string[] = [];
   for (const banner of BANNERS) {
     const id = seedUuid(banner.key);
+    seededIds.push(id);
     await prisma.marketingBanner.upsert({
       where: { id },
       create: {
@@ -69,5 +71,18 @@ export async function seedMarketing(ctx: SeedContext): Promise<void> {
       },
     });
   }
+
+  // Soft-delete demo banners that are no longer part of the fixture so
+  // re-seeds never leave duplicate heroes/placements on the storefront.
+  const placements = [...new Set(BANNERS.map((banner) => banner.placement))];
+  await prisma.marketingBanner.updateMany({
+    where: {
+      deletedAt: null,
+      placement: { in: placements },
+      id: { notIn: seededIds },
+    },
+    data: { status: BannerStatus.ARCHIVED, deletedAt: new Date() },
+  });
+
   seedLog(`Seeded ${BANNERS.length} marketing banners.`);
 }

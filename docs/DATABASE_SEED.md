@@ -15,42 +15,42 @@ npm run prisma:migrate-and-seed --workspace=backend
 
 Required env (also listed in `backend/.env.example`):
 
-| Variable | Purpose |
-|----------|---------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `SEED_SUPER_ADMIN_EMAIL` | Super Admin login email |
-| `SEED_SUPER_ADMIN_PASSWORD` | Min 12 chars |
-| `SEED_SUPER_ADMIN_PHONE` | BD mobile (`01…` or `+8801…`) |
+| Variable                    | Purpose                       |
+| --------------------------- | ----------------------------- |
+| `DATABASE_URL`              | PostgreSQL connection string  |
+| `SEED_SUPER_ADMIN_EMAIL`    | Super Admin login email       |
+| `SEED_SUPER_ADMIN_PASSWORD` | Min 12 chars                  |
+| `SEED_SUPER_ADMIN_PHONE`    | BD mobile (`01…` or `+8801…`) |
 
 ## Environment behaviour
 
-| Condition | Result |
-|-----------|--------|
-| `SEED_ENABLED=false` | Skip seeding (migrations still run) |
-| `NODE_ENV=production` and `ENABLE_PRODUCTION_SEED=false` | Skip seeding |
-| Otherwise (including production with default `ENABLE_PRODUCTION_SEED=true`) | Seed after migrate |
-| Seed throws / non-zero exit | CI / rollout fails |
+| Condition                                                                   | Result                              |
+| --------------------------------------------------------------------------- | ----------------------------------- |
+| `SEED_ENABLED=false`                                                        | Skip seeding (migrations still run) |
+| `NODE_ENV=production` and `ENABLE_PRODUCTION_SEED=false`                    | Skip seeding                        |
+| Otherwise (including production with default `ENABLE_PRODUCTION_SEED=true`) | Seed after migrate                  |
+| Seed throws / non-zero exit                                                 | CI / rollout fails                  |
 
 Optional knobs:
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `ENABLE_PRODUCTION_SEED` | `true` on deploy | Set `false` to skip seed when `NODE_ENV=production` |
-| `SEED_ENABLED` | `true` | Hard disable seed in any environment |
-| `SEED_PROFILE` | `full` | `full` = all modules; `core` = users + catalog + coupons + banners + alerts |
-| `SEED_COMMERCE_DEMO` | `true` | When `full`, set `false` to skip carts/orders/CRM/etc. |
-| `SEED_ADMIN_EMAIL` / `PASSWORD` / `PHONE` | demo admin | Staff `ADMIN` account |
-| `SEED_DEMO_PASSWORD` | `CustomerDemoPass123` | Shared password for demo customers |
+| Variable                                  | Default               | Purpose                                                                     |
+| ----------------------------------------- | --------------------- | --------------------------------------------------------------------------- |
+| `ENABLE_PRODUCTION_SEED`                  | `true` on deploy      | Set `false` to skip seed when `NODE_ENV=production`                         |
+| `SEED_ENABLED`                            | `true`                | Hard disable seed in any environment                                        |
+| `SEED_PROFILE`                            | `full`                | `full` = all modules; `core` = users + catalog + coupons + banners + alerts |
+| `SEED_COMMERCE_DEMO`                      | `true`                | When `full`, set `false` to skip carts/orders/CRM/etc.                      |
+| `SEED_ADMIN_EMAIL` / `PASSWORD` / `PHONE` | demo admin            | Staff `ADMIN` account                                                       |
+| `SEED_DEMO_PASSWORD`                      | `CustomerDemoPass123` | Shared password for demo customers                                          |
 
 ## What gets seeded
 
 ### Core (always when seed runs)
 
 - **Users:** Super Admin (env), Admin (`admin@elevateapparel.demo`), 6 demo customers
-- **Catalog:** 12 products from `frontend/features/products/data.ts` (variants, media, prices, fixture reviews)
+- **Catalog:** 15 products from `frontend/features/products/data.ts` (Elevate shirts + Ubaid wallet; variants, media, prices, fixture reviews)
 - **Inventory:** `MAIN` location, opening balances/movements (`seed:opening:v1:{sku}`), stock alerts
 - **Promotions:** `ELEVATE10`, `FREESHIP`, `MIDWEEK200`
-- **Marketing:** HOME_HERO / HOME_PROMO / SHOP_BANNER / SALE_BANNER
+- **Marketing:** HOME_HERO / SHOP_BANNER / SALE_BANNER (Elevate lifestyle photography)
 
 ### Commerce demo (`SEED_PROFILE=full` and `SEED_COMMERCE_DEMO=true`)
 
@@ -83,11 +83,14 @@ backend/prisma/
 Pipeline order (foreign keys / dependencies):
 
 1. users → 2. catalog → 3. promotions → 4. marketing → 5. stock alerts  
-→ (commerce) preferences → addresses → carts/wishlists → orders → reviews → notifications → CRM → contact/newsletter → abandoned carts → reports
+   → (commerce) preferences → addresses → carts/wishlists → orders → reviews → notifications → CRM → contact/newsletter → abandoned carts → reports
 
 ## Idempotency rules
 
 - Upsert by natural keys (`email`, `slug`, `sku`, `code`, deterministic UUIDs via `seedUuid(key)`)
+- Catalog products resolve by `legacyKey` or `slug` so renamed fixtures do not duplicate
+- Fixture products no longer in `data.ts` are soft-archived on re-seed
+- Marketing banners for seeded placements soft-archive non-fixture rows
 - Orders skip when `number` (`EASEED####`) already exists — inventory is not double-applied
 - Opening / sale / reserve movements use stable `idempotencyKey`s
 - Inventory balances are never overwritten on catalog re-seed (`update: {}`)
@@ -95,11 +98,11 @@ Pipeline order (foreign keys / dependencies):
 
 ## Demo credentials (non-production)
 
-| Role | Email | Password (default) |
-|------|-------|--------------------|
-| Super Admin | from `SEED_SUPER_ADMIN_*` | from env |
-| Admin | `admin@elevateapparel.demo` | `AdminDemoPass123` |
-| Customers | `rahim.khan@elevateapparel.demo`, … | `CustomerDemoPass123` |
+| Role        | Email                               | Password (default)    |
+| ----------- | ----------------------------------- | --------------------- |
+| Super Admin | from `SEED_SUPER_ADMIN_*`           | from env              |
+| Admin       | `admin@elevateapparel.demo`         | `AdminDemoPass123`    |
+| Customers   | `rahim.khan@elevateapparel.demo`, … | `CustomerDemoPass123` |
 
 Do not use these passwords in real production. When enabling production seed, set strong unique secrets via env.
 
@@ -107,10 +110,10 @@ Do not use these passwords in real production. When enabling production seed, se
 
 ### GitHub Actions (`integration` job)
 
-1. Start Postgres + Redis services  
-2. `prisma generate`  
-3. `npm run prisma:migrate-and-seed --workspace=backend` (fails the job if migrate **or** seed fails)  
-4. Integration / COD smoke tests  
+1. Start Postgres + Redis services
+2. `prisma generate`
+3. `npm run prisma:migrate-and-seed --workspace=backend` (fails the job if migrate **or** seed fails)
+4. Integration / COD smoke tests
 
 ### Production Compose (`deploy/docker-compose.prod.yml`)
 

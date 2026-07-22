@@ -29,20 +29,20 @@ export async function seedUserReviews(ctx: SeedContext): Promise<void> {
   });
 
   const reviewCopy: Record<string, { rating: number; title: string; body: string }> = {
-    'elevate-oversized-tee': {
+    'urban-horizon-distressed-stripe-shirt': {
       rating: 5,
-      title: 'Daily driver tee',
-      body: 'Heavyweight cotton, clean fit. Washed twice and still holds shape.',
+      title: 'Daily driver shirt',
+      body: 'Contrast cuffs look premium. Washed once and the stripe still pops.',
     },
-    'womens-hoodie': {
+    'peach-white-plaid-button-down': {
       rating: 4,
       title: 'Soft and structured',
-      body: 'Love the drape. Runs true to size — will order another color.',
+      body: 'Love the peach plaid. Runs true to size — will order another color.',
     },
-    'heritage-logo-tee': {
+    'elevate-blue-essentials-dress-shirt': {
       rating: 5,
-      title: 'Quiet branding done right',
-      body: 'Subtle logo, excellent hand-feel. Pairing with the joggers next.',
+      title: 'Office staple',
+      body: 'Gingham is clean and the cotton feels substantial. Pairing with the wallet next.',
     },
   };
 

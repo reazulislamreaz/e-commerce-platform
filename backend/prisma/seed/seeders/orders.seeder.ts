@@ -31,7 +31,7 @@ const DEMO_ORDERS: DemoOrderSpec[] = [
     index: 1,
     customerKey: 'customer-rahim',
     status: OrderStatus.DELIVERED,
-    productSlug: 'elevate-oversized-tee',
+    productSlug: 'urban-horizon-distressed-stripe-shirt',
     quantity: 1,
     couponCode: 'ELEVATE10',
     daysAgo: 45,
@@ -41,7 +41,7 @@ const DEMO_ORDERS: DemoOrderSpec[] = [
     index: 2,
     customerKey: 'customer-nadia',
     status: OrderStatus.DELIVERED,
-    productSlug: 'womens-hoodie',
+    productSlug: 'peach-white-plaid-button-down',
     quantity: 1,
     daysAgo: 30,
   },
@@ -49,7 +49,7 @@ const DEMO_ORDERS: DemoOrderSpec[] = [
     index: 3,
     customerKey: 'customer-farhan',
     status: OrderStatus.SHIPPED,
-    productSlug: 'elevate-hoodie',
+    productSlug: 'elevate-premium-orange-plaid-cotton-shirt',
     quantity: 1,
     couponCode: 'FREESHIP',
     daysAgo: 5,
@@ -58,7 +58,7 @@ const DEMO_ORDERS: DemoOrderSpec[] = [
     index: 4,
     customerKey: 'customer-mehreen',
     status: OrderStatus.PROCESSING,
-    productSlug: 'soft-lounge-hoodie',
+    productSlug: 'terracotta-floral-slim-fit-shirt',
     quantity: 1,
     daysAgo: 2,
   },
@@ -66,7 +66,7 @@ const DEMO_ORDERS: DemoOrderSpec[] = [
     index: 5,
     customerKey: 'customer-sakib',
     status: OrderStatus.CONFIRMED,
-    productSlug: 'elevate-jogger',
+    productSlug: 'ubaid-classic-pebbled-leather-wallet',
     quantity: 2,
     daysAgo: 1,
   },
@@ -74,7 +74,7 @@ const DEMO_ORDERS: DemoOrderSpec[] = [
     index: 6,
     customerKey: 'customer-anika',
     status: OrderStatus.CANCELLED,
-    productSlug: 'essential-tee',
+    productSlug: 'dusty-blue-windowpane-check-shirt',
     quantity: 1,
     daysAgo: 20,
   },
@@ -82,7 +82,7 @@ const DEMO_ORDERS: DemoOrderSpec[] = [
     index: 7,
     customerKey: 'customer-rahim',
     status: OrderStatus.DELIVERED,
-    productSlug: 'heritage-logo-tee',
+    productSlug: 'elevate-blue-essentials-dress-shirt',
     quantity: 1,
     daysAgo: 12,
     withReturn: 'EXCHANGE',
@@ -91,7 +91,7 @@ const DEMO_ORDERS: DemoOrderSpec[] = [
     index: 8,
     customerKey: 'customer-nadia',
     status: OrderStatus.PACKED,
-    productSlug: 'studio-crop-hoodie',
+    productSlug: 'abstract-geometric-print-shirt',
     quantity: 1,
     daysAgo: 3,
   },
@@ -104,7 +104,10 @@ function daysAgoDate(days: number, hour = 10): Date {
   return d;
 }
 
-function statusTimeline(status: OrderStatus, createdAt: Date): Partial<{
+function statusTimeline(
+  status: OrderStatus,
+  createdAt: Date,
+): Partial<{
   confirmedAt: Date;
   processingAt: Date;
   packedAt: Date;
@@ -283,9 +286,7 @@ export async function seedOrders(ctx: SeedContext): Promise<void> {
     throw new Error('locationId missing — run catalog seeder first');
   }
 
-  const customerByKey = new Map(
-    DEMO_CUSTOMERS.map((spec, i) => [spec.key, users.customers[i]!]),
-  );
+  const customerByKey = new Map(DEMO_CUSTOMERS.map((spec, i) => [spec.key, users.customers[i]!]));
 
   let created = 0;
   let skipped = 0;
@@ -423,17 +424,18 @@ export async function seedOrders(ctx: SeedContext): Promise<void> {
             currencyCode: 'BDT',
             providerRef: `seed-cod:${number}`,
             collectedAt:
-              spec.status === OrderStatus.DELIVERED ? stamps.deliveredAt ?? createdAt : null,
+              spec.status === OrderStatus.DELIVERED ? (stamps.deliveredAt ?? createdAt) : null,
           },
         },
         reservation: {
           create: {
             id: seedUuid(`reservation:${number}`),
             status: reservationStatus,
-            expiresAt: isTerminalConsumed || isCancelled
-              ? null
-              : new Date(createdAt.getTime() + 7 * 24 * 3_600_000),
-            releasedAt: isCancelled ? stamps.cancelledAt ?? createdAt : null,
+            expiresAt:
+              isTerminalConsumed || isCancelled
+                ? null
+                : new Date(createdAt.getTime() + 7 * 24 * 3_600_000),
+            releasedAt: isCancelled ? (stamps.cancelledAt ?? createdAt) : null,
             items: {
               create: [
                 {
@@ -502,7 +504,7 @@ export async function seedOrders(ctx: SeedContext): Promise<void> {
         type: spec.withReturn === 'RETURN' ? ReturnType.RETURN : ReturnType.EXCHANGE,
         createdAt: stamps.deliveredAt ?? createdAt,
         exchangeVariantId:
-          spec.withReturn === 'EXCHANGE' ? product.variants[1]?.id ?? null : null,
+          spec.withReturn === 'EXCHANGE' ? (product.variants[1]?.id ?? null) : null,
       });
     }
 
@@ -551,9 +553,7 @@ async function seedReturnForOrder(
       conditionAttested: true,
       createdAt: input.createdAt,
       decidedAt: new Date(input.createdAt.getTime() + 24 * 3_600_000),
-      completedAt: completed
-        ? new Date(input.createdAt.getTime() + 72 * 3_600_000)
-        : null,
+      completedAt: completed ? new Date(input.createdAt.getTime() + 72 * 3_600_000) : null,
       items: {
         create: [
           {

@@ -13,14 +13,34 @@ import { slugify } from '../utils/slugify';
  * Re-running refreshes catalog metadata; existing inventory balances are never
  * overwritten. Opening movements use stable idempotency keys.
  */
+function resolveDescription(source: (typeof catalogProducts)[number]): string {
+  const body = source.description?.trim() ?? '';
+  const short = source.shortDescription?.trim();
+  if (short && body && !body.startsWith(short)) {
+    return `${short}\n\n${body}`;
+  }
+  return body || short || '';
+}
+
 export async function seedCatalog(ctx: SeedContext): Promise<void> {
   const { prisma } = ctx;
 
-  const brand = await prisma.brand.upsert({
-    where: { slug: 'elevate-apparel' },
-    create: { name: 'Elevate Apparel', slug: 'elevate-apparel' },
-    update: { name: 'Elevate Apparel', deletedAt: null, isActive: true },
-  });
+  const brandIds = new Map<string, string>();
+  async function upsertBrand(name: string): Promise<string> {
+    const slug = slugify(name);
+    const cached = brandIds.get(slug);
+    if (cached) return cached;
+    const brand = await prisma.brand.upsert({
+      where: { slug },
+      create: { name, slug },
+      update: { name, deletedAt: null, isActive: true },
+    });
+    brandIds.set(slug, brand.id);
+    return brand.id;
+  }
+
+  await upsertBrand('Elevate Apparel');
+
   const location = await prisma.inventoryLocation.upsert({
     where: { code: 'MAIN' },
     create: { code: 'MAIN', name: 'Main Warehouse' },
@@ -40,6 +60,7 @@ export async function seedCatalog(ctx: SeedContext): Promise<void> {
   }
 
   for (const [featuredPosition, source] of catalogProducts.entries()) {
+    const brandId = await upsertBrand(source.brand ?? 'Elevate Apparel');
     const parentSlug = slugify(source.category);
     const parent = await prisma.category.upsert({
       where: { slug: parentSlug },
@@ -64,63 +85,57 @@ export async function seedCatalog(ctx: SeedContext): Promise<void> {
       },
     });
 
-    const product = await prisma.product.upsert({
-      where: { slug: source.slug },
-      create: {
-        brandId: brand.id,
-        legacyKey: source.id,
-        name: source.name,
-        slug: source.slug,
-        description: source.description ?? '',
-        status: ProductStatus.ACTIVE,
-        primaryColor: source.color,
-        currentPriceAmount: BigInt(source.price * 100),
-        currentCompareAtAmount:
-          source.compareAtPrice === undefined ? null : BigInt(source.compareAtPrice * 100),
-        discountPercent: source.compareAtPrice
-          ? Math.round((1 - source.price / source.compareAtPrice) * 100)
-          : 0,
-        isNew: source.isNew ?? false,
-        onSale: source.onSale ?? false,
-        featuredPosition,
-        ratingAverage: Math.round((source.rating ?? 0) * 100),
-        reviewCount: source.reviewCount ?? 0,
-        publishedAt: new Date(),
+    const description = resolveDescription(source);
+    const existing = await prisma.product.findFirst({
+      where: {
+        OR: [{ slug: source.slug }, { legacyKey: source.id }],
       },
-      update: {
-        brandId: brand.id,
-        legacyKey: source.id,
-        name: source.name,
-        description: source.description ?? '',
-        status: ProductStatus.ACTIVE,
-        primaryColor: source.color,
-        currentPriceAmount: BigInt(source.price * 100),
-        currentCompareAtAmount:
-          source.compareAtPrice === undefined ? null : BigInt(source.compareAtPrice * 100),
-        discountPercent: source.compareAtPrice
-          ? Math.round((1 - source.price / source.compareAtPrice) * 100)
-          : 0,
-        isNew: source.isNew ?? false,
-        onSale: source.onSale ?? false,
-        featuredPosition,
-        ratingAverage: Math.round((source.rating ?? 0) * 100),
-        reviewCount: source.reviewCount ?? 0,
-        publishedAt: new Date(),
-        deletedAt: null,
-      },
+      select: { id: true, slug: true },
     });
 
-    await prisma.productCategory.upsert({
-      where: { productId_categoryId: { productId: product.id, categoryId: leaf.id } },
-      create: { productId: product.id, categoryId: leaf.id, isPrimary: true },
-      update: { isPrimary: true },
+    const productFields = {
+      brandId,
+      legacyKey: source.id,
+      name: source.name,
+      slug: source.slug,
+      description,
+      status: ProductStatus.ACTIVE,
+      primaryColor: source.color,
+      currentPriceAmount: BigInt(source.price * 100),
+      currentCompareAtAmount:
+        source.compareAtPrice === undefined ? null : BigInt(source.compareAtPrice * 100),
+      discountPercent: source.compareAtPrice
+        ? Math.round((1 - source.price / source.compareAtPrice) * 100)
+        : 0,
+      isNew: source.isNew ?? false,
+      onSale: source.onSale ?? false,
+      featuredPosition,
+      ratingAverage: Math.round((source.rating ?? 0) * 100),
+      reviewCount: source.reviewCount ?? 0,
+      publishedAt: new Date(),
+      deletedAt: null,
+    };
+
+    const product = existing
+      ? await prisma.product.update({
+          where: { id: existing.id },
+          data: productFields,
+        })
+      : await prisma.product.create({
+          data: productFields,
+        });
+
+    await prisma.$transaction([
+      prisma.productCategory.deleteMany({ where: { productId: product.id } }),
+      prisma.productCollection.deleteMany({ where: { productId: product.id } }),
+    ]);
+    await prisma.productCategory.create({
+      data: { productId: product.id, categoryId: leaf.id, isPrimary: true },
     });
     const collectionId = collectionIds.get(source.collection);
     if (!collectionId) throw new Error(`Unknown collection ${source.collection}`);
-    await prisma.productCollection.upsert({
-      where: { productId_collectionId: { productId: product.id, collectionId } },
-      create: { productId: product.id, collectionId, isPrimary: true },
-      update: { isPrimary: true },
+    await prisma.productCollection.create({
+      data: { productId: product.id, collectionId, isPrimary: true },
     });
 
     await prisma.$transaction([
@@ -135,11 +150,12 @@ export async function seedCatalog(ctx: SeedContext): Promise<void> {
         position,
       })),
     });
+    const mediaUrls = source.images?.length ? source.images : [source.image];
     await prisma.productMedia.createMany({
-      data: (source.images?.length ? source.images : [source.image]).map((url, position) => ({
+      data: mediaUrls.map((url, position) => ({
         productId: product.id,
         url,
-        alt: source.name,
+        alt: source.imageAlts?.[position]?.trim() || source.name,
         position,
         isPrimary: position === 0,
       })),
@@ -252,6 +268,22 @@ export async function seedCatalog(ctx: SeedContext): Promise<void> {
         },
       });
     }
+  }
+
+  const fixtureSlugs = catalogProducts.map((product) => product.slug);
+  const archived = await prisma.product.updateMany({
+    where: {
+      deletedAt: null,
+      slug: { notIn: fixtureSlugs },
+      legacyKey: { not: null },
+    },
+    data: {
+      status: ProductStatus.ARCHIVED,
+      deletedAt: new Date(),
+    },
+  });
+  if (archived.count > 0) {
+    seedLog(`Archived ${archived.count} legacy fixture products no longer in catalog.`);
   }
 
   seedLog(`Seeded ${catalogProducts.length} products and opening inventory.`);

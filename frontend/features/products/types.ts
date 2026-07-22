@@ -41,7 +41,13 @@ export interface CatalogProduct {
   sizes?: string[];
   image: string;
   images?: string[];
+  /** Per-gallery alt text; falls back to product name when omitted */
+  imageAlts?: string[];
+  shortDescription?: string;
   description?: string;
+  tags?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
   variants?: ProductVariant[];
   inStock?: boolean;
   rating?: number;

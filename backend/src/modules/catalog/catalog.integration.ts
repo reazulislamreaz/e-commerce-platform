@@ -17,8 +17,8 @@ describe('Catalog + Inventory integration', () => {
 
   it('filters and sorts seeded products using indexed price projections', async () => {
     const result = await catalog.list({
-      minPrice: 1000,
-      maxPrice: 1500,
+      minPrice: 2500,
+      maxPrice: 3600,
       sort: 'price-asc',
       availability: 'in-stock',
       page: 1,
@@ -26,7 +26,7 @@ describe('Catalog + Inventory integration', () => {
     });
 
     expect(result.data.length).toBeGreaterThan(0);
-    expect(result.data.every((item) => item.price >= 1000 && item.price <= 1500)).toBe(true);
+    expect(result.data.every((item) => item.price >= 2500 && item.price <= 3600)).toBe(true);
     expect(result.data.every((item) => item.inStock)).toBe(true);
     expect(result.data.map((item) => item.price)).toEqual(
       [...result.data.map((item) => item.price)].sort((a, b) => a - b),
@@ -34,10 +34,10 @@ describe('Catalog + Inventory integration', () => {
   });
 
   it('exposes aggregate inventory and published reviews on product detail', async () => {
-    const product = await catalog.getBySlug('elevate-oversized-tee');
+    const product = await catalog.getBySlug('urban-horizon-distressed-stripe-shirt');
     expect(product.variants).toHaveLength(10);
-    const blackXxl = await prisma.productVariant.findUniqueOrThrow({
-      where: { sku: 'P1-BLA-XXL' },
+    const oliveXxl = await prisma.productVariant.findUniqueOrThrow({
+      where: { sku: 'P1-OLI-XXL' },
       select: {
         inventoryBalances: {
           where: { location: { isActive: true } },
@@ -45,11 +45,11 @@ describe('Catalog + Inventory integration', () => {
         },
       },
     });
-    const expectedAvailable = blackXxl.inventoryBalances.reduce(
+    const expectedAvailable = oliveXxl.inventoryBalances.reduce(
       (total, balance) => total + Math.max(0, balance.onHand - balance.reserved),
       0,
     );
-    expect(product.variants.find((variant) => variant.sku === 'P1-BLA-XXL')?.stock).toBe(
+    expect(product.variants.find((variant) => variant.sku === 'P1-OLI-XXL')?.stock).toBe(
       expectedAvailable,
     );
     // Match on the seeded fixture reviews so reviews created by other

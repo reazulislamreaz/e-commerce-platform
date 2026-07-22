@@ -41,7 +41,7 @@ describe('COD order smoke (HTTP)', () => {
     await request(app.getHttpServer()).get('/api/v1/health/ready').expect(200);
 
     const product = await prisma.product.findFirst({
-      where: { slug: 'elevate-oversized-tee', deletedAt: null },
+      where: { slug: 'urban-horizon-distressed-stripe-shirt', deletedAt: null },
       include: {
         variants: {
           where: { isActive: true, deletedAt: null },

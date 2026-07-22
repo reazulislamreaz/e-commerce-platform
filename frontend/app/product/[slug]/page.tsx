@@ -15,16 +15,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getCachedProductBySlug(slug);
   if (!product) return { title: 'Product' };
-  const imageUrl = product.image.startsWith('http')
-    ? product.image
-    : `${siteUrl}${product.image}`;
+  const imageUrl = product.image.startsWith('http') ? product.image : `${siteUrl}${product.image}`;
+  const seoDescription =
+    product.description
+      ?.split('\n')
+      .find((line) => line.trim().length > 0)
+      ?.trim() ?? `${product.name} — ${product.color}. Premium Elevate Apparel.`;
   return {
     title: product.name,
-    description: `${product.name} — ${product.color}. Premium Elevate Apparel.`,
+    description: seoDescription,
     openGraph: {
       title: product.name,
-      description: `${product.name} — ${product.color}. Premium Elevate Apparel.`,
-      images: [{ url: imageUrl, alt: product.name }],
+      description: seoDescription,
+      images: [{ url: imageUrl, alt: product.imageAlts?.[0] ?? product.name }],
     },
     twitter: {
       card: 'summary_large_image',

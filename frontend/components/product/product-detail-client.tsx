@@ -169,7 +169,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
             >
               <ProductImage
                 src={p.images[activeImage] ?? p.image}
-                alt={p.name}
+                alt={p.imageAlts?.[activeImage] ?? p.name}
                 width={800}
                 height={1000}
                 priority
@@ -198,7 +198,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
                   >
                     <ProductImage
                       src={src}
-                      alt={`${p.name} view ${index + 1}`}
+                      alt={p.imageAlts?.[index] ?? `${p.name} view ${index + 1}`}
                       fill
                       className="object-cover"
                       sizes="64px"
@@ -359,7 +359,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
           >
             <ProductImage
               src={p.images[activeImage] ?? p.image}
-              alt={p.name}
+              alt={p.imageAlts?.[activeImage] ?? p.name}
               width={1200}
               height={1500}
               className="max-h-[min(90vh,900px)] w-auto max-w-full object-contain"
