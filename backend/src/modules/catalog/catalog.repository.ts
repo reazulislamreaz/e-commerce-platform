@@ -3,7 +3,8 @@ import { Prisma, ProductStatus, ReviewStatus } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import type { ListProductsQueryDto, ProductSort } from './dto/list-products.query.dto';
 
-const productInclude = {
+/** Shared relations for cards and rails — no review bodies. */
+const productListInclude = {
   brand: true,
   categories: {
     where: { isPrimary: true, category: { isActive: true, deletedAt: null } },
@@ -21,6 +22,11 @@ const productInclude = {
     where: { isActive: true, deletedAt: null },
     orderBy: { position: 'asc' as const },
   },
+} satisfies Prisma.ProductInclude;
+
+/** PDP include — list relations plus published reviews. */
+const productDetailInclude = {
+  ...productListInclude,
   reviews: {
     where: { status: ReviewStatus.PUBLISHED, deletedAt: null },
     orderBy: { createdAt: 'desc' as const },
@@ -28,9 +34,18 @@ const productInclude = {
   },
 } satisfies Prisma.ProductInclude;
 
-export type CatalogProductRecord = Prisma.ProductGetPayload<{
-  include: typeof productInclude;
+export type CatalogListProductRecord = Prisma.ProductGetPayload<{
+  include: typeof productListInclude;
 }>;
+
+export type CatalogProductRecord = Prisma.ProductGetPayload<{
+  include: typeof productDetailInclude;
+}>;
+
+/** Either list or detail shape; detail always has `reviews`. */
+export type CatalogMappableProduct = CatalogListProductRecord & {
+  reviews?: CatalogProductRecord['reviews'];
+};
 
 const activeProductWhere = {
   status: ProductStatus.ACTIVE,
@@ -66,6 +81,9 @@ export class CatalogRepository {
 
   private buildWhere(query: ListProductsQueryDto): Prisma.ProductWhereInput {
     const and: Prisma.ProductWhereInput[] = [activeProductWhere];
+    if (query.isNew === true) {
+      and.push({ isNew: true });
+    }
     if (query.collections?.length) {
       and.push({
         collections: {
@@ -184,7 +202,7 @@ export class CatalogRepository {
     const page = Math.min(query.page, totalPages);
     const items = await this.prisma.product.findMany({
       where,
-      include: productInclude,
+      include: productListInclude,
       orderBy: orderBy(query.sort),
       skip: (page - 1) * query.pageSize,
       take: query.pageSize,
@@ -195,41 +213,53 @@ export class CatalogRepository {
   findBySlug(slug: string): Promise<CatalogProductRecord | null> {
     return this.prisma.product.findFirst({
       where: { ...activeProductWhere, slug },
-      include: productInclude,
+      include: productDetailInclude,
     });
   }
 
   findByIdentifier(identifier: string): Promise<CatalogProductRecord | null> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      identifier,
-    );
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
     return this.prisma.product.findFirst({
       where: {
         ...activeProductWhere,
         OR: [...(isUuid ? [{ id: identifier }] : []), { legacyKey: identifier }],
       },
-      include: productInclude,
+      include: productDetailInclude,
     });
   }
 
-  findByIdentifiers(identifiers: string[]): Promise<CatalogProductRecord[]> {
+  findByIdentifiers(identifiers: string[]): Promise<CatalogListProductRecord[]> {
     const uuidIds = identifiers.filter((identifier) =>
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        identifier,
-      ),
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier),
     );
     return this.prisma.product.findMany({
       where: {
         ...activeProductWhere,
         OR: [{ id: { in: uuidIds } }, { legacyKey: { in: identifiers } }],
       },
-      include: productInclude,
+      include: productListInclude,
     });
   }
 
-  async findRelated(product: CatalogProductRecord, limit: number) {
+  /**
+   * Related products for a slug without loading the full PDP graph for the source product.
+   * Returns null when the slug is not an active published product.
+   */
+  async findRelatedBySlug(slug: string, limit: number): Promise<CatalogListProductRecord[] | null> {
+    const product = await this.prisma.product.findFirst({
+      where: { ...activeProductWhere, slug },
+      select: {
+        id: true,
+        categories: { where: { isPrimary: true }, select: { categoryId: true } },
+        collections: { where: { isPrimary: true }, select: { collectionId: true } },
+      },
+    });
+    if (!product) return null;
+
     const categoryIds = product.categories.map(({ categoryId }) => categoryId);
     const collectionIds = product.collections.map(({ collectionId }) => collectionId);
+
     return this.prisma.product.findMany({
       where: {
         ...activeProductWhere,
@@ -239,7 +269,7 @@ export class CatalogRepository {
           { collections: { some: { collectionId: { in: collectionIds } } } },
         ],
       },
-      include: productInclude,
+      include: productListInclude,
       orderBy: orderBy('featured'),
       take: limit,
     });

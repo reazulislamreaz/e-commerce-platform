@@ -10,6 +10,7 @@ import { normalizeBdPhone } from '@/common/utils/bd-phone';
 import { uniqueConflictIncludes } from '@/common/utils/prisma-unique-conflict';
 import { USER_FACING } from '@/common/messages/user-facing-errors';
 import { AuthService } from '@/modules/auth/auth.service';
+import { AuthUserCacheService } from '@/modules/auth/auth-user-cache.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { PrismaService } from '@/prisma/prisma.service';
 import type { CreateAdminDto } from './dto/create-admin.dto';
@@ -37,6 +38,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auth: AuthService,
+    private readonly userCache: AuthUserCacheService,
   ) {}
 
   /**
@@ -148,6 +150,7 @@ export class UsersService {
       data: { status },
       select: userSelect,
     });
+    await this.userCache.invalidate(target.id);
     if (status === UserStatus.SUSPENDED) await this.auth.revokeAllUserSessions(target.id);
     return updated;
   }
@@ -161,6 +164,7 @@ export class UsersService {
       data: { role },
       select: userSelect,
     });
+    await this.userCache.invalidate(target.id);
     if (target.role !== role) {
       // Role changed: existing sessions carry stale privileges, so end them.
       await this.auth.revokeAllUserSessions(target.id);
@@ -180,6 +184,7 @@ export class UsersService {
         phone: `deleted+${target.id}`,
       },
     });
+    await this.userCache.invalidate(target.id);
     await this.auth.revokeAllUserSessions(target.id);
   }
 

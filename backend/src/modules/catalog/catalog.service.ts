@@ -1,6 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryService } from '@/modules/inventory/inventory.service';
-import { CatalogRepository, type CatalogProductRecord } from './catalog.repository';
+import { CatalogCacheService } from './catalog-cache.service';
+import {
+  CatalogRepository,
+  type CatalogMappableProduct,
+  type CatalogProductRecord,
+} from './catalog.repository';
 import type {
   ListProductsQueryDto,
   ProductLimitQueryDto,
@@ -16,6 +21,7 @@ export class CatalogService {
   constructor(
     private readonly catalog: CatalogRepository,
     private readonly inventory: InventoryService,
+    private readonly cache: CatalogCacheService,
   ) {}
 
   async list(query: ListProductsQueryDto) {
@@ -56,8 +62,9 @@ export class CatalogService {
       availability: 'all',
       page: 1,
       pageSize: query.limit,
+      isNew: true,
     });
-    return this.mapMany(result.items.filter((product) => product.isNew));
+    return this.mapMany(result.items);
   }
 
   async onSale(query: ProductLimitQueryDto) {
@@ -72,9 +79,15 @@ export class CatalogService {
   }
 
   async getBySlug(slug: string) {
+    const cached =
+      await this.cache.getProductBySlug<ReturnType<CatalogService['toResponse']>>(slug);
+    if (cached) return cached;
+
     const product = await this.catalog.findBySlug(slug);
     if (!product) throw new NotFoundException('Product not found');
-    return this.mapOne(product);
+    const mapped = await this.mapOne(product);
+    await this.cache.setProductBySlug(slug, mapped);
+    return mapped;
   }
 
   async getByIdentifier(identifier: string) {
@@ -99,14 +112,25 @@ export class CatalogService {
   }
 
   async related(slug: string, query: ProductLimitQueryDto) {
-    const product = await this.catalog.findBySlug(slug);
-    if (!product) throw new NotFoundException('Product not found');
-    return this.mapMany(await this.catalog.findRelated(product, query.limit));
+    const related = await this.catalog.findRelatedBySlug(slug, query.limit);
+    if (related === null) throw new NotFoundException('Product not found');
+    return this.mapMany(related);
   }
 
   async facets() {
+    const cached = await this.cache.getFacets<{
+      categories: string[];
+      subcategories: string[];
+      brands: string[];
+      sizes: string[];
+      colors: string[];
+      minPrice: number;
+      maxPrice: number;
+    }>();
+    if (cached) return cached;
+
     const facets = await this.catalog.facets();
-    return {
+    const mapped = {
       categories: facets.categories.map(({ name }) => name),
       subcategories: facets.subcategories.map(({ name }) => name),
       brands: facets.brands.map(({ name }) => name),
@@ -119,9 +143,11 @@ export class CatalogService {
         ? taka(facets.priceRange._max.currentPriceAmount)
         : 0,
     };
+    await this.cache.setFacets(mapped);
+    return mapped;
   }
 
-  private async mapMany(products: CatalogProductRecord[]) {
+  private async mapMany(products: CatalogMappableProduct[]) {
     const variantIds = products.flatMap((product) => product.variants.map(({ id }) => id));
     const availability = await this.inventory.getAvailableByVariantIds(variantIds);
     return products.map((product) => this.toResponse(product, availability));
@@ -134,7 +160,7 @@ export class CatalogService {
     return this.toResponse(product, availability);
   }
 
-  private toResponse(product: CatalogProductRecord, availability: Map<string, number>) {
+  private toResponse(product: CatalogMappableProduct, availability: Map<string, number>) {
     const category = product.categories[0]?.category;
     const collection = product.collections[0]?.collection.slug;
     const media = product.media.map(({ url, alt }) => ({ url, alt }));
@@ -147,6 +173,7 @@ export class CatalogService {
       stock: availability.get(variant.id) ?? 0,
       sku: variant.sku,
     }));
+    const reviews = product.reviews ?? [];
     return {
       id: product.id,
       ...(product.legacyKey ? { legacyId: product.legacyKey } : {}),
@@ -171,7 +198,7 @@ export class CatalogService {
       inStock: variants.some(({ stock }) => stock > 0),
       rating: product.ratingAverage / 100,
       reviewCount: product.reviewCount,
-      reviews: product.reviews.map((review) => ({
+      reviews: reviews.map((review) => ({
         id: review.id,
         author: review.authorName,
         rating: review.rating,

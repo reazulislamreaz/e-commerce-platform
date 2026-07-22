@@ -5,6 +5,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Role, UserStatus } from '@/generated/prisma/client';
 import { USER_FACING } from '@/common/messages/user-facing-errors';
 import { PrismaService } from '@/prisma/prisma.service';
+import { AuthUserCacheService } from './auth-user-cache.service';
 
 export interface JwtPayload {
   sub: string;
@@ -20,6 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly userCache: AuthUserCacheService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -31,15 +33,26 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   /**
    * Confirms the user still exists and is active on every request, so a
    * suspension/deletion takes effect immediately instead of after token expiry.
-   * The role is re-read from the database to prevent stale role claims.
+   * The role is re-read from the database (or a short-lived Redis snapshot) to
+   * prevent stale role claims.
    */
   async validate(payload: JwtPayload): Promise<JwtPayload> {
+    const cached = await this.userCache.get(payload.sub);
+    if (cached) {
+      if (cached.deletedAt || cached.status !== UserStatus.ACTIVE) {
+        throw new UnauthorizedException(USER_FACING.ACCOUNT_INACTIVE);
+      }
+      return { ...payload, role: cached.role };
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: { role: true, status: true, deletedAt: true },
     });
-    if (!user || user.deletedAt || user.status !== UserStatus.ACTIVE)
+    if (!user || user.deletedAt || user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException(USER_FACING.ACCOUNT_INACTIVE);
+    }
+    await this.userCache.set(payload.sub, user);
     return { ...payload, role: user.role };
   }
 }

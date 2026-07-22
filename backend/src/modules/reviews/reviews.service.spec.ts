@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { Test } from '@nestjs/testing';
 import { ReviewStatus, Role } from '@/generated/prisma/client';
 import { AuditService } from '@/modules/platform/audit.service';
+import { CatalogCacheService } from '@/modules/catalog/catalog-cache.service';
 import { ReviewsRepository } from './reviews.repository';
 import { ReviewsService } from './reviews.service';
 
@@ -26,6 +27,7 @@ describe('ReviewsService', () => {
     listAdmin: jest.fn(),
   };
   const audit = { write: jest.fn() };
+  const catalogCache = { invalidateAll: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -38,6 +40,7 @@ describe('ReviewsService', () => {
         ReviewsService,
         { provide: ReviewsRepository, useValue: repository },
         { provide: AuditService, useValue: audit },
+        { provide: CatalogCacheService, useValue: catalogCache },
       ],
     }).compile();
 

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import type { CatalogCacheService } from './catalog-cache.service';
 import { CatalogRepository } from './catalog.repository';
 import { CatalogService } from './catalog.service';
 import { InventoryRepository } from '@/modules/inventory/inventory.repository';
@@ -10,7 +11,14 @@ describe('Catalog + Inventory integration', () => {
   const catalogRepository = new CatalogRepository(prisma);
   const inventoryRepository = new InventoryRepository(prisma);
   const inventory = new InventoryService(inventoryRepository, prisma);
-  const catalog = new CatalogService(catalogRepository, inventory);
+  const cache = {
+    getProductBySlug: async () => null,
+    setProductBySlug: async () => undefined,
+    getFacets: async () => null,
+    setFacets: async () => undefined,
+    invalidateAll: async () => undefined,
+  } as unknown as CatalogCacheService;
+  const catalog = new CatalogService(catalogRepository, inventory, cache);
 
   beforeAll(() => prisma.$connect());
   afterAll(() => prisma.$disconnect());

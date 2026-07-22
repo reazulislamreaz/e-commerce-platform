@@ -9,6 +9,7 @@ import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { TransformResponseInterceptor } from '@/common/interceptors/transform-response.interceptor';
+import { RedisModule } from '@/common/redis/redis.module';
 import { RedisThrottlerStorage } from '@/common/throttler/redis-throttler.storage';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { PlatformModule } from '@/modules/platform/platform.module';
@@ -54,6 +55,7 @@ import { HealthModule } from '@/modules/health/health.module';
         connection: { url: config.getOrThrow<string>('REDIS_URL') },
       }),
     }),
+    RedisModule,
     PrismaModule,
     PlatformModule,
     HealthModule,

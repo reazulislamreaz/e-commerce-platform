@@ -24,18 +24,18 @@ The MVP commerce platform is implemented end-to-end for Cash on Delivery: identi
 
 ## Technology and runtime
 
-| Area              | Technology                                                               |
-| ----------------- | ------------------------------------------------------------------------ |
-| Runtime           | Node.js 20.19.6 (defined in `.nvmrc`)                                    |
-| Package manager   | npm workspaces; committed `package-lock.json`                            |
-| Frontend          | Next.js 16, React 19, TypeScript, Tailwind CSS 4                         |
-| Frontend state    | Redux Toolkit for client state; TanStack Query for API/server state      |
-| Frontend requests | Axios with access-token attachment and refresh retry                     |
-| Backend           | NestJS 11, TypeScript, class-validator/class-transformer                 |
-| Database          | PostgreSQL 17 with Prisma 7                                              |
-| Cache/jobs        | Redis 7 and BullMQ                                                       |
-| Security          | JWT, refresh cookies, RBAC guards, Helmet, CORS, compression, throttling |
-| Observability     | Pino via `nestjs-pino`, Swagger/OpenAPI                                  |
+| Area              | Technology                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| Runtime           | Node.js 20.19.6 (defined in `.nvmrc`)                                                  |
+| Package manager   | npm workspaces; committed `package-lock.json`                                          |
+| Frontend          | Next.js 16, React 19, TypeScript, Tailwind CSS 4                                       |
+| Frontend state    | Redux Toolkit for client state; TanStack Query for API/server state                    |
+| Frontend requests | Axios with access-token attachment and refresh retry                                   |
+| Backend           | NestJS 11, TypeScript, class-validator/class-transformer                               |
+| Database          | PostgreSQL 17 with Prisma 7                                                            |
+| Cache/jobs        | Redis 7 and BullMQ (catalog read-through + JWT user snapshot caches; jobs; throttling) |
+| Security          | JWT, refresh cookies, RBAC guards, Helmet, CORS, compression, throttling               |
+| Observability     | Pino via `nestjs-pino`, Swagger/OpenAPI                                                |
 
 ## Local service topology
 
@@ -206,18 +206,18 @@ Premium perceived performance is **mandatory** for all storefront work. Authorit
 
 **Implemented patterns (extend these — do not bypass):**
 
-| Layer             | Purpose                                       | Location                                                                                                                                                       |
-| ----------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page skeletons    | Layout-matched route transitions (zero CLS)   | `frontend/components/loading/` — `HomePageSkeleton`, `ShopPageSkeleton`, `SalePageSkeleton`, `CatalogSectionSkeleton`, cart/checkout/account/wishlist variants |
-| Base shimmer      | Shared gold skeleton primitive                | `frontend/components/common/skeleton.tsx` (`Skeleton`, `ProductCardSkeleton`, …)                                                                               |
-| Route loading UI  | Instant shell on navigation                   | `frontend/app/**/loading.tsx` (home, shop, sale, category, search, cart, checkout, account, wishlist, product, …)                                              |
-| Progressive SSR   | Hero/static chrome first, catalog streams     | `Suspense` in `app/page.tsx`, `app/shop/page.tsx`, `app/sale/page.tsx`, search/category catalog sections                                                       |
-| SWR / cache       | Stale-while-revalidate lists; no filter flash | TanStack Query in `features/products/hooks.ts` (`placeholderData`, `CATALOG_STALE_MS`); global client in `providers/app-providers.tsx`                         |
-| SSR hydrate       | First paint for remote catalog                | `dehydrateProductList` + `QueryHydration`                                                                                                                      |
-| Prefetch          | Faster repeat nav to shop/sale/category       | `providers/route-prefetcher.tsx`, `components/layouts/prefetch-nav-link.tsx`, `usePrefetchProduct`                                                             |
-| Media             | Natural image reveal                          | `components/common/product-image.tsx` (opacity fade, reserved ground)                                                                                          |
-| Segment errors    | Recover without root crash                    | `frontend/app/{shop,checkout,account}/error.tsx`                                                                                                               |
-| Optimistic client | Cart/wishlist feel instant                    | Redux + server sync + `flashMessage` rollback                                                                                                                  |
+| Layer             | Purpose                                       | Location                                                                                                                                                           |
+| ----------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Page skeletons    | Layout-matched route transitions (zero CLS)   | `frontend/components/loading/` — `HomePageSkeleton`, `ShopPageSkeleton`, `SalePageSkeleton`, `CatalogSectionSkeleton`, cart/checkout/account/wishlist variants     |
+| Base shimmer      | Shared gold skeleton primitive                | `frontend/components/common/skeleton.tsx` (`Skeleton`, `ProductCardSkeleton`, …)                                                                                   |
+| Route loading UI  | Instant shell on navigation                   | `frontend/app/**/loading.tsx` (home, shop, sale, category, search, cart, checkout, account, wishlist, product, …)                                                  |
+| Progressive SSR   | Hero/static chrome first, catalog streams     | `Suspense` in `app/page.tsx`, `app/shop/page.tsx`, `app/sale/page.tsx`, search/category catalog sections                                                           |
+| SWR / cache       | Stale-while-revalidate lists; no filter flash | TanStack Query (`placeholderData`, `CATALOG_STALE_MS`); Redis facets + product-by-slug (`CatalogCacheService`); JwtStrategy user snapshot (`AuthUserCacheService`) |
+| SSR hydrate       | First paint for remote catalog                | `dehydrateProductList` + `QueryHydration`                                                                                                                          |
+| Prefetch          | Faster repeat nav to shop/sale/category       | `providers/route-prefetcher.tsx`, `components/layouts/prefetch-nav-link.tsx`, `usePrefetchProduct`                                                                 |
+| Media             | Natural image reveal                          | `components/common/product-image.tsx` (opacity fade, reserved ground)                                                                                              |
+| Segment errors    | Recover without root crash                    | `frontend/app/{shop,checkout,account,product,wishlist,sale,search,cart}/error.tsx`                                                                                 |
+| Optimistic client | Cart/wishlist feel instant                    | Redux + server sync + `flashMessage` rollback                                                                                                                      |
 
 **Expected behavior after deploy:**
 

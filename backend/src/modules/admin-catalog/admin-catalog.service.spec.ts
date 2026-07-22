@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { ProductStatus, Role } from '@/generated/prisma/client';
 import { InventoryService } from '@/modules/inventory/inventory.service';
 import { AuditService } from '@/modules/platform/audit.service';
+import { CatalogCacheService } from '@/modules/catalog/catalog-cache.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AdminCatalogRepository } from './admin-catalog.repository';
 import { AdminCatalogService } from './admin-catalog.service';
@@ -29,6 +30,7 @@ describe('AdminCatalogService', () => {
   };
   const audit = { write: jest.fn() };
   const inventory = { adjust: jest.fn() };
+  const catalogCache = { invalidateAll: jest.fn() };
   const prisma = {
     $transaction: jest.fn(),
   };
@@ -41,6 +43,7 @@ describe('AdminCatalogService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: InventoryService, useValue: inventory },
         { provide: AuditService, useValue: audit },
+        { provide: CatalogCacheService, useValue: catalogCache },
       ],
     }).compile();
 
@@ -48,14 +51,17 @@ describe('AdminCatalogService', () => {
     jest.clearAllMocks();
     prisma.$transaction.mockImplementation(async (fn: (tx: object) => unknown) => fn({}));
     adminCatalog.findBrandById.mockResolvedValue({ id: '22222222-2222-4222-8222-222222222222' });
-    adminCatalog.listCategories.mockResolvedValue([
-      { id: '33333333-3333-4333-8333-333333333333' },
-    ]);
+    adminCatalog.listCategories.mockResolvedValue([{ id: '33333333-3333-4333-8333-333333333333' }]);
   });
 
   describe('assertPublishable', () => {
     it('rejects a product without active variants', async () => {
-      adminCatalog.countPublishRequirements.mockResolvedValue([0, 1, 1, { currentPriceAmount: 1000n }]);
+      adminCatalog.countPublishRequirements.mockResolvedValue([
+        0,
+        1,
+        1,
+        { currentPriceAmount: 1000n },
+      ]);
 
       await expect(service.assertPublishable('product-1')).rejects.toThrow(
         new BadRequestException('Product must have at least one active variant to publish'),
@@ -63,7 +69,12 @@ describe('AdminCatalogService', () => {
     });
 
     it('rejects a product without media', async () => {
-      adminCatalog.countPublishRequirements.mockResolvedValue([1, 0, 1, { currentPriceAmount: 1000n }]);
+      adminCatalog.countPublishRequirements.mockResolvedValue([
+        1,
+        0,
+        1,
+        { currentPriceAmount: 1000n },
+      ]);
 
       await expect(service.assertPublishable('product-1')).rejects.toThrow(
         new BadRequestException('Product must have at least one media item to publish'),
@@ -71,7 +82,12 @@ describe('AdminCatalogService', () => {
     });
 
     it('rejects a product without an active price', async () => {
-      adminCatalog.countPublishRequirements.mockResolvedValue([1, 1, 0, { currentPriceAmount: 0n }]);
+      adminCatalog.countPublishRequirements.mockResolvedValue([
+        1,
+        1,
+        0,
+        { currentPriceAmount: 0n },
+      ]);
 
       await expect(service.assertPublishable('product-1')).rejects.toThrow(
         new BadRequestException('Product must have an active price to publish'),
@@ -146,7 +162,12 @@ describe('AdminCatalogService', () => {
         status: ProductStatus.DRAFT,
         publishedAt: null,
       });
-      adminCatalog.countPublishRequirements.mockResolvedValue([0, 1, 1, { currentPriceAmount: 1000n }]);
+      adminCatalog.countPublishRequirements.mockResolvedValue([
+        0,
+        1,
+        1,
+        { currentPriceAmount: 1000n },
+      ]);
 
       await expect(service.publishProduct(actor, 'product-1')).rejects.toThrow(
         new BadRequestException('Product must have at least one active variant to publish'),

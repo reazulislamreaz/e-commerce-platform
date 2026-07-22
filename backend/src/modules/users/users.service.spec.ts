@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, NotFoundException } from '@nestj
 import { Test } from '@nestjs/testing';
 import { Prisma, Role, UserStatus } from '@/generated/prisma/client';
 import { AuthService } from '@/modules/auth/auth.service';
+import { AuthUserCacheService } from '@/modules/auth/auth-user-cache.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { PrismaService } from '@/prisma/prisma.service';
 import { canAssignRole, canManage } from './role-policy';
@@ -63,6 +64,7 @@ describe('UsersService', () => {
     },
   };
   const auth = { revokeAllUserSessions: jest.fn() };
+  const userCache = { invalidate: jest.fn(), get: jest.fn(), set: jest.fn() };
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -70,6 +72,7 @@ describe('UsersService', () => {
         UsersService,
         { provide: PrismaService, useValue: prisma },
         { provide: AuthService, useValue: auth },
+        { provide: AuthUserCacheService, useValue: userCache },
       ],
     }).compile();
     service = moduleRef.get(UsersService);

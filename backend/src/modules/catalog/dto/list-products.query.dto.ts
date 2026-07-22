@@ -22,7 +22,10 @@ export type ProductAvailability = (typeof AVAILABILITY)[number];
 function stringList(value: unknown): string[] | undefined {
   if (value === undefined || value === null || value === '') return undefined;
   const values = Array.isArray(value) ? value : String(value).split(',');
-  return values.map(String).map((item) => item.trim()).filter(Boolean);
+  return values
+    .map(String)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function optionalBoolean(value: unknown): boolean | undefined {
@@ -33,7 +36,10 @@ function optionalBoolean(value: unknown): boolean | undefined {
 }
 
 export class ListProductsQueryDto {
-  @ApiPropertyOptional({ type: [String], description: 'Collection slugs; comma-separated accepted' })
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Collection slugs; comma-separated accepted',
+  })
   @IsOptional()
   @Transform(({ value }) => stringList(value))
   @IsArray()
@@ -98,6 +104,13 @@ export class ListProductsQueryDto {
   @IsOptional()
   @Transform(({ value }) => optionalBoolean(value))
   discount?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'When true, only products flagged as new arrivals',
+  })
+  @IsOptional()
+  @Transform(({ value }) => optionalBoolean(value))
+  isNew?: boolean;
 
   @ApiPropertyOptional({ minimum: 0, maximum: 5 })
   @IsOptional()

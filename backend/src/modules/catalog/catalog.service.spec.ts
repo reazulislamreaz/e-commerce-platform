@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { ProductStatus, ReviewStatus } from '@/generated/prisma/client';
 import { InventoryService } from '@/modules/inventory/inventory.service';
+import { CatalogCacheService } from './catalog-cache.service';
 import { CatalogRepository, type CatalogProductRecord } from './catalog.repository';
 import { CatalogService } from './catalog.service';
 
@@ -142,10 +143,17 @@ describe('CatalogService', () => {
     findBySlug: jest.fn(),
     findByIdentifier: jest.fn(),
     findByIdentifiers: jest.fn(),
-    findRelated: jest.fn(),
+    findRelatedBySlug: jest.fn(),
     facets: jest.fn(),
   };
   const inventory = { getAvailableByVariantIds: jest.fn() };
+  const cache = {
+    getProductBySlug: jest.fn(),
+    setProductBySlug: jest.fn(),
+    getFacets: jest.fn(),
+    setFacets: jest.fn(),
+    invalidateAll: jest.fn(),
+  };
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -153,12 +161,15 @@ describe('CatalogService', () => {
         CatalogService,
         { provide: CatalogRepository, useValue: repository },
         { provide: InventoryService, useValue: inventory },
+        { provide: CatalogCacheService, useValue: cache },
       ],
     }).compile();
     service = moduleRef.get(CatalogService);
     inventory.getAvailableByVariantIds.mockResolvedValue(
       new Map([['66666666-6666-4666-8666-666666666666', 7]]),
     );
+    cache.getProductBySlug.mockResolvedValue(null);
+    cache.getFacets.mockResolvedValue(null);
   });
 
   it('maps poisha, taxonomy, inventory, and reviews to the storefront contract', async () => {
@@ -184,6 +195,7 @@ describe('CatalogService', () => {
     expect(result.reviews[0]).toEqual(
       expect.objectContaining({ author: 'Rahim K.', createdAt: '2026-05-12' }),
     );
+    expect(cache.setProductBySlug).toHaveBeenCalledWith(product.slug, result);
   });
 
   it('returns pagination metadata compatible with the frontend', async () => {
@@ -196,6 +208,24 @@ describe('CatalogService', () => {
     });
     expect(result.meta).toEqual({ page: 1, pageSize: 8, total: 12, totalPages: 2 });
     expect(result.data).toHaveLength(1);
+    expect(result.data[0].reviews).toEqual(
+      expect.arrayContaining([expect.objectContaining({ author: 'Rahim K.' })]),
+    );
+  });
+
+  it('filters new arrivals in the repository query', async () => {
+    repository.list.mockResolvedValue({ items: [product], total: 1, page: 1, totalPages: 1 });
+    await service.newArrivals({ limit: 8 });
+    expect(repository.list).toHaveBeenCalledWith(
+      expect.objectContaining({ isNew: true, pageSize: 8, sort: 'newest' }),
+    );
+  });
+
+  it('loads related products without a full PDP fetch for the source slug', async () => {
+    repository.findRelatedBySlug.mockResolvedValue([product]);
+    await service.related(product.slug, { limit: 4 });
+    expect(repository.findRelatedBySlug).toHaveBeenCalledWith(product.slug, 4);
+    expect(repository.findBySlug).not.toHaveBeenCalled();
   });
 
   it('rejects an inverted price range before querying', async () => {

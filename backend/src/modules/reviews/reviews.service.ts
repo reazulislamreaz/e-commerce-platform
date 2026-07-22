@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ReviewStatus } from '@/generated/prisma/client';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
+import { CatalogCacheService } from '@/modules/catalog/catalog-cache.service';
 import { AuditService } from '@/modules/platform/audit.service';
 import type { AdminReviewActionDto } from './dto/admin-review-action.dto';
 import type { CreateReviewDto } from './dto/create-review.dto';
@@ -19,6 +20,7 @@ export class ReviewsService {
   constructor(
     private readonly reviews: ReviewsRepository,
     private readonly audit: AuditService,
+    private readonly catalogCache: CatalogCacheService,
   ) {}
 
   async create(userId: string, dto: CreateReviewDto): Promise<ReviewResponseDto> {
@@ -28,9 +30,7 @@ export class ReviewsService {
 
       const purchase = await this.reviews.findDeliveredPurchase(userId, dto.productId, tx);
       if (!purchase) {
-        throw new BadRequestException(
-          'You can only review products from your delivered orders',
-        );
+        throw new BadRequestException('You can only review products from your delivered orders');
       }
 
       const existing = await this.reviews.findActiveByUserAndProduct(userId, dto.productId, tx);
@@ -71,7 +71,8 @@ export class ReviewsService {
   }
 
   async update(userId: string, id: string, dto: UpdateReviewDto): Promise<ReviewResponseDto> {
-    return this.reviews.runTransaction(async (tx) => {
+    let shouldInvalidate = false;
+    const response = await this.reviews.runTransaction(async (tx) => {
       const current = await this.reviews.findById(id, tx);
       if (!current || current.userId !== userId) {
         throw new NotFoundException('Review not found');
@@ -84,22 +85,24 @@ export class ReviewsService {
           ...(dto.rating != null ? { rating: dto.rating } : {}),
           ...(dto.title != null ? { title: dto.title.trim() } : {}),
           ...(dto.body != null ? { body: dto.body.trim() } : {}),
-          ...(wasPublished
-            ? { status: ReviewStatus.PENDING, publishedAt: null }
-            : {}),
+          ...(wasPublished ? { status: ReviewStatus.PENDING, publishedAt: null } : {}),
         },
         tx,
       );
 
       if (wasPublished) {
         await this.reviews.recomputeProductAggregates(current.productId, tx);
+        shouldInvalidate = true;
       }
 
       return toResponse(updated);
     });
+    if (shouldInvalidate) await this.catalogCache.invalidateAll();
+    return response;
   }
 
   async remove(userId: string, id: string): Promise<void> {
+    let shouldInvalidate = false;
     await this.reviews.runTransaction(async (tx) => {
       const current = await this.reviews.findById(id, tx);
       if (!current || current.userId !== userId) {
@@ -109,8 +112,10 @@ export class ReviewsService {
       await this.reviews.softDelete(id, tx);
       if (current.status === ReviewStatus.PUBLISHED) {
         await this.reviews.recomputeProductAggregates(current.productId, tx);
+        shouldInvalidate = true;
       }
     });
+    if (shouldInvalidate) await this.catalogCache.invalidateAll();
   }
 
   async listAdmin(query: ListReviewsQueryDto) {
@@ -129,7 +134,7 @@ export class ReviewsService {
     id: string,
     dto: AdminReviewActionDto,
   ): Promise<ReviewResponseDto> {
-    return this.reviews.runTransaction(async (tx) => {
+    const response = await this.reviews.runTransaction(async (tx) => {
       const current = await this.reviews.findById(id, tx);
       if (!current) throw new NotFoundException('Review not found');
       if (current.status === ReviewStatus.PUBLISHED) {
@@ -162,6 +167,8 @@ export class ReviewsService {
 
       return toResponse(updated);
     });
+    await this.catalogCache.invalidateAll();
+    return response;
   }
 
   async reject(
@@ -169,7 +176,8 @@ export class ReviewsService {
     id: string,
     dto: AdminReviewActionDto,
   ): Promise<ReviewResponseDto> {
-    return this.reviews.runTransaction(async (tx) => {
+    let shouldInvalidate = false;
+    const response = await this.reviews.runTransaction(async (tx) => {
       const current = await this.reviews.findById(id, tx);
       if (!current) throw new NotFoundException('Review not found');
       if (current.status === ReviewStatus.REJECTED) {
@@ -188,6 +196,7 @@ export class ReviewsService {
 
       if (wasPublished) {
         await this.reviews.recomputeProductAggregates(current.productId, tx);
+        shouldInvalidate = true;
       }
 
       await this.audit.write(
@@ -205,6 +214,8 @@ export class ReviewsService {
 
       return toResponse(updated);
     });
+    if (shouldInvalidate) await this.catalogCache.invalidateAll();
+    return response;
   }
 
   /** Exposed for unit tests of aggregate math. */
@@ -221,7 +232,7 @@ export class ReviewsService {
       data: page.map(toResponse),
       meta: {
         limit,
-        nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+        nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
       },
     };
   }

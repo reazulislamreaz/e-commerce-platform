@@ -9,13 +9,10 @@ import { slugify } from '@/common/utils/slug';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { InventoryService } from '@/modules/inventory/inventory.service';
 import { AuditService } from '@/modules/platform/audit.service';
+import { CatalogCacheService } from '@/modules/catalog/catalog-cache.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AdminCatalogRepository } from './admin-catalog.repository';
-import type {
-  BrandRecord,
-  CategoryRecord,
-  CollectionRecord,
-} from './admin-catalog.repository';
+import type { BrandRecord, CategoryRecord, CollectionRecord } from './admin-catalog.repository';
 import type { CreateBrandDto, UpdateBrandDto } from './dto/brand.dto';
 import type { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 import type { CreateCollectionDto, UpdateCollectionDto } from './dto/collection.dto';
@@ -36,14 +33,13 @@ export class AdminCatalogService {
     private readonly adminCatalog: AdminCatalogRepository,
     private readonly inventory: InventoryService,
     private readonly audit: AuditService,
+    private readonly catalogCache: CatalogCacheService,
   ) {}
 
   async listProducts(query: ListAdminProductsQueryDto) {
     const { items, hasMore, stockByVariant } = await this.adminCatalog.listProducts(query);
     return {
-      data: items.map((product) =>
-        this.adminCatalog.toProductListSummary(product, stockByVariant),
-      ),
+      data: items.map((product) => this.adminCatalog.toProductListSummary(product, stockByVariant)),
       meta: {
         limit: query.limit,
         nextCursor: hasMore ? items[items.length - 1].id : null,
@@ -132,6 +128,7 @@ export class AdminCatalogService {
         );
         return created;
       });
+      await this.catalogCache.invalidateAll();
       return this.adminCatalog.toProductDetail(product);
     } catch (error) {
       this.rethrowUnique(error, 'Product slug or variant SKU already exists');
@@ -181,6 +178,7 @@ export class AdminCatalogService {
         );
         return updated;
       });
+      await this.catalogCache.invalidateAll();
       return this.adminCatalog.toProductDetail(product);
     } catch (error) {
       this.rethrowUnique(error, 'Product slug or variant SKU already exists');
@@ -229,6 +227,7 @@ export class AdminCatalogService {
       return updated;
     });
 
+    await this.catalogCache.invalidateAll();
     return this.adminCatalog.toProductDetail(product);
   }
 
@@ -256,6 +255,7 @@ export class AdminCatalogService {
         resourceId: brand.id,
         after: { name: brand.name, slug: brand.slug },
       });
+      await this.catalogCache.invalidateAll();
       return this.toBrandResponse(brand);
     } catch (error) {
       this.rethrowUnique(error, 'Brand slug already exists');
@@ -277,6 +277,7 @@ export class AdminCatalogService {
         before: { name: existing.name, slug: existing.slug },
         after: { name: brand.name, slug: brand.slug },
       });
+      await this.catalogCache.invalidateAll();
       return this.toBrandResponse(brand);
     } catch (error) {
       this.rethrowUnique(error, 'Brand slug already exists');
@@ -296,6 +297,7 @@ export class AdminCatalogService {
       resourceId: id,
       before: { name: existing.name },
     });
+    await this.catalogCache.invalidateAll();
   }
 
   async listCategories() {
@@ -326,6 +328,7 @@ export class AdminCatalogService {
         resourceId: category.id,
         after: { name: category.name, slug: category.slug },
       });
+      await this.catalogCache.invalidateAll();
       return this.toCategoryResponse(category);
     } catch (error) {
       this.rethrowUnique(error, 'Category slug already exists');
@@ -358,6 +361,7 @@ export class AdminCatalogService {
         before: { name: existing.name, slug: existing.slug },
         after: { name: category.name, slug: category.slug },
       });
+      await this.catalogCache.invalidateAll();
       return this.toCategoryResponse(category);
     } catch (error) {
       this.rethrowUnique(error, 'Category slug already exists');
@@ -377,6 +381,7 @@ export class AdminCatalogService {
       resourceId: id,
       before: { name: existing.name },
     });
+    await this.catalogCache.invalidateAll();
   }
 
   async listCollections() {
@@ -403,6 +408,7 @@ export class AdminCatalogService {
         resourceId: collection.id,
         after: { name: collection.name, slug: collection.slug },
       });
+      await this.catalogCache.invalidateAll();
       return this.toCollectionResponse(collection);
     } catch (error) {
       this.rethrowUnique(error, 'Collection slug already exists');
@@ -424,6 +430,7 @@ export class AdminCatalogService {
         before: { name: existing.name, slug: existing.slug },
         after: { name: collection.name, slug: collection.slug },
       });
+      await this.catalogCache.invalidateAll();
       return this.toCollectionResponse(collection);
     } catch (error) {
       this.rethrowUnique(error, 'Collection slug already exists');
@@ -443,6 +450,7 @@ export class AdminCatalogService {
       resourceId: id,
       before: { name: existing.name },
     });
+    await this.catalogCache.invalidateAll();
   }
 
   async listInventoryBalances(query: ListInventoryBalancesQueryDto) {
@@ -537,6 +545,7 @@ export class AdminCatalogService {
       );
     });
 
+    await this.catalogCache.invalidateAll();
     return { success: true };
   }
 
@@ -588,6 +597,7 @@ export class AdminCatalogService {
       return updated;
     });
 
+    await this.catalogCache.invalidateAll();
     return this.adminCatalog.toProductDetail(product);
   }
 
