@@ -3,18 +3,18 @@ import { cn } from '@/lib/utils';
 
 export const BRAND_LOGO = {
   /** Transparent — for `#FAFAFA` / white / light sections */
-  onLight: '/images/brand/elevate-apparel-logo-on-light.webp',
+  onLight: '/images/brand/elevate-apparel-logo-on-light-hires.webp',
   /** Transparent — for black / dark sections (footer, dark heroes) */
-  onDark: '/images/brand/elevate-apparel-logo-on-dark.webp',
+  onDark: '/images/brand/elevate-apparel-logo-on-dark-hires.webp',
   /** Transparent monogram only (sidebar collapsed, compact chrome) */
-  markOnLight: '/images/brand/elevate-apparel-mark-on-light.webp',
-  markOnDark: '/images/brand/elevate-apparel-mark-on-dark.webp',
+  markOnLight: '/images/brand/elevate-apparel-mark-on-light-refined.webp',
+  markOnDark: '/images/brand/elevate-apparel-mark-on-dark-refined.webp',
   /** 3D EA mark + Elevate wordmark — navbar (horizontal) and auth (stacked) */
   elevate3dHorizontal: '/images/brand/elevate-logo-nav-exact.webp',
   elevate3dStacked: '/images/brand/elevate-logo-stacked-3d.webp',
   elevate3dMark: '/images/brand/elevate-mark-3d.webp',
-  width: 1248,
-  height: 179,
+  width: 2496,
+  height: 358,
   elevate3dHorizontalWidth: 544,
   elevate3dHorizontalHeight: 172,
   elevate3dStackedWidth: 631,
@@ -58,7 +58,7 @@ export function BrandLogo({
   className,
   heightClassName = 'h-7',
   priority = false,
-  quality = 90,
+  quality = 95,
 }: BrandLogoProps) {
   if (style === 'elevate3d') {
     const isMark = layout === 'mark';
