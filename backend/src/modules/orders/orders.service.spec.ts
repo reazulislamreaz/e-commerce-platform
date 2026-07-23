@@ -12,6 +12,7 @@ import { IdempotencyService } from '@/modules/platform/idempotency.service';
 import { OutboxService } from '@/modules/platform/outbox.service';
 import { PromotionsService } from '@/modules/promotions/promotions.service';
 import { PrismaService } from '@/prisma/prisma.service';
+import { InvoicePdfService } from './invoice-pdf.service';
 import { OrdersRepository } from './orders.repository';
 import { OrdersService } from './orders.service';
 
@@ -52,6 +53,7 @@ describe('OrdersService', () => {
           provide: DeliveryPartnersService,
           useValue: { resolveTrackingUrl: jest.fn() },
         },
+        { provide: InvoicePdfService, useValue: { generate: jest.fn() } },
       ],
     }).compile();
 

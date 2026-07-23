@@ -17,7 +17,7 @@ import { selectAuthUser, selectCartHydrated, selectCartItems } from '@/store/sel
 import { cartSubtotal, resolveCartLines, shippingForSubtotal } from '@/features/cart/pricing';
 import { accountRepository, useAccountAddresses, type SavedAddress } from '@/features/account';
 import { useProductsByIds } from '@/features/products';
-import { trackInitiateCheckout, trackPurchase } from '@/features/analytics/facebook-pixel';
+import { trackInitiateCheckout } from '@/features/analytics/facebook-pixel';
 import { setCartRecoveryEmail } from '@/features/cart/api';
 import { createClientId } from '@/lib/client-id';
 
@@ -237,32 +237,25 @@ export function CheckoutClient() {
         idempotencyKey,
       );
 
-      if (user) {
-        trackPurchase({
-          content_ids: lines.map(({ item }) => item.productId),
-          value: order.total,
-          order_id: order.number,
-        });
-      }
-
       dispatch(cartCleared());
       setIdempotencyKey(createClientId());
       toast.success(`Order #${order.number} placed successfully.`, {
         dedupeKey: `checkout:order:${order.id}`,
       });
 
-      if (user) {
-        router.push(`/account/orders/${order.id}?confirmed=1`);
-        return;
-      }
-
+      // Cache the full order so the success page renders instantly (no blank flash).
+      // The purchase pixel fires once on the success page for both cohorts.
       try {
         sessionStorage.setItem('elevate:lastOrder', JSON.stringify(order));
       } catch {
         // ignore quota errors
       }
       const params = new URLSearchParams({ order: order.number });
-      if (values.email) params.set('email', values.email);
+      if (user) {
+        params.set('id', order.id);
+      } else if (values.email) {
+        params.set('email', values.email);
+      }
       router.push(`/order-confirmation?${params.toString()}`);
     } catch (error: unknown) {
       const message = toastFromError(error, USER_FACING_ERRORS.ORDER_FAILED);

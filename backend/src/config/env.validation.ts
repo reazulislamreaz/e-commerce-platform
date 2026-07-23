@@ -40,6 +40,11 @@ export const envValidationSchema = Joi.object({
     otherwise: Joi.optional().allow(''),
   }),
   CONTACT_INBOX: Joi.string().email().optional().allow(''),
+  // Company identity printed on PDF invoices; sensible Elevate Apparel defaults apply.
+  COMPANY_LEGAL_NAME: Joi.string().optional().allow(''),
+  COMPANY_ADDRESS: Joi.string().optional().allow(''),
+  SUPPORT_EMAIL: Joi.string().email().optional().allow(''),
+  SUPPORT_PHONE: Joi.string().optional().allow(''),
   // Directory for locally stored product images; defaults to backend/uploads/products.
   PRODUCT_UPLOAD_DIR: Joi.string().optional().allow(''),
   // Local MVP report storage; use durable object storage in multi-instance production.

@@ -3,12 +3,13 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Download } from 'lucide-react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ReviewForm } from '@/components/account/review-form';
 import { toast } from '@/lib/toast';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
-import { useAccountOrder, useAccountReviews } from '@/features/account';
+import { useAccountOrder, useAccountReviews, useDownloadInvoice } from '@/features/account';
 import { formatTaka } from '@/lib/currency';
 import { AccountPanelSkeleton } from '@/components/common/skeleton';
 
@@ -20,6 +21,7 @@ function OrderDetailInner() {
   const { data: reviews } = useAccountReviews(user.id);
   const orderQuery = useAccountOrder(user.id, id);
   const order = orderQuery.data;
+  const downloadInvoice = useDownloadInvoice();
   const [reviewProductId, setReviewProductId] = useState<string | null>(null);
   const confirmedToastShown = useRef(false);
 
@@ -69,12 +71,25 @@ function OrderDetailInner() {
               <p className="mt-1 text-sm text-[#C9A227]">Tracking: {order.trackingNumber}</p>
             )}
           </div>
-          <Link
-            href={`/track-order?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(user.email)}`}
-            className="rounded-[4px] border border-[#E5E7EB] px-3 py-2 text-[10px] font-bold uppercase text-[#111111] hover:border-[#C9A227]"
-          >
-            Track Order
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                downloadInvoice.mutate({ orderNumber: order.number, orderId: order.id })
+              }
+              disabled={downloadInvoice.isPending}
+              className="inline-flex items-center gap-1.5 rounded-[4px] border border-[#111111] bg-[#111111] px-3 py-2 text-[10px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Download className="size-3.5" strokeWidth={1.8} />
+              {downloadInvoice.isPending ? 'Preparing…' : 'Invoice'}
+            </button>
+            <Link
+              href={`/track-order?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(user.email)}`}
+              className="rounded-[4px] border border-[#E5E7EB] px-3 py-2 text-[10px] font-bold uppercase text-[#111111] hover:border-[#C9A227]"
+            >
+              Track Order
+            </Link>
+          </div>
         </div>
 
         <ol className="mt-6 grid gap-2 sm:grid-cols-5">

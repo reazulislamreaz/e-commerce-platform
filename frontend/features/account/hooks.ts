@@ -99,6 +99,39 @@ export function useAccountOrder(userId: string | undefined, orderId: string | un
   });
 }
 
+function saveBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+type DownloadInvoiceInput = { orderNumber: string } & ({ orderId: string } | { email: string });
+
+/** Streams the authorized invoice PDF and triggers a browser download. */
+export function useDownloadInvoice() {
+  return useMutation({
+    mutationFn: async (input: DownloadInvoiceInput) => {
+      const blob =
+        'orderId' in input
+          ? await accountRepository.downloadInvoice(input.orderId)
+          : await accountRepository.downloadGuestInvoice(input.orderNumber, input.email);
+      saveBlob(blob, `invoice-${input.orderNumber}.pdf`);
+    },
+    onError: (error) => {
+      toastErrorFrom(
+        error,
+        "We couldn't generate your invoice right now. Please try again in a moment.",
+        'invoice:download-error',
+      );
+    },
+  });
+}
+
 export function useTrackedOrder(number: string, email: string, enabled: boolean) {
   return useQuery({
     queryKey: accountKeys.trackedOrder(number, email),

@@ -6,6 +6,7 @@ import { InventoryModule } from '@/modules/inventory/inventory.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { PromotionsModule } from '@/modules/promotions/promotions.module';
 import { AdminOrdersController } from './admin-orders.controller';
+import { InvoicePdfService } from './invoice-pdf.service';
 import { OrdersController } from './orders.controller';
 import { OrdersRepository } from './orders.repository';
 import { OrdersService } from './orders.service';
@@ -20,7 +21,7 @@ import { OrdersService } from './orders.service';
     DeliveryPartnersModule,
   ],
   controllers: [OrdersController, AdminOrdersController],
-  providers: [OrdersRepository, OrdersService],
+  providers: [OrdersRepository, OrdersService, InvoicePdfService],
   exports: [OrdersService],
 })
 export class OrdersModule {}

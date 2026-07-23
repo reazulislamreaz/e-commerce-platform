@@ -9,6 +9,7 @@ export {
   SearchPageSkeleton,
   CartPageSkeleton,
   CheckoutPageSkeleton,
+  OrderSuccessSkeleton,
   WishlistPageSkeleton,
   AccountLayoutSkeleton,
   ProductRailSkeleton,

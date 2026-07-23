@@ -21,6 +21,7 @@ export {
   useAccountReturns,
   useAccountReviews,
   useCreateReturnRequest,
+  useDownloadInvoice,
   useCreateReview,
   useUpdateReview,
   useDeleteReview,

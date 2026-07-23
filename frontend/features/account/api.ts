@@ -75,6 +75,10 @@ export interface AccountRepository {
   getOrder(id: string): Promise<CustomerOrder>;
   placeOrderCheckout(input: PlaceOrderInput, idempotencyKey?: string): Promise<CustomerOrder>;
   trackOrder(number: string, email: string): Promise<CustomerOrder>;
+  /** Authenticated invoice PDF for an owned order. */
+  downloadInvoice(orderId: string): Promise<Blob>;
+  /** Guest invoice PDF via order number + email. */
+  downloadGuestInvoice(number: string, email: string): Promise<Blob>;
 
   getNotifications(params?: {
     cursor?: string;
@@ -170,6 +174,12 @@ export const localAccountRepository: LocalAccountRepository = {
   },
   async trackOrder() {
     return notSupported('trackOrder');
+  },
+  async downloadInvoice() {
+    return notSupported('downloadInvoice');
+  },
+  async downloadGuestInvoice() {
+    return notSupported('downloadGuestInvoice');
   },
   async getNotifications(params?: { cursor?: string; limit?: number; unreadOnly?: boolean }) {
     const items = getNotifications('');

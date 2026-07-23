@@ -103,6 +103,21 @@ export const httpAccountRepository: AccountRepository = {
     return getData<CustomerOrder>('/orders/track', { params: { number, email } });
   },
 
+  async downloadInvoice(orderId: string) {
+    const { data } = await apiClient.get<Blob>(`/orders/${orderId}/invoice`, {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  async downloadGuestInvoice(number: string, email: string) {
+    const { data } = await apiClient.get<Blob>('/orders/track/invoice', {
+      params: { number, email },
+      responseType: 'blob',
+    });
+    return data;
+  },
+
   async getNotifications(params?: { cursor?: string; limit?: number; unreadOnly?: boolean }) {
     return getPage<AccountNotification>('/notifications', {
       ...(params?.cursor ? { cursor: params.cursor } : {}),

@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Req,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -85,6 +86,20 @@ export class OrdersController {
     return this.orders.track(query);
   }
 
+  @Get('track/invoice')
+  @Public()
+  @ApiOperation({
+    summary: 'Download a guest invoice PDF by order number and email',
+    description:
+      'Public invoice download using the same number + email security model as order tracking.',
+  })
+  @ApiOkResponse({ description: 'PDF invoice stream' })
+  @ApiNotFoundResponse({ description: 'Order not found' })
+  async trackInvoice(@Query() query: TrackOrderQueryDto): Promise<StreamableFile> {
+    const file = await this.orders.getTrackedInvoice(query);
+    return this.toPdf(file);
+  }
+
   @Get()
   @Roles(Role.CUSTOMER, Role.ADMIN)
   @ApiBearerAuth()
@@ -94,6 +109,22 @@ export class OrdersController {
   @ApiForbiddenResponse({ description: 'Customer or admin role required' })
   listMine(@CurrentUser() actor: JwtPayload, @Query() query: ListOrdersQueryDto) {
     return this.orders.listMine(actor.sub, query);
+  }
+
+  @Get(':id/invoice')
+  @Roles(Role.CUSTOMER, Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Download the invoice PDF for an owned order' })
+  @ApiOkResponse({ description: 'PDF invoice stream' })
+  @ApiNotFoundResponse({ description: 'Order not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
+  @ApiForbiddenResponse({ description: 'Customer or admin role required' })
+  async invoice(
+    @CurrentUser() actor: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<StreamableFile> {
+    const file = await this.orders.getMineInvoice(actor.sub, id);
+    return this.toPdf(file);
   }
 
   @Get(':id')
@@ -106,6 +137,13 @@ export class OrdersController {
   @ApiForbiddenResponse({ description: 'Customer or admin role required' })
   getMine(@CurrentUser() actor: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     return this.orders.getMine(actor.sub, id);
+  }
+
+  private toPdf(file: { buffer: Buffer; fileName: string }): StreamableFile {
+    return new StreamableFile(file.buffer, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="${file.fileName}"`,
+    });
   }
 
   private readGuestToken(request: Request): string | undefined {

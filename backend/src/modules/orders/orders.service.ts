@@ -35,11 +35,14 @@ import type { CreateOrderDto } from './dto/create-order.dto';
 import type { ListOrdersQueryDto } from './dto/list-orders.query.dto';
 import type { OrderResponseDto, OrdersSummaryDto } from './dto/order-response.dto';
 import type { TrackOrderQueryDto } from './dto/track-order.query.dto';
+import { InvoicePdfService } from './invoice-pdf.service';
 import {
   OrdersRepository,
   type CheckoutVariantRecord,
   type OrderDetailRecord,
 } from './orders.repository';
+
+export type InvoiceFile = { buffer: Buffer; fileName: string };
 
 const IDEMPOTENCY_SCOPE_CREATE = 'orders:create';
 const TERMINAL_STATUSES = new Set<OrderStatus>([
@@ -96,6 +99,7 @@ export class OrdersService {
     private readonly notifications: NotificationsService,
     private readonly customerMetrics: CustomerMetricsService,
     private readonly deliveryPartners: DeliveryPartnersService,
+    private readonly invoicePdf: InvoicePdfService,
   ) {}
 
   computeCheckoutTotals(input: {
@@ -342,6 +346,23 @@ export class OrdersService {
     const order = await this.orders.findByNumberAndEmail(query.number, query.email);
     if (!order) throw new NotFoundException('Order not found');
     return this.toOrderResponse(order);
+  }
+
+  /** Authorized invoice for an owned order (ownership enforced by getMine). */
+  async getMineInvoice(userId: string, orderId: string): Promise<InvoiceFile> {
+    const order = await this.getMine(userId, orderId);
+    return this.renderInvoice(order);
+  }
+
+  /** Guest invoice via order number + email (same security model as track). */
+  async getTrackedInvoice(query: TrackOrderQueryDto): Promise<InvoiceFile> {
+    const order = await this.track(query);
+    return this.renderInvoice(order);
+  }
+
+  private async renderInvoice(order: OrderResponseDto): Promise<InvoiceFile> {
+    const buffer = await this.invoicePdf.generate(order);
+    return { buffer, fileName: `invoice-${order.number}.pdf` };
   }
 
   async listAdmin(query: ListOrdersQueryDto) {

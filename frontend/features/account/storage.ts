@@ -37,16 +37,19 @@ export interface OrderLineItem {
   name: string;
   slug: string;
   image: string;
+  sku?: string;
   size: string;
   color: string;
   quantity: number;
   unitPrice: number;
+  lineTotal?: number;
 }
 
 export interface CustomerOrder {
   id: string;
   number: string;
   createdAt: string;
+  updatedAt?: string;
   status: OrderStatus;
   items: OrderLineItem[];
   subtotal: number;
@@ -56,6 +59,9 @@ export interface CustomerOrder {
   couponCode?: string;
   shippingAddress: SavedAddress;
   paymentMethod: 'cod' | 'bkash' | 'card'; // bkash/card reserved until gateways ship
+  paymentStatus?: 'pending' | 'collected' | 'cancelled';
+  email?: string;
+  phone?: string;
   trackingNumber?: string;
   timeline: { label: string; at: string; done: boolean }[];
 }

@@ -245,6 +245,31 @@ export function CheckoutPageSkeleton() {
   );
 }
 
+export function OrderSuccessSkeleton() {
+  return (
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
+      <section className="mx-auto max-w-3xl px-5 py-10 sm:px-7 sm:py-14">
+        <div className="flex flex-col items-center text-center">
+          <Skeleton className="size-16 rounded-full" />
+          <Skeleton className="mt-5 h-3 w-28" />
+          <Skeleton className="mt-3 h-8 w-72 max-w-full" />
+          <Skeleton className="mt-3 h-4 w-80 max-w-full" />
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <Skeleton className="h-52 w-full rounded-lg" />
+          <Skeleton className="h-52 w-full rounded-lg" />
+        </div>
+        <Skeleton className="mt-4 h-56 w-full rounded-lg" />
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Skeleton className="h-11 w-40" />
+          <Skeleton className="h-11 w-36" />
+          <Skeleton className="h-11 w-36" />
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export function WishlistPageSkeleton() {
   return (
     <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true" aria-live="polite">
