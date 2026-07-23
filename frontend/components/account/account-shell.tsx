@@ -23,6 +23,7 @@ import { useAppSelector } from '@/store/hooks';
 import { useLogout } from '@/features/auth/hooks';
 import { displayName, useUnreadNotificationCount } from '@/features/account';
 import { AccountPanelSkeleton } from '@/components/common/skeleton';
+import { loginHref } from '@/lib/auth-redirect';
 import { cn } from '@/lib/utils';
 
 const nav: {
@@ -57,7 +58,7 @@ export function AccountShell({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (hydrated && !user) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      router.replace(loginHref(pathname, 'account'));
     }
   }, [hydrated, user, router, pathname]);
 

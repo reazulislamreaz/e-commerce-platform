@@ -11,11 +11,13 @@ import { useRegister } from '@/features/auth/hooks';
 import { registerSchema, type RegisterInput } from '@/features/auth/schemas';
 import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
 import { loginHref, resolvePostAuthPath } from '@/lib/auth-redirect';
+import { AuthReasonNotice } from '@/features/auth/components/auth-reason-notice';
 
 function RegisterFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next');
+  const reason = searchParams.get('reason');
   const registerMutation = useRegister();
   const {
     register,
@@ -38,6 +40,7 @@ function RegisterFormInner() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <AuthReasonNotice />
       <FormField
         label="Full name"
         hideLabel
@@ -108,7 +111,7 @@ function RegisterFormInner() {
       <p className="pt-2 text-center text-sm text-[#555555]">
         Already have an account?{' '}
         <Link
-          href={loginHref(next)}
+          href={loginHref(next, reason)}
           className="font-semibold text-[#C9A227] transition-colors hover:text-[#D4B03A]"
         >
           Sign In

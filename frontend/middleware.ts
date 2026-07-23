@@ -11,7 +11,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAccount = pathname.startsWith('/account');
   const isAdmin = pathname === '/admin' || pathname.startsWith('/admin/');
-  if (!isAccount && !isAdmin) return NextResponse.next();
+  const isWishlist = pathname === '/wishlist' || pathname.startsWith('/wishlist/');
+  if (!isAccount && !isAdmin && !isWishlist) return NextResponse.next();
 
   const hasRefresh = Boolean(request.cookies.get('refresh_token')?.value);
   const hasLocalHint = request.cookies.get(AUTH_HINT_COOKIE)?.value === '1';
@@ -20,10 +21,13 @@ export function middleware(request: NextRequest) {
 
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = '/login';
+  loginUrl.search = '';
   loginUrl.searchParams.set('next', pathname);
+  const reason = isWishlist ? 'wishlist' : isAccount ? 'account' : undefined;
+  if (reason) loginUrl.searchParams.set('reason', reason);
   return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  matcher: ['/account/:path*', '/admin', '/admin/:path*'],
+  matcher: ['/account/:path*', '/admin', '/admin/:path*', '/wishlist', '/wishlist/:path*'],
 };

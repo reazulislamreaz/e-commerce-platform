@@ -9,6 +9,7 @@ import { Star } from 'lucide-react';
 import { z } from 'zod';
 import { useAccountReviews, useCreateReview } from '@/features/account';
 import { getUserFacingErrorMessage } from '@/lib/user-facing-error';
+import { loginHref } from '@/lib/auth-redirect';
 import { cn } from '@/lib/utils';
 import { useAppSelector } from '@/store/hooks';
 import { selectAuthUser } from '@/store/selectors';
@@ -109,7 +110,7 @@ export function ProductWriteReview({ productId, productName }: ProductWriteRevie
     defaultValues: { rating: 0, body: '' },
   });
 
-  const loginHref = `/login?next=${encodeURIComponent(pathname)}`;
+  const signInHref = loginHref(pathname, 'review');
 
   if (!user) {
     return (
@@ -122,7 +123,7 @@ export function ProductWriteReview({ productId, productName }: ProductWriteRevie
           Sign in to rate {productName} and help other shoppers choose with confidence.
         </p>
         <Link
-          href={loginHref}
+          href={signInHref}
           className="mt-5 inline-flex border border-[#111111] bg-[#111111] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
         >
           Sign in to review

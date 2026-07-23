@@ -30,19 +30,62 @@ export function sanitizeNext(next: string | null | undefined): string | null {
   return next;
 }
 
-/** Builds `/login`, optionally carrying a sanitized `next` destination. */
-export function loginHref(next?: string | null): string {
+function withAuthParams(
+  base: '/login' | '/register',
+  next?: string | null,
+  reason?: string | null,
+) {
+  const params = new URLSearchParams();
   const safe = sanitizeNext(next);
-  return safe ? `/login?next=${encodeURIComponent(safe)}` : '/login';
+  if (safe) params.set('next', safe);
+  if (reason) params.set('reason', reason);
+  const query = params.toString();
+  return query ? `${base}?${query}` : base;
 }
 
-/** Builds `/register`, optionally carrying a sanitized `next` destination. */
-export function registerHref(next?: string | null): string {
-  const safe = sanitizeNext(next);
-  return safe ? `/register?next=${encodeURIComponent(safe)}` : '/register';
+/** Builds `/login`, optionally carrying a sanitized `next` destination and a reason. */
+export function loginHref(next?: string | null, reason?: string | null): string {
+  return withAuthParams('/login', next, reason);
+}
+
+/** Builds `/register`, optionally carrying a sanitized `next` destination and a reason. */
+export function registerHref(next?: string | null, reason?: string | null): string {
+  return withAuthParams('/register', next, reason);
 }
 
 /** Resolves where to send the user after a successful login/register. */
 export function resolvePostAuthPath(next: string | null | undefined, fallback = '/'): string {
   return sanitizeNext(next) ?? fallback;
+}
+
+/**
+ * Friendly, feature-specific prompts shown on the auth screens when a guest is
+ * redirected from a protected feature. Falls back to a generic prompt for any
+ * reason not listed here (keeps future protected features working without edits).
+ */
+const AUTH_REASON_MESSAGES: Record<string, string> = {
+  wishlist: 'Please sign in to save items to your wishlist.',
+  account: 'Please sign in to access your account.',
+  orders: 'Please sign in to view your orders.',
+  addresses: 'Please sign in to manage your saved addresses.',
+  profile: 'Please sign in to manage your profile.',
+  review: 'Please sign in to write a review.',
+  reorder: 'Please sign in to reorder previous purchases.',
+  loyalty: 'Please sign in to view your rewards.',
+  checkout: 'Sign in for faster checkout, or continue as a guest.',
+};
+
+const GENERIC_AUTH_MESSAGE = 'Please sign in to continue.';
+
+/**
+ * Resolves the prompt to show on the login/register screens. A known `reason`
+ * wins; otherwise a bare `next` (came from a protected route) shows the generic
+ * prompt; with neither, no banner is shown.
+ */
+export function authPromptMessage(
+  reason: string | null | undefined,
+  next?: string | null,
+): string | null {
+  if (reason) return AUTH_REASON_MESSAGES[reason] ?? GENERIC_AUTH_MESSAGE;
+  return next ? GENERIC_AUTH_MESSAGE : null;
 }

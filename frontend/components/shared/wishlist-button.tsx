@@ -1,10 +1,13 @@
 'use client';
 
 import { Heart } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { wishlistToggled } from '@/store/slices/wishlist-slice';
 import { selectAuthUser, selectIsWishlisted } from '@/store/selectors';
 import { addWishlistProduct, removeWishlistProduct } from '@/features/wishlist/api';
+import { addPendingWishlist } from '@/features/wishlist/pending';
+import { loginHref } from '@/lib/auth-redirect';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 
@@ -18,10 +21,25 @@ export function WishlistButton({
   variant?: 'overlay' | 'button';
 }) {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const pathname = usePathname();
   const wishlisted = useAppSelector(selectIsWishlisted(productId));
   const user = useAppSelector(selectAuthUser);
 
   const toggle = () => {
+    // Guests: never save before authenticating. Remember the intended product,
+    // send them to login preserving the current page, and complete the add
+    // automatically after a successful sign-in.
+    if (!user) {
+      addPendingWishlist(productId);
+      const search = typeof window !== 'undefined' ? window.location.search : '';
+      toast.info('Please sign in to save items to your wishlist.', {
+        dedupeKey: 'wishlist:auth',
+      });
+      router.push(loginHref(`${pathname}${search}`, 'wishlist'));
+      return;
+    }
+
     const nextWishlisted = !wishlisted;
     dispatch(wishlistToggled(productId));
     if (nextWishlisted) {
@@ -29,7 +47,6 @@ export function WishlistButton({
     } else {
       toast.info('Removed from wishlist.', { dedupeKey: `wishlist:remove:${productId}` });
     }
-    if (!user) return;
     void (nextWishlisted ? addWishlistProduct(productId) : removeWishlistProduct(productId)).catch(
       () => {
         dispatch(wishlistToggled(productId));

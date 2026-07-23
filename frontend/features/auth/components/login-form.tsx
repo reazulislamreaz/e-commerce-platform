@@ -11,11 +11,13 @@ import { useLogin } from '@/features/auth/hooks';
 import { loginSchema, type LoginInput } from '@/features/auth/schemas';
 import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
 import { registerHref, resolvePostAuthPath } from '@/lib/auth-redirect';
+import { AuthReasonNotice } from '@/features/auth/components/auth-reason-notice';
 
 function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next');
+  const reason = searchParams.get('reason');
   const login = useLogin();
   const [rememberMe, setRememberMe] = useState(true);
   const {
@@ -39,6 +41,7 @@ function LoginFormInner() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <AuthReasonNotice />
       <FormField
         label="Email"
         hideLabel
@@ -98,7 +101,7 @@ function LoginFormInner() {
       <p className="pt-2 text-center text-sm text-[#555555]">
         Doesn&apos;t have an account?{' '}
         <Link
-          href={registerHref(next)}
+          href={registerHref(next, reason)}
           className="font-semibold text-[#C9A227] transition-colors hover:text-[#D4B03A]"
         >
           Sign Up

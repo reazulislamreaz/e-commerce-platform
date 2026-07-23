@@ -7,7 +7,8 @@ import { authenticated, profileUpdated, signedOut } from '@/store/slices/auth-sl
 import { cartHydrated } from '@/store/slices/cart-slice';
 import { wishlistHydrated } from '@/store/slices/wishlist-slice';
 import { mergeServerCart, toReduxCartItems } from '@/features/cart/api';
-import { mergeWishlist } from '@/features/wishlist/api';
+import { addWishlistProduct, mergeWishlist } from '@/features/wishlist/api';
+import { clearPendingWishlist, readPendingWishlist } from '@/features/wishlist/pending';
 import { readStorage } from '@/lib/storage';
 import {
   changePassword,
@@ -32,7 +33,24 @@ async function mergeGuestCommerceState(dispatch: ReturnType<typeof useAppDispatc
 
   try {
     const localIds = readStorage<string[]>('wishlist', []);
-    const productIds = await mergeWishlist(localIds);
+    let productIds = await mergeWishlist(localIds);
+
+    // Complete any wishlist add a guest attempted before being asked to sign in.
+    const pending = readPendingWishlist();
+    if (pending.length > 0) {
+      for (const id of pending) {
+        if (!productIds.includes(id)) {
+          try {
+            productIds = await addWishlistProduct(id);
+          } catch {
+            // Skip an individual product that can no longer be saved.
+          }
+        }
+      }
+      clearPendingWishlist();
+      toast.success('Saved to your wishlist.', { dedupeKey: 'wishlist:pending' });
+    }
+
     dispatch(wishlistHydrated(productIds));
   } catch {
     // Ignore wishlist merge failures.
