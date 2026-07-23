@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CornerDownLeft, Search } from 'lucide-react';
 import { adminNavItems } from '@/components/admin/admin-nav';
 import { cn } from '@/lib/utils';
+import { useAppSelector } from '@/store/hooks';
+import { selectAuthUser } from '@/store/selectors';
 
 type SearchResult = {
   href: string;
@@ -13,11 +15,15 @@ type SearchResult = {
   icon?: (typeof adminNavItems)[number]['icon'];
 };
 
-function buildResults(query: string): SearchResult[] {
+function buildResults(query: string, role: string | undefined): SearchResult[] {
   const trimmed = query.trim();
   const lower = trimmed.toLowerCase();
 
   const destinations = adminNavItems
+    .filter(
+      (item) =>
+        !item.roles || (role ? item.roles.includes(role as 'SUPER_ADMIN' | 'ADMIN') : false),
+    )
     .filter(
       (item) =>
         !lower ||
@@ -53,13 +59,14 @@ function buildResults(query: string): SearchResult[] {
 
 export function AdminQuickSearch({ className }: { className?: string }) {
   const router = useRouter();
+  const user = useAppSelector(selectAuthUser);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const results = useMemo(() => buildResults(query), [query]);
+  const results = useMemo(() => buildResults(query, user?.role), [query, user?.role]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

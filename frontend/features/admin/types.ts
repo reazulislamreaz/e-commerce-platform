@@ -16,17 +16,49 @@ export type NewsletterStatus = 'ACTIVE' | 'UNSUBSCRIBED';
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 export type UserStatus = 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED';
 export type AdminRole = 'SUPER_ADMIN' | 'ADMIN' | 'CUSTOMER';
-export type CustomerSegment =
-  | 'NEW'
-  | 'ONE_TIME'
-  | 'ACTIVE'
-  | 'HIGH_VALUE'
-  | 'AT_RISK'
-  | 'DORMANT';
+export type CustomerSegment = 'NEW' | 'ONE_TIME' | 'ACTIVE' | 'HIGH_VALUE' | 'AT_RISK' | 'DORMANT';
 
 export type CursorPage<T> = {
   data: T[];
   meta: { limit: number; nextCursor: string | null };
+};
+
+export type OffsetPageMeta = {
+  page: number;
+  pageSize: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  nextCursor?: string | null;
+};
+
+export type OffsetPage<T> = {
+  data: T[];
+  meta: OffsetPageMeta;
+};
+
+export type UserListSort =
+  | 'CREATED_DESC'
+  | 'CREATED_ASC'
+  | 'NAME_ASC'
+  | 'NAME_DESC'
+  | 'LAST_LOGIN_DESC'
+  | 'ORDERS_DESC'
+  | 'SPENDING_DESC';
+
+export type BulkUserAction = 'ACTIVATE' | 'SUSPEND' | 'VERIFY' | 'SOFT_DELETE' | 'RESTORE';
+
+export type AdminUserListParams = {
+  page?: number;
+  limit?: number;
+  role?: AdminRole | string;
+  status?: UserStatus | string;
+  search?: string;
+  sort?: UserListSort | string;
+  createdFrom?: string;
+  createdTo?: string;
+  verified?: boolean;
+  deleted?: boolean;
 };
 
 export type AdminOrder = {
@@ -322,8 +354,88 @@ export type AdminUser = {
   status: UserStatus;
   firstName: string | null;
   lastName: string | null;
+  emailVerifiedAt?: string | null;
+  emailVerified: boolean;
+  registrationMethod: 'EMAIL';
+  lastLoginAt?: string | null;
+  orderCount: number;
+  totalSpending: number;
+  adminNotes?: string | null;
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AdminUserAddress = {
+  id: string;
+  label: string;
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  district: string;
+  postalCode: string;
+  country: string;
+  type: 'SHIPPING' | 'BILLING';
+  isDefault: boolean;
+};
+
+export type AdminUserDetail = AdminUser & {
+  shippingAddresses: AdminUserAddress[];
+  billingAddresses: AdminUserAddress[];
+  orders: Array<{
+    id: string;
+    number: string;
+    status: string;
+    itemCount: number;
+    total: number;
+    createdAt: string;
+  }>;
+  wishlist: Array<{
+    productId: string;
+    name: string;
+    slug: string;
+    imageUrl?: string;
+    addedAt: string;
+  }>;
+  reviews: Array<{
+    id: string;
+    productId: string;
+    productName: string;
+    productSlug: string;
+    rating: number;
+    title: string;
+    status: string;
+    createdAt: string;
+  }>;
+  activity: Array<{
+    id: string;
+    eventType: string;
+    title: string;
+    href?: string;
+    createdAt: string;
+  }>;
+  loginHistory: Array<{
+    id: string;
+    ip: string | null;
+    userAgent: string | null;
+    rememberMe: boolean;
+    createdAt: string;
+    lastSeenAt: string;
+    expiresAt: string;
+    revokedAt: string | null;
+    active: boolean;
+  }>;
+  auditTrail: Array<{
+    id: string;
+    action: string;
+    resourceType: string;
+    resourceId: string;
+    actorUserId: string | null;
+    actorRole: string | null;
+    createdAt: string;
+  }>;
 };
 
 export type AnalyticsOverview = {

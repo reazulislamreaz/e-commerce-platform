@@ -24,14 +24,18 @@ export class CrmService {
   ) {}
 
   async listCustomers(query: ListCustomersQueryDto) {
-    const rows = await this.crm.listCustomers(query);
-    const hasMore = rows.length > query.limit;
-    const page = hasMore ? rows.slice(0, query.limit) : rows;
+    const { rows, total } = await this.crm.listCustomers(query);
+    const pageSize = query.limit;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
     return {
-      data: page.map(toCustomerResponse),
+      data: rows.map(toCustomerResponse),
       meta: {
-        limit: query.limit,
-        nextCursor: hasMore ? page.at(-1)?.id ?? null : null,
+        page: query.page,
+        pageSize,
+        limit: pageSize,
+        total,
+        totalPages,
+        nextCursor: null,
       },
     };
   }
@@ -53,19 +57,17 @@ export class CrmService {
     const hasMore = rows.length > query.limit;
     const page = hasMore ? rows.slice(0, query.limit) : rows;
     return {
-      data: page.map(
-        (order): CustomerOrderHistoryDto => ({
-          id: order.id,
-          number: order.number,
-          status: order.status,
-          itemCount: order._count.items,
-          total: poishaToTaka(order.totalPoisha),
-          createdAt: order.createdAt.toISOString(),
-        }),
-      ),
+      data: page.map((order): CustomerOrderHistoryDto => ({
+        id: order.id,
+        number: order.number,
+        status: order.status,
+        itemCount: order._count.items,
+        total: poishaToTaka(order.totalPoisha),
+        createdAt: order.createdAt.toISOString(),
+      })),
       meta: {
         limit: query.limit,
-        nextCursor: hasMore ? page.at(-1)?.id ?? null : null,
+        nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
       },
     };
   }
@@ -76,21 +78,19 @@ export class CrmService {
     const hasMore = rows.length > query.limit;
     const page = hasMore ? rows.slice(0, query.limit) : rows;
     return {
-      data: page.map(
-        (event): CustomerActivityResponseDto => ({
-          id: event.id.toString(),
-          eventType: event.eventType,
-          title: event.title,
-          ...(event.href ? { href: event.href } : {}),
-          ...(event.metadata && typeof event.metadata === 'object' && !Array.isArray(event.metadata)
-            ? { metadata: event.metadata as Record<string, unknown> }
-            : {}),
-          createdAt: event.createdAt.toISOString(),
-        }),
-      ),
+      data: page.map((event): CustomerActivityResponseDto => ({
+        id: event.id.toString(),
+        eventType: event.eventType,
+        title: event.title,
+        ...(event.href ? { href: event.href } : {}),
+        ...(event.metadata && typeof event.metadata === 'object' && !Array.isArray(event.metadata)
+          ? { metadata: event.metadata as Record<string, unknown> }
+          : {}),
+        createdAt: event.createdAt.toISOString(),
+      })),
       meta: {
         limit: query.limit,
-        nextCursor: hasMore ? page.at(-1)?.id.toString() ?? null : null,
+        nextCursor: hasMore ? (page.at(-1)?.id.toString() ?? null) : null,
       },
     };
   }

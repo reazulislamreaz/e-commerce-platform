@@ -16,7 +16,11 @@ import type {
   AdminReviewStatus,
   AdminReturnStatus,
   AdminUser,
+  AdminUserDetail,
+  AdminUserListParams,
+  BulkUserAction,
   AnalyticsOverview,
+  OffsetPage,
   Bestseller,
   ContactMessage,
   ContactStatus,
@@ -49,13 +53,36 @@ async function getData<T>(path: string, config?: Parameters<typeof apiClient.get
 
 async function getPage<T>(
   path: string,
-  params?: Record<string, string | number | undefined>,
+  params?: Record<string, string | number | boolean | undefined>,
 ): Promise<CursorPage<T>> {
   const { data } = await apiClient.get<ApiResponse<T[]>>(path, { params });
   return {
     data: unwrapData(data),
     meta: {
       limit: Number(data.meta?.limit ?? params?.limit ?? 20),
+      nextCursor: (data.meta?.nextCursor as string | null | undefined) ?? null,
+    },
+  };
+}
+
+async function getOffsetPage<T>(
+  path: string,
+  params?: Record<string, string | number | boolean | undefined>,
+): Promise<OffsetPage<T>> {
+  const { data } = await apiClient.get<ApiResponse<T[]>>(path, { params });
+  const rows = unwrapData(data);
+  const pageSize = Number(data.meta?.pageSize ?? data.meta?.limit ?? params?.limit ?? 20);
+  const page = Number(data.meta?.page ?? params?.page ?? 1);
+  const total = Number(data.meta?.total ?? rows.length);
+  const totalPages = Number(data.meta?.totalPages ?? Math.max(1, Math.ceil(total / pageSize)));
+  return {
+    data: rows,
+    meta: {
+      page,
+      pageSize,
+      limit: pageSize,
+      total,
+      totalPages,
       nextCursor: (data.meta?.nextCursor as string | null | undefined) ?? null,
     },
   };
@@ -77,13 +104,13 @@ async function deleteData(path: string): Promise<void> {
 
 export const adminApi = {
   listCustomers(params?: {
-    cursor?: string;
+    page?: number;
     limit?: number;
     search?: string;
     segment?: CustomerSegment | string;
     sort?: 'RECENT' | 'HIGH_VALUE';
   }) {
-    return getPage<AdminCustomer>('/admin/customers', params);
+    return getOffsetPage<AdminCustomer>('/admin/customers', params);
   },
   getCustomer(id: string) {
     return getData<AdminCustomer>(`/admin/customers/${id}`);
@@ -347,22 +374,42 @@ export const adminApi = {
     return postData<NewsletterSubscription>(`/admin/newsletter/subscriptions/${id}/unsubscribe`);
   },
 
-  listUsers(params?: {
-    cursor?: string;
-    limit?: number;
-    role?: string;
-    status?: UserStatus | string;
-  }) {
-    return getPage<AdminUser>('/users', params);
+  listUsers(params?: AdminUserListParams) {
+    return getOffsetPage<AdminUser>('/users', {
+      ...params,
+      ...(params?.verified !== undefined ? { verified: params.verified } : {}),
+      ...(params?.deleted !== undefined ? { deleted: params.deleted } : {}),
+    });
   },
   getUser(id: string) {
     return getData<AdminUser>(`/users/${id}`);
+  },
+  getUserDetail(id: string) {
+    return getData<AdminUserDetail>(`/users/${id}/detail`);
+  },
+  updateUser(id: string, body: { firstName?: string; lastName?: string; phone?: string }) {
+    return patchData<AdminUser>(`/users/${id}`, body);
+  },
+  updateUserNotes(id: string, notes: string) {
+    return patchData<AdminUser>(`/users/${id}/notes`, { notes });
   },
   updateUserStatus(id: string, status: UserStatus) {
     return patchData<AdminUser>(`/users/${id}/status`, { status });
   },
   updateUserRole(id: string, role: 'ADMIN' | 'CUSTOMER') {
     return patchData<AdminUser>(`/users/${id}/role`, { role });
+  },
+  verifyUser(id: string) {
+    return postData<AdminUser>(`/users/${id}/verify`);
+  },
+  resetUserPassword(id: string) {
+    return postData<{ sent: boolean }>(`/users/${id}/reset-password`);
+  },
+  restoreUser(id: string) {
+    return postData<AdminUser>(`/users/${id}/restore`);
+  },
+  bulkUsers(body: { ids: string[]; action: BulkUserAction }) {
+    return postData<{ processed: number; skipped: string[] }>('/users/bulk', body);
   },
   createAdmin(body: {
     email: string;

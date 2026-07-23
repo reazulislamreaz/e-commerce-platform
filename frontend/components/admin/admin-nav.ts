@@ -10,6 +10,7 @@ import {
   Shirt,
   Star,
   Tag,
+  UserCog,
   UserRoundSearch,
   Users,
   Warehouse,
@@ -23,6 +24,8 @@ export type AdminNavItem = {
   exact?: boolean;
   /** Extra terms matched by the quick search. */
   keywords?: string[];
+  /** When set, item is shown only for these roles (Super Admin always sees all). */
+  roles?: Array<'SUPER_ADMIN' | 'ADMIN'>;
 };
 
 export const adminNavGroups: { label: string; items: AdminNavItem[] }[] = [
@@ -100,7 +103,14 @@ export const adminNavGroups: { label: string; items: AdminNavItem[] }[] = [
         href: '/admin/users',
         label: 'Users',
         icon: Users,
-        keywords: ['customers', 'accounts', 'admins'],
+        keywords: ['customers', 'accounts', 'user management'],
+      },
+      {
+        href: '/admin/staff',
+        label: 'Staff',
+        icon: UserCog,
+        keywords: ['admins', 'administrators', 'team', 'rbac'],
+        roles: ['SUPER_ADMIN'],
       },
       {
         href: '/admin/contact',

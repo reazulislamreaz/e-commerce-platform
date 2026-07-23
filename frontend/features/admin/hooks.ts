@@ -9,7 +9,6 @@ import type {
   AdminReviewStatus,
   ContactStatus,
   NewsletterStatus,
-  UserStatus,
 } from './types';
 
 const TAXONOMY_STALE_MS = 5 * 60 * 1000;
@@ -317,12 +316,7 @@ export function useAdminNewsletter(params?: {
   });
 }
 
-export function useAdminUsers(params?: {
-  cursor?: string;
-  limit?: number;
-  role?: string;
-  status?: UserStatus | string;
-}) {
+export function useAdminUsers(params?: import('./types').AdminUserListParams) {
   return useQuery({
     queryKey: adminKeys.users(params),
     queryFn: () => adminApi.listUsers(params),
@@ -331,8 +325,18 @@ export function useAdminUsers(params?: {
   });
 }
 
+export function useAdminUser(id: string | undefined) {
+  return useQuery({
+    queryKey: adminKeys.user(id ?? ''),
+    queryFn: () => adminApi.getUserDetail(id!),
+    enabled: Boolean(id),
+    staleTime: LIST_STALE_MS,
+    placeholderData: (previous) => previous,
+  });
+}
+
 export function useAdminCustomers(params?: {
-  cursor?: string;
+  page?: number;
   limit?: number;
   search?: string;
   segment?: string;

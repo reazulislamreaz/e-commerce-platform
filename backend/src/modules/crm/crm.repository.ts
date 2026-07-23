@@ -27,7 +27,7 @@ export type CustomerRecord = Prisma.UserGetPayload<{ select: typeof customerSele
 export class CrmRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  listCustomers(query: ListCustomersQueryDto): Promise<CustomerRecord[]> {
+  private customerWhere(query: ListCustomersQueryDto): Prisma.UserWhereInput {
     const search = query.search?.trim();
     const segmentFilter = query.segment
       ? query.segment === CustomerSegmentKey.NEW
@@ -39,30 +39,43 @@ export class CrmRepository {
           }
         : { customerMetric: { is: { segmentKey: query.segment } } }
       : {};
-    return this.prisma.user.findMany({
-      where: {
-        role: Role.CUSTOMER,
-        deletedAt: null,
-        ...segmentFilter,
-        ...(search
-          ? {
-              OR: [
-                { email: { contains: search, mode: 'insensitive' } },
-                { phone: { contains: search } },
-                { firstName: { contains: search, mode: 'insensitive' } },
-                { lastName: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
-      select: customerSelect,
-      orderBy:
-        query.sort === CustomerSort.HIGH_VALUE
-          ? [{ customerMetric: { lifetimeValuePoisha: 'desc' } }, { id: 'desc' }]
-          : [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: query.limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    });
+    return {
+      role: Role.CUSTOMER,
+      deletedAt: null,
+      ...segmentFilter,
+      ...(search
+        ? {
+            OR: [
+              { email: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search } },
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+  }
+
+  async listCustomers(query: ListCustomersQueryDto): Promise<{
+    rows: CustomerRecord[];
+    total: number;
+  }> {
+    const where = this.customerWhere(query);
+    const orderBy =
+      query.sort === CustomerSort.HIGH_VALUE
+        ? ([{ customerMetric: { lifetimeValuePoisha: 'desc' } }, { id: 'desc' }] as const)
+        : ([{ createdAt: 'desc' }, { id: 'desc' }] as const);
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        select: customerSelect,
+        orderBy: [...orderBy],
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      }),
+    ]);
+    return { rows, total };
   }
 
   findCustomer(id: string): Promise<CustomerRecord | null> {
@@ -102,9 +115,7 @@ export class CrmRepository {
       },
       orderBy: { id: 'desc' },
       take: query.limit + 1,
-      ...(query.cursor
-        ? { cursor: { id: BigInt(query.cursor) }, skip: 1 }
-        : {}),
+      ...(query.cursor ? { cursor: { id: BigInt(query.cursor) }, skip: 1 } : {}),
     });
   }
 
@@ -133,10 +144,7 @@ export class CrmRepository {
     const counts = new Map<CustomerSegmentKey, number>(
       grouped.map((row) => [row.segmentKey, row._count._all]),
     );
-    counts.set(
-      CustomerSegmentKey.NEW,
-      (counts.get(CustomerSegmentKey.NEW) ?? 0) + missingMetric,
-    );
+    counts.set(CustomerSegmentKey.NEW, (counts.get(CustomerSegmentKey.NEW) ?? 0) + missingMetric);
 
     return Object.values(CustomerSegmentKey).map((segmentKey) => ({
       segmentKey,

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { AdminPagination, type AdminPageSize } from '@/components/admin/admin-pagination';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
 import {
   AdminButton,
@@ -37,20 +38,26 @@ export default function AdminCustomersPage() {
   const [search, setSearch] = useState('');
   const [segment, setSegment] = useState<CustomerSegment | ''>('');
   const [sort, setSort] = useState<'RECENT' | 'HIGH_VALUE'>('RECENT');
-  const [cursor, setCursor] = useState<string>();
-  const [history, setHistory] = useState<Array<string | undefined>>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(20);
   const customers = useAdminCustomers({
-    limit: 25,
+    page,
+    limit: pageSize,
     ...(search ? { search } : {}),
     ...(segment ? { segment } : {}),
     sort,
-    ...(cursor ? { cursor } : {}),
   });
   const summary = useCustomerSegmentSummary();
+  const meta = customers.data?.meta ?? {
+    page,
+    pageSize,
+    limit: pageSize,
+    total: 0,
+    totalPages: 1,
+  };
 
   function resetPagination() {
-    setCursor(undefined);
-    setHistory([]);
+    setPage(1);
   }
 
   return (
@@ -138,7 +145,7 @@ export default function AdminCustomersPage() {
           <AdminEmpty>No customers match these filters.</AdminEmpty>
         ) : null}
         {(customers.data?.data.length ?? 0) > 0 ? (
-          <>
+          <div className={customers.isFetching ? 'opacity-70 transition-opacity' : undefined}>
             <AdminTable>
               <thead>
                 <tr>
@@ -183,30 +190,17 @@ export default function AdminCustomersPage() {
                 ))}
               </tbody>
             </AdminTable>
-            <div className="mt-4 flex justify-end gap-2">
-              <AdminButton
-                variant="secondary"
-                disabled={history.length === 0}
-                onClick={() => {
-                  const previous = history.at(-1);
-                  setHistory((items) => items.slice(0, -1));
-                  setCursor(previous);
-                }}
-              >
-                Previous
-              </AdminButton>
-              <AdminButton
-                variant="secondary"
-                disabled={!customers.data?.meta.nextCursor}
-                onClick={() => {
-                  setHistory((items) => [...items, cursor]);
-                  setCursor(customers.data?.meta.nextCursor ?? undefined);
-                }}
-              >
-                Next
-              </AdminButton>
-            </div>
-          </>
+            <AdminPagination
+              meta={meta}
+              entityLabel="customers"
+              isFetching={customers.isFetching && !customers.isLoading}
+              onPageChange={setPage}
+              onPageSizeChange={(next) => {
+                setPageSize(next);
+                resetPagination();
+              }}
+            />
+          </div>
         ) : null}
       </AdminPanel>
     </div>

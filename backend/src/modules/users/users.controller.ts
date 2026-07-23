@@ -26,12 +26,15 @@ import { Role } from '@/generated/prisma/client';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
+import { BulkUsersDto, BulkUsersResultDto } from './dto/bulk-users.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { ListUsersQueryDto } from './dto/list-users.query.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { UpdateUserNotesDto } from './dto/update-user-notes.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
-import { UserResponseDto } from './dto/user-response.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserDetailResponseDto, UserResponseDto } from './dto/user-response.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
@@ -48,8 +51,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Create an admin account (Super Admin only)' })
   @ApiCreatedResponse({ type: UserResponseDto })
   @ApiConflictResponse({ description: 'Email is already registered' })
-  createAdmin(@Body() dto: CreateAdminDto) {
-    return this.users.createAdmin(dto);
+  createAdmin(@CurrentUser() actor: JwtPayload, @Body() dto: CreateAdminDto) {
+    return this.users.createAdmin(actor, dto);
   }
 
   // `me` routes are declared before `:id` so the static segment wins routing.
@@ -75,20 +78,64 @@ export class UsersController {
 
   @Get()
   @ApiOperation({
-    summary: 'List users (cursor-paginated)',
-    description: 'Admins see customer accounts only; Super Admin sees every account.',
+    summary: 'List users (offset-paginated)',
+    description:
+      'Admins see customer accounts only; Super Admin sees every account and may filter by role. Supports search, status, date range, verification, sort, and soft-deleted restore lists.',
   })
   @ApiOkResponse({ type: [UserResponseDto] })
   list(@CurrentUser() actor: JwtPayload, @Query() query: ListUsersQueryDto) {
     return this.users.list(actor, query);
   }
 
+  @Post('bulk')
+  @ApiOperation({ summary: 'Apply a bulk action to multiple accounts' })
+  @ApiOkResponse({ type: BulkUsersResultDto })
+  bulk(@CurrentUser() actor: JwtPayload, @Body() dto: BulkUsersDto) {
+    return this.users.bulk(actor, dto);
+  }
+
   @Get(':id')
-  @ApiOperation({ summary: 'Get a user by id' })
+  @ApiOperation({ summary: 'Get a user by id (summary)' })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiNotFoundResponse({ description: 'User not found' })
   getById(@CurrentUser() actor: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     return this.users.getById(actor, id);
+  }
+
+  @Get(':id/detail')
+  @ApiOperation({
+    summary: 'Get a full user profile for admin management',
+    description:
+      'Includes addresses, orders, wishlist, reviews, activity, login history, notes, and audit trail.',
+  })
+  @ApiOkResponse({ type: UserDetailResponseDto })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  getDetail(@CurrentUser() actor: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
+    return this.users.getDetail(actor, id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Edit user profile fields (name, phone)' })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiConflictResponse({ description: 'Phone number is already registered' })
+  updateProfile(
+    @CurrentUser() actor: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserDto,
+  ) {
+    return this.users.updateProfile(actor, id, dto);
+  }
+
+  @Patch(':id/notes')
+  @ApiOperation({ summary: 'Update internal admin notes for an account' })
+  @ApiOkResponse({ type: UserResponseDto })
+  updateNotes(
+    @CurrentUser() actor: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserNotesDto,
+  ) {
+    return this.users.updateNotes(actor, id, dto.notes);
   }
 
   @Patch(':id/status')
@@ -124,12 +171,34 @@ export class UsersController {
     return this.users.updateRole(actor, id, dto.role);
   }
 
+  @Post(':id/verify')
+  @ApiOperation({ summary: 'Mark email verified and activate pending accounts' })
+  @ApiOkResponse({ type: UserResponseDto })
+  verify(@CurrentUser() actor: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
+    return this.users.verify(actor, id);
+  }
+
+  @Post(':id/reset-password')
+  @ApiOperation({ summary: 'Email a password-reset link to an active account' })
+  @ApiOkResponse({ description: 'Reset email queued when the account is eligible' })
+  sendPasswordReset(@CurrentUser() actor: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
+    return this.users.sendPasswordReset(actor, id);
+  }
+
+  @Post(':id/restore')
+  @ApiOperation({ summary: 'Restore a soft-deleted account' })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiConflictResponse({ description: 'Restored email or phone is already in use' })
+  restore(@CurrentUser() actor: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
+    return this.users.restore(actor, id);
+  }
+
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({
     summary: 'Soft-delete an account',
     description:
-      'Marks the account deleted, anonymizes the email, and revokes every session. Admins may only delete customers.',
+      'Marks the account deleted, anonymizes the email/phone (preserving originals for restore), and revokes every session. Admins may only delete customers.',
   })
   @ApiNoContentResponse()
   @ApiNotFoundResponse({ description: 'User not found' })

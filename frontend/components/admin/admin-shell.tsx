@@ -110,69 +110,77 @@ function NavLinks({
   pathname,
   collapsed,
   badges,
+  role,
   onNavigate,
 }: {
   pathname: string;
   collapsed: boolean;
   badges: Record<string, QueueBadge | undefined>;
+  role: Role;
   onNavigate?: () => void;
 }) {
   return (
     <nav aria-label="Admin" className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
-      {adminNavGroups.map((group) => (
-        <div key={group.label}>
-          {!collapsed ? (
-            <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-[#555555]">
-              {group.label}
-            </p>
-          ) : null}
-          <div className="space-y-0.5">
-            {group.items.map((item) => {
-              const active = item.exact
-                ? pathname === item.href
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
-              const Icon = item.icon;
-              const badge = badges[item.href];
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  title={collapsed ? item.label : undefined}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] font-semibold tracking-[.02em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]',
-                    collapsed && 'justify-center px-0',
-                    active
-                      ? 'bg-[#C9A227]/10 text-[#C9A227]'
-                      : 'text-[#555555] hover:bg-[#FAFAFA] hover:text-[#111111]',
-                  )}
-                >
-                  {active ? (
-                    <span
-                      aria-hidden
-                      className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-[#C9A227]"
-                    />
-                  ) : null}
-                  <Icon
+      {adminNavGroups.map((group) => {
+        const items = group.items.filter(
+          (item) => !item.roles || item.roles.includes(role as 'SUPER_ADMIN' | 'ADMIN'),
+        );
+        if (items.length === 0) return null;
+        return (
+          <div key={group.label}>
+            {!collapsed ? (
+              <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-[#555555]">
+                {group.label}
+              </p>
+            ) : null}
+            <div className="space-y-0.5">
+              {items.map((item) => {
+                const active = item.exact
+                  ? pathname === item.href
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const Icon = item.icon;
+                const badge = badges[item.href];
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onNavigate}
+                    title={collapsed ? item.label : undefined}
+                    aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'size-4 shrink-0 transition-colors',
-                      active ? 'text-[#C9A227]' : 'text-[#555555] group-hover:text-[#C9A227]',
+                      'group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] font-semibold tracking-[.02em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A227]',
+                      collapsed && 'justify-center px-0',
+                      active
+                        ? 'bg-[#C9A227]/10 text-[#C9A227]'
+                        : 'text-[#555555] hover:bg-[#FAFAFA] hover:text-[#111111]',
                     )}
-                    strokeWidth={1.6}
-                  />
-                  {!collapsed ? (
-                    <>
-                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                      {badge ? <NavBadge badge={badge} /> : null}
-                    </>
-                  ) : null}
-                </Link>
-              );
-            })}
+                  >
+                    {active ? (
+                      <span
+                        aria-hidden
+                        className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-[#C9A227]"
+                      />
+                    ) : null}
+                    <Icon
+                      className={cn(
+                        'size-4 shrink-0 transition-colors',
+                        active ? 'text-[#C9A227]' : 'text-[#555555] group-hover:text-[#C9A227]',
+                      )}
+                      strokeWidth={1.6}
+                    />
+                    {!collapsed ? (
+                      <>
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {badge ? <NavBadge badge={badge} /> : null}
+                      </>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }
@@ -410,6 +418,7 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
           pathname={pathname}
           collapsed={collapsed}
           badges={badges}
+          role={user.role}
           onNavigate={() => setMenuOpen(false)}
         />
         {!collapsed ? <ProTipCard /> : null}
@@ -470,6 +479,7 @@ function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) 
               pathname={pathname}
               collapsed={false}
               badges={badges}
+              role={user.role}
               onNavigate={() => setDrawerOpen(false)}
             />
             <ProTipCard />

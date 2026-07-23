@@ -1,6 +1,16 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { CustomerSegmentKey } from '@/generated/prisma/client';
 
 export enum CustomerSort {
@@ -9,10 +19,12 @@ export enum CustomerSort {
 }
 
 export class ListCustomersQueryDto {
-  @ApiPropertyOptional({ description: 'Customer id cursor from the previous page' })
+  @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
-  @IsUUID()
-  cursor?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page: number = 1;
 
   @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
   @IsOptional()

@@ -225,6 +225,11 @@ model User {
   firstName       String?
   lastName        String?
   emailVerifiedAt DateTime?  @db.Timestamptz(3)
+  /// Internal admin notes (not visible to the account holder).
+  adminNotes      String?    @db.Text
+  /// Original contact preserved on soft-delete so accounts can be restored.
+  deletedEmail    String?
+  deletedPhone    String?
   deletedAt       DateTime?  @db.Timestamptz(3)
   createdAt       DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime   @updatedAt @db.Timestamptz(3)
