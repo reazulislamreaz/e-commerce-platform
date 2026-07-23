@@ -29,12 +29,18 @@ import { loginHref, registerHref } from '@/lib/auth-redirect';
 
 const CHECKOUT_PATH = '/checkout';
 
+// Accepts local (01712345678) and international (+8801712345678 / 8801712345678)
+// Bangladeshi mobile formats. Operator prefix must be 013–019.
+const BD_MOBILE_REGEX = /^(?:\+?880|0)1[3-9]\d{8}$/;
+
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(80),
-  phone: z.string().min(10, 'Enter a valid phone number').max(20),
+  phone: z
+    .string()
+    .trim()
+    .regex(BD_MOBILE_REGEX, 'Enter a valid Bangladeshi mobile number (e.g. 01712345678)'),
   email: z.email(),
   line1: z.string().min(3, 'Address is required').max(120),
-  line2: z.string().max(120).optional(),
   city: z.string().min(2).max(80),
   district: z.string().min(2).max(80),
   postalCode: z.string().min(3).max(20),
@@ -46,15 +52,11 @@ type CheckoutInput = z.infer<typeof checkoutSchema>;
 
 function addressFields(
   address: SavedAddress,
-): Pick<
-  CheckoutInput,
-  'fullName' | 'phone' | 'line1' | 'line2' | 'city' | 'district' | 'postalCode'
-> {
+): Pick<CheckoutInput, 'fullName' | 'phone' | 'line1' | 'city' | 'district' | 'postalCode'> {
   return {
     fullName: address.fullName,
     phone: address.phone,
     line1: address.line1,
-    line2: address.line2 ?? '',
     city: address.city,
     district: address.district,
     postalCode: address.postalCode,
@@ -256,7 +258,6 @@ export function CheckoutClient() {
           phone: values.phone,
           email: values.email,
           line1: values.line1,
-          line2: values.line2,
           city: values.city,
           district: values.district,
           postalCode: values.postalCode,
@@ -468,7 +469,14 @@ export function CheckoutClient() {
                 error={errors.fullName?.message}
                 {...register('fullName')}
               />
-              <FormField label="Phone" error={errors.phone?.message} {...register('phone')} />
+              <FormField
+                label="Phone"
+                type="tel"
+                inputMode="tel"
+                placeholder="01712345678"
+                error={errors.phone?.message}
+                {...register('phone')}
+              />
               <div className="sm:col-span-2">
                 <FormField
                   label="Email"
@@ -484,19 +492,11 @@ export function CheckoutClient() {
                   {...register('line1')}
                 />
               </div>
-              <div className="sm:col-span-2">
-                <FormField label="Address line 2 (optional)" {...register('line2')} />
-              </div>
               <FormField label="City" error={errors.city?.message} {...register('city')} />
               <FormField
                 label="District"
                 error={errors.district?.message}
                 {...register('district')}
-              />
-              <FormField
-                label="Postal code"
-                error={errors.postalCode?.message}
-                {...register('postalCode')}
               />
               <div className="sm:col-span-2">
                 <FormField
