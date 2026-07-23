@@ -19,6 +19,11 @@ import { accountRepository, useAccountAddresses, type SavedAddress } from '@/fea
 import { useProductsByIds } from '@/features/products';
 import { trackInitiateCheckout } from '@/features/analytics/facebook-pixel';
 import { setCartRecoveryEmail } from '@/features/cart/api';
+import {
+  clearAppliedCoupon,
+  readAppliedCoupon,
+  writeAppliedCoupon,
+} from '@/features/cart/coupon-storage';
 import { createClientId } from '@/lib/client-id';
 import { loginHref, registerHref } from '@/lib/auth-redirect';
 
@@ -79,6 +84,7 @@ export function CheckoutClient() {
   const [idempotencyKey, setIdempotencyKey] = useState(() => createClientId());
   const defaultAddressApplied = useRef(false);
   const lastCouponSubtotal = useRef<number | null>(null);
+  const couponRestoreAttempted = useRef(false);
 
   const lines = useMemo(() => resolveCartLines(items, products.data ?? []), [items, products.data]);
   const checkoutTracked = useRef(false);
@@ -156,8 +162,31 @@ export function CheckoutClient() {
       setAppliedCode(undefined);
       setCouponError(null);
       lastCouponSubtotal.current = null;
+      clearAppliedCoupon();
     }
   }, [subtotal, appliedCode]);
+
+  // Restore a previously-applied coupon after a refresh or login-during-checkout,
+  // re-validating it against the current bag so it only sticks while still valid.
+  useEffect(() => {
+    if (couponRestoreAttempted.current) return;
+    if (!user || appliedCode || lines.length === 0) return;
+    const savedCode = readAppliedCoupon();
+    if (!savedCode) return;
+    couponRestoreAttempted.current = true;
+    void (async () => {
+      try {
+        const result = await accountRepository.validateCoupon(savedCode, subtotal);
+        setDiscount(result.discount);
+        setShippingWaived(result.shippingWaived);
+        setAppliedCode(result.code);
+        setCouponCode(result.code);
+        lastCouponSubtotal.current = subtotal;
+      } catch {
+        clearAppliedCoupon();
+      }
+    })();
+  }, [user, appliedCode, lines.length, subtotal]);
 
   const applySavedAddress = (address: SavedAddress) => {
     setSelectedAddressId(address.id);
@@ -185,6 +214,7 @@ export function CheckoutClient() {
       setShippingWaived(result.shippingWaived);
       setAppliedCode(result.code);
       lastCouponSubtotal.current = subtotal;
+      writeAppliedCoupon(result.code);
       toast.success(`Coupon ${result.code} applied.`, { dedupeKey: 'checkout:coupon-apply' });
     } catch (error: unknown) {
       const message = toastFromError(
@@ -196,6 +226,7 @@ export function CheckoutClient() {
       setShippingWaived(false);
       setAppliedCode(undefined);
       lastCouponSubtotal.current = null;
+      clearAppliedCoupon();
       toast.error(message, { dedupeKey: 'checkout:coupon-error' });
     } finally {
       setCouponPending(false);
@@ -241,6 +272,7 @@ export function CheckoutClient() {
       );
 
       dispatch(cartCleared());
+      clearAppliedCoupon();
       setIdempotencyKey(createClientId());
       toast.success(`Order #${order.number} placed successfully.`, {
         dedupeKey: `checkout:order:${order.id}`,

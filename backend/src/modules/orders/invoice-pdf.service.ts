@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import PDFDocument from 'pdfkit';
 import { takaInWords } from '@/common/utils/taka-in-words';
 import type { OrderResponseDto } from './dto/order-response.dto';
+import { INVOICE_LOGO, INVOICE_LOGO_HEIGHT, INVOICE_LOGO_WIDTH } from './invoice-logo';
 
 interface InvoiceBranding {
   legalName: string;
@@ -110,20 +111,16 @@ export class InvoicePdfService {
   ): void {
     const top = PAGE_MARGIN;
 
-    // Brand wordmark (typographic — no external asset dependency).
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(21)
-      .fillColor(COLOR.ink)
-      .text('ELEVATE', PAGE_MARGIN, top, { continued: true })
-      .fillColor(COLOR.gold)
-      .text(' APPAREL');
+    // Real Elevate Apparel brand logo (embedded PNG, on-light colorway).
+    const logoWidth = 172;
+    const logoHeight = (logoWidth * INVOICE_LOGO_HEIGHT) / INVOICE_LOGO_WIDTH;
+    doc.image(INVOICE_LOGO, PAGE_MARGIN, top, { width: logoWidth });
 
     doc
       .font('Helvetica')
       .fontSize(8.5)
       .fillColor(COLOR.muted)
-      .text(branding.legalName, PAGE_MARGIN, top + 26)
+      .text(branding.legalName, PAGE_MARGIN, top + logoHeight + 10)
       .text(branding.address)
       .text(`${branding.supportPhone}  |  ${branding.supportEmail}`)
       .text(branding.website);

@@ -10,8 +10,8 @@ import { normalizeProduct } from '@/features/products/types';
 import { trackAddToCart, trackViewContent } from '@/features/analytics/facebook-pixel';
 import { ProductActionButtons } from '@/components/product/product-action-buttons';
 import { ProductBelowFold } from '@/components/product/product-below-fold';
+import { ProductGallery } from '@/components/product/product-gallery';
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
-import { WishlistButton } from '@/components/shared/wishlist-button';
 import { ProductImage } from '@/components/common/product-image';
 import { useCartMutations } from '@/features/cart/hooks';
 import { useCartUi } from '@/components/cart/cart-ui-context';
@@ -32,7 +32,6 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
   const [size, setSize] = useState(p.sizes[0] ?? 'M');
   const [color, setColor] = useState(p.color);
   const [qty, setQty] = useState(1);
-  const [zoom, setZoom] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [coarsePointer, setCoarsePointer] = useState(false);
 
@@ -122,72 +121,18 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
         />
 
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          <div>
-            <div
-              ref={imageBoxRef}
-              className={`relative overflow-hidden rounded-[4px] bg-[#e4e3e1] ${
-                coarsePointer ? 'cursor-zoom-in' : ''
-              }`}
-              onMouseEnter={() => {
-                if (!coarsePointer) setZoom(true);
-              }}
-              onMouseLeave={() => setZoom(false)}
-              onClick={() => {
-                if (coarsePointer) setLightboxOpen(true);
-              }}
-              onKeyDown={(e) => {
-                if (!coarsePointer) return;
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setLightboxOpen(true);
-                }
-              }}
-              role={coarsePointer ? 'button' : undefined}
-              tabIndex={coarsePointer ? 0 : undefined}
-              aria-label={coarsePointer ? `Enlarge image of ${p.name}` : undefined}
-            >
-              <ProductImage
-                src={p.images[activeImage] ?? p.image}
-                alt={p.imageAlts?.[activeImage] ?? p.name}
-                width={800}
-                height={1000}
-                priority
-                className={`pointer-events-none aspect-[.8] h-auto w-full object-cover transition-transform duration-300 ${
-                  zoom && !coarsePointer ? 'scale-110' : 'scale-100'
-                }`}
-              />
-              {discount > 0 && (
-                <span className="absolute left-3 top-3 z-10 bg-[#C9A227] px-2.5 py-1 text-[11px] font-bold text-[#111111]">
-                  -{discount}%
-                </span>
-              )}
-              <WishlistButton productId={p.id} variant="overlay" />
-            </div>
-            {p.images.length > 1 && (
-              <div className="mt-3 flex gap-2 overflow-x-auto">
-                {p.images.map((src, index) => (
-                  <button
-                    key={src}
-                    type="button"
-                    onClick={() => setActiveImage(index)}
-                    aria-pressed={index === activeImage}
-                    className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-[4px] border ${
-                      index === activeImage ? 'border-[#C9A227]' : 'border-transparent'
-                    }`}
-                  >
-                    <ProductImage
-                      src={src}
-                      alt={p.imageAlts?.[index] ?? `${p.name} view ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                      containerClassName="absolute inset-0"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProductGallery
+            images={p.images}
+            imageAlts={p.imageAlts}
+            productName={p.name}
+            productId={p.id}
+            discount={discount}
+            activeIndex={activeImage}
+            onActiveIndexChange={setActiveImage}
+            onOpenLightbox={() => setLightboxOpen(true)}
+            zoomEnabled={!coarsePointer}
+            containerRef={imageBoxRef}
+          />
 
           <div className="flex flex-col">
             <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C9A227]">

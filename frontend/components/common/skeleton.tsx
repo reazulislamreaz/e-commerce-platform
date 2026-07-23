@@ -45,13 +45,13 @@ export function ProductDetailSkeleton() {
       <section className="mx-auto max-w-[1400px] px-5 py-6 sm:px-7 lg:py-10">
         <Skeleton className="mb-6 h-3 w-48" />
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          <div>
-            <Skeleton className="aspect-[.8] w-full rounded-[4px] bg-[#e4e3e1]/20" />
-            <div className="mt-3 flex gap-2">
+          <div className="flex gap-3">
+            <div className="hidden flex-col gap-2 md:flex">
               {Array.from({ length: 4 }, (_, i) => (
-                <Skeleton key={i} className="h-20 w-16 shrink-0" />
+                <Skeleton key={i} className="aspect-[.8] w-16 shrink-0" />
               ))}
             </div>
+            <Skeleton className="aspect-[.8] w-full flex-1 rounded-[4px] bg-[#e4e3e1]/20" />
           </div>
           <div className="flex flex-col gap-3">
             <Skeleton className="h-3 w-32" />
