@@ -288,7 +288,7 @@ export class ReportsRepository {
         o."createdAt"                                 AS "orderDate"
       FROM customer_order o
       LEFT JOIN "User" u ON u.id = o."userId"
-      LEFT JOIN address a ON a.id = o."shippingAddressId"
+      LEFT JOIN order_address a ON a."orderId" = o.id
       LEFT JOIN shipment s ON s."orderId" = o.id
       LEFT JOIN delivery_partner dp ON dp.id = s."deliveryPartnerId"
       LEFT JOIN LATERAL (

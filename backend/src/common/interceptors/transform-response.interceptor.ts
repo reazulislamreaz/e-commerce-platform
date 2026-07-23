@@ -1,4 +1,10 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  StreamableFile,
+} from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 
 export interface ApiSuccessResponse {
@@ -29,9 +35,16 @@ function hasEnvelopeShape(value: unknown): value is EnvelopeHints {
 
 @Injectable()
 export class TransformResponseInterceptor implements NestInterceptor {
-  intercept(_: ExecutionContext, next: CallHandler): Observable<ApiSuccessResponse> {
+  intercept(
+    _: ExecutionContext,
+    next: CallHandler,
+  ): Observable<ApiSuccessResponse | StreamableFile> {
     return next.handle().pipe(
-      map((payload: unknown): ApiSuccessResponse => {
+      map((payload: unknown): ApiSuccessResponse | StreamableFile => {
+        // StreamableFile must pass through untransformed so NestJS streams
+        // the raw file bytes instead of serialising the object as JSON.
+        if (payload instanceof StreamableFile) return payload;
+
         if (hasEnvelopeShape(payload)) {
           return {
             success: true,
