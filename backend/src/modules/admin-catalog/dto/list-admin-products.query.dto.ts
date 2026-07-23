@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { ProductStatus } from '@/generated/prisma/client';
+import { OffsetPaginationQueryDto } from '@/common/pagination/offset-pagination.query.dto';
 
 export enum AdminProductSort {
   UPDATED_DESC = 'UPDATED_DESC',
@@ -19,20 +19,7 @@ export enum AdminStockFilter {
   OUT_OF_STOCK = 'OUT_OF_STOCK',
 }
 
-export class ListAdminProductsQueryDto {
-  @ApiPropertyOptional({ description: 'Cursor: id of the last item from the previous page' })
-  @IsOptional()
-  @IsUUID()
-  cursor?: string;
-
-  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit: number = 20;
-
+export class ListAdminProductsQueryDto extends OffsetPaginationQueryDto {
   @ApiPropertyOptional({ enum: ProductStatus })
   @IsOptional()
   @IsEnum(ProductStatus)

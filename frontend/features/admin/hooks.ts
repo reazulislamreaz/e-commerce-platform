@@ -53,7 +53,8 @@ export const adminKeys = {
   inventoryLocations: () => [...adminKeys.all, 'inventory-locations'] as const,
   stockAlerts: (params?: Record<string, unknown>) =>
     [...adminKeys.all, 'stock-alerts', params ?? {}] as const,
-  coupons: () => [...adminKeys.all, 'coupons'] as const,
+  coupons: (params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'coupons', params ?? {}] as const,
   coupon: (id: string) => [...adminKeys.all, 'coupon', id] as const,
   couponRedemptions: (id: string, params?: Record<string, unknown>) =>
     [...adminKeys.all, 'coupon', id, 'redemptions', params ?? {}] as const,
@@ -144,7 +145,7 @@ export function useActiveDeliveryPartners() {
   });
 }
 
-export function useAdminReturns(params?: { cursor?: string; limit?: number; status?: string }) {
+export function useAdminReturns(params?: { page?: number; limit?: number; status?: string }) {
   return useQuery({
     queryKey: adminKeys.returns(params),
     queryFn: () => adminApi.listReturns(params),
@@ -164,7 +165,7 @@ export function useAdminReturn(id: string | undefined) {
 }
 
 export function useAdminReviews(params?: {
-  cursor?: string;
+  page?: number;
   limit?: number;
   status?: AdminReviewStatus | string;
 }) {
@@ -187,7 +188,7 @@ export function useAdminReview(id: string | undefined) {
 }
 
 export function useInventoryBalances(params?: {
-  cursor?: string;
+  page?: number;
   limit?: number;
   variantId?: string;
   locationId?: string;
@@ -209,7 +210,7 @@ export function useInventoryLocations() {
   });
 }
 
-export function useStockAlerts(params?: { limit?: number }) {
+export function useStockAlerts(params?: { page?: number; limit?: number }) {
   return useQuery({
     queryKey: adminKeys.stockAlerts(params),
     queryFn: () => adminApi.listStockAlerts(params),
@@ -235,7 +236,7 @@ export function useInventoryMovements(params?: {
 
 export function useCouponRedemptions(
   id: string | undefined,
-  params?: { cursor?: string; limit?: number },
+  params?: { page?: number; limit?: number },
 ) {
   return useQuery({
     queryKey: adminKeys.couponRedemptions(id ?? '', params),
@@ -262,12 +263,12 @@ export function useProductInventoryBalances(variantIds: string[]) {
   });
 }
 
-export function useAdminCoupons() {
+export function useAdminCoupons(params?: { page?: number; limit?: number }) {
   return useQuery({
-    queryKey: adminKeys.coupons(),
-    queryFn: () => adminApi.listCoupons(),
+    queryKey: adminKeys.coupons(params),
+    queryFn: () => adminApi.listCoupons(params),
     staleTime: LIST_STALE_MS,
-    placeholderData: (previous) => previous,
+    placeholderData: keepPrevious,
   });
 }
 
@@ -324,7 +325,7 @@ export function useAdminCollections() {
 }
 
 export function useAdminContact(params?: {
-  cursor?: string;
+  page?: number;
   limit?: number;
   status?: ContactStatus | string;
 }) {
@@ -337,7 +338,7 @@ export function useAdminContact(params?: {
 }
 
 export function useAdminNewsletter(params?: {
-  cursor?: string;
+  page?: number;
   limit?: number;
   status?: NewsletterStatus | string;
 }) {

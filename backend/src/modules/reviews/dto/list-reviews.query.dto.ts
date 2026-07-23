@@ -2,12 +2,23 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 import { ReviewStatus } from '@/generated/prisma/client';
+import { OffsetPaginationQueryDto } from '@/common/pagination/offset-pagination.query.dto';
 
 function normalizeReviewStatus(value: unknown): unknown {
   if (typeof value !== 'string') return value;
   return value.trim().toUpperCase();
 }
 
+/** Admin review queue uses offset (numbered) pagination. */
+export class ListAdminReviewsQueryDto extends OffsetPaginationQueryDto {
+  @ApiPropertyOptional({ enum: ReviewStatus })
+  @IsOptional()
+  @Transform(({ value }) => normalizeReviewStatus(value))
+  @IsEnum(ReviewStatus)
+  status?: ReviewStatus;
+}
+
+/** Storefront "my reviews" keeps cursor pagination (infinite scroll). */
 export class ListReviewsQueryDto {
   @ApiPropertyOptional({ description: 'Cursor: id of the last review from the previous page' })
   @IsOptional()

@@ -268,6 +268,23 @@ export type InventoryMovement = {
   createdAt: string;
 };
 
+export type StockAlert = {
+  id: string;
+  level: 'LOW' | 'OUT';
+  available: number;
+  threshold: number;
+  createdAt: string;
+  variantId: string;
+  sku: string;
+  size: string;
+  color: string;
+  locationId: string;
+  locationCode: string;
+  locationName: string;
+  onHand: number;
+  reserved: number;
+};
+
 export type AdminCoupon = {
   id: string;
   code: string;
@@ -296,7 +313,7 @@ export type AdminProductSort =
 export type AdminStockFilter = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
 
 export type AdminProductListParams = {
-  cursor?: string;
+  page?: number;
   limit?: number;
   status?: ProductStatus | string;
   q?: string;

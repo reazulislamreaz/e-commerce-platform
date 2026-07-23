@@ -42,6 +42,7 @@ import type {
   ReportExportJob,
   ReportExportType,
   SalesPoint,
+  StockAlert,
   CustomerAnalytics,
   UpdateAdminProductInput,
   UserStatus,
@@ -220,8 +221,8 @@ export const adminApi = {
     );
   },
 
-  listReturns(params?: { cursor?: string; limit?: number; status?: string }) {
-    return getPage<AdminReturn>('/admin/returns', params);
+  listReturns(params?: { page?: number; limit?: number; status?: string }) {
+    return getOffsetPage<AdminReturn>('/admin/returns', params);
   },
   getReturn(id: string) {
     return getData<AdminReturn>(`/admin/returns/${id}`);
@@ -236,8 +237,8 @@ export const adminApi = {
     return postData<AdminReturn>(`/admin/returns/${id}/complete`, { note });
   },
 
-  listReviews(params?: { cursor?: string; limit?: number; status?: AdminReviewStatus | string }) {
-    return getPage<AdminReview>('/admin/reviews', params);
+  listReviews(params?: { page?: number; limit?: number; status?: AdminReviewStatus | string }) {
+    return getOffsetPage<AdminReview>('/admin/reviews', params);
   },
   getReview(id: string) {
     return getData<AdminReview>(`/admin/reviews/${id}`);
@@ -250,12 +251,12 @@ export const adminApi = {
   },
 
   listInventoryBalances(params?: {
-    cursor?: string;
+    page?: number;
     limit?: number;
     variantId?: string;
     locationId?: string;
   }) {
-    return getPage<InventoryBalance>('/admin/inventory/balances', params);
+    return getOffsetPage<InventoryBalance>('/admin/inventory/balances', params);
   },
   listInventoryMovements(params?: { cursor?: string; limit?: number; variantId?: string }) {
     return getPage<InventoryMovement>('/admin/inventory/movements', params);
@@ -263,25 +264,8 @@ export const adminApi = {
   listInventoryLocations() {
     return getData<InventoryLocation[]>('/admin/inventory/locations');
   },
-  listStockAlerts(params?: { limit?: number }) {
-    return getData<
-      Array<{
-        id: string;
-        level: 'LOW' | 'OUT';
-        available: number;
-        threshold: number;
-        createdAt: string;
-        variantId: string;
-        sku: string;
-        size: string;
-        color: string;
-        locationId: string;
-        locationCode: string;
-        locationName: string;
-        onHand: number;
-        reserved: number;
-      }>
-    >('/admin/inventory/alerts', { params });
+  listStockAlerts(params?: { page?: number; limit?: number }) {
+    return getOffsetPage<StockAlert>('/admin/inventory/alerts', params);
   },
   adjustInventory(body: {
     variantId: string;
@@ -294,8 +278,8 @@ export const adminApi = {
     return postData<{ success: true }>('/admin/inventory/adjustments', body);
   },
 
-  listCoupons() {
-    return getData<AdminCoupon[]>('/admin/coupons');
+  listCoupons(params?: { page?: number; limit?: number }) {
+    return getOffsetPage<AdminCoupon>('/admin/coupons', params);
   },
   getCoupon(id: string) {
     return getData<AdminCoupon>(`/admin/coupons/${id}`);
@@ -309,8 +293,8 @@ export const adminApi = {
   deactivateCoupon(id: string) {
     return postData<AdminCoupon>(`/admin/coupons/${id}/deactivate`);
   },
-  listCouponRedemptions(id: string, params?: { cursor?: string; limit?: number }) {
-    return getPage<{
+  listCouponRedemptions(id: string, params?: { page?: number; limit?: number }) {
+    return getOffsetPage<{
       id: string;
       orderId: string;
       userId?: string | null;
@@ -321,7 +305,7 @@ export const adminApi = {
   },
 
   listProducts(params?: AdminProductListParams) {
-    return getPage<AdminProductSummary>('/admin/products', params);
+    return getOffsetPage<AdminProductSummary>('/admin/products', params);
   },
   getProductStats() {
     return getData<AdminProductStats>('/admin/products/stats');
@@ -417,23 +401,19 @@ export const adminApi = {
     return deleteData(`/admin/collections/${id}`);
   },
 
-  listContactMessages(params?: {
-    cursor?: string;
-    limit?: number;
-    status?: ContactStatus | string;
-  }) {
-    return getPage<ContactMessage>('/admin/contact-messages', params);
+  listContactMessages(params?: { page?: number; limit?: number; status?: ContactStatus | string }) {
+    return getOffsetPage<ContactMessage>('/admin/contact-messages', params);
   },
   updateContactMessage(id: string, body: { status?: ContactStatus; adminNotes?: string }) {
     return patchData<ContactMessage>(`/admin/contact-messages/${id}`, body);
   },
 
   listNewsletterSubscriptions(params?: {
-    cursor?: string;
+    page?: number;
     limit?: number;
     status?: NewsletterStatus | string;
   }) {
-    return getPage<NewsletterSubscription>('/admin/newsletter/subscriptions', params);
+    return getOffsetPage<NewsletterSubscription>('/admin/newsletter/subscriptions', params);
   },
   forceUnsubscribe(id: string) {
     return postData<NewsletterSubscription>(`/admin/newsletter/subscriptions/${id}/unsubscribe`);

@@ -3,6 +3,7 @@
 import { toast } from '@/lib/toast';
 import { useMemo, useState, type FormEvent } from 'react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
+import { AdminPagination, type AdminPageSize } from '@/components/admin/admin-pagination';
 import {
   AdminButton,
   AdminEmpty,
@@ -43,37 +44,27 @@ function CouponRedemptionsPanel({
   couponId: string;
   couponCode: string;
 }) {
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [priorRows, setPriorRows] = useState<
-    Array<{
-      id: string;
-      orderId: string;
-      userId?: string | null;
-      discountTaka: number;
-      shippingWaived: boolean;
-      createdAt: string;
-    }>
-  >([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(20);
 
   const queryParams = useMemo(
     () => ({
-      limit: 20,
-      ...(cursor ? { cursor } : {}),
+      page,
+      limit: pageSize,
     }),
-    [cursor],
+    [page, pageSize],
   );
 
   const redemptionsQuery = useCouponRedemptions(couponId, queryParams);
-  const pageRows = redemptionsQuery.data?.data ?? [];
-  const rows = cursor ? [...priorRows, ...pageRows] : pageRows;
-  const nextCursor = redemptionsQuery.data?.meta.nextCursor ?? null;
-  const showInitialLoading = redemptionsQuery.isLoading && !cursor && rows.length === 0;
-
-  function loadMore() {
-    if (!redemptionsQuery.data?.meta.nextCursor) return;
-    setPriorRows(cursor ? [...priorRows, ...pageRows] : pageRows);
-    setCursor(redemptionsQuery.data.meta.nextCursor);
-  }
+  const rows = redemptionsQuery.data?.data ?? [];
+  const meta = redemptionsQuery.data?.meta ?? {
+    page,
+    pageSize,
+    limit: pageSize,
+    total: 0,
+    totalPages: 1,
+  };
+  const showInitialLoading = redemptionsQuery.isLoading && rows.length === 0;
 
   return (
     <AdminPanel
@@ -86,7 +77,13 @@ function CouponRedemptionsPanel({
         <AdminEmpty>No redemptions yet for this coupon.</AdminEmpty>
       ) : null}
       {rows.length > 0 ? (
-        <>
+        <div
+          className={
+            redemptionsQuery.isFetching && !redemptionsQuery.isLoading
+              ? 'opacity-70 transition-opacity'
+              : undefined
+          }
+        >
           <AdminTable>
             <thead>
               <tr>
@@ -129,23 +126,26 @@ function CouponRedemptionsPanel({
               ))}
             </tbody>
           </AdminTable>
-          <div className="mt-4 flex justify-center">
-            {redemptionsQuery.isFetching && cursor ? (
-              <p className="text-sm text-[#555555]">Loading more…</p>
-            ) : nextCursor ? (
-              <AdminButton type="button" variant="secondary" onClick={loadMore}>
-                Load more
-              </AdminButton>
-            ) : null}
-          </div>
-        </>
+          <AdminPagination
+            meta={meta}
+            entityLabel="redemptions"
+            isFetching={redemptionsQuery.isFetching && !redemptionsQuery.isLoading}
+            onPageChange={setPage}
+            onPageSizeChange={(next) => {
+              setPageSize(next);
+              setPage(1);
+            }}
+          />
+        </div>
       ) : null}
     </AdminPanel>
   );
 }
 
 export default function AdminCouponsPage() {
-  const couponsQuery = useAdminCoupons();
+  const [couponsPage, setCouponsPage] = useState(1);
+  const [couponsPageSize, setCouponsPageSize] = useState<AdminPageSize>(20);
+  const couponsQuery = useAdminCoupons({ page: couponsPage, limit: couponsPageSize });
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -175,7 +175,14 @@ export default function AdminCouponsPage() {
   );
 
   const busy = createMutation.isPending || updateMutation.isPending || deactivateMutation.isPending;
-  const coupons = couponsQuery.data ?? [];
+  const coupons = couponsQuery.data?.data ?? [];
+  const couponsMeta = couponsQuery.data?.meta ?? {
+    page: couponsPage,
+    pageSize: couponsPageSize,
+    limit: couponsPageSize,
+    total: 0,
+    totalPages: 1,
+  };
   const isEditing = editingId !== null;
 
   function resetForm() {
@@ -329,84 +336,102 @@ export default function AdminCouponsPage() {
         ) : null}
 
         {coupons.length > 0 ? (
-          <AdminTable>
-            <thead>
-              <tr>
-                <AdminTh>Code</AdminTh>
-                <AdminTh>Title</AdminTh>
-                <AdminTh>Reward</AdminTh>
-                <AdminTh>Min order</AdminTh>
-                <AdminTh>Window</AdminTh>
-                <AdminTh>Status</AdminTh>
-                <AdminTh className="text-right">Action</AdminTh>
-              </tr>
-            </thead>
-            <tbody>
-              {coupons.map((coupon) => (
-                <tr key={coupon.id}>
-                  <AdminTd>
-                    <span className="font-semibold text-[#111111]">{coupon.code}</span>
-                  </AdminTd>
-                  <AdminTd>
-                    <span className="text-[#111111]">{coupon.title}</span>
-                  </AdminTd>
-                  <AdminTd>
-                    <span className="text-[#C9A227]">
-                      {coupon.rewardType === 'free_shipping'
-                        ? 'Free shipping'
-                        : coupon.rewardType === 'percent'
-                          ? `${coupon.value ?? 0}%`
-                          : formatTaka(coupon.value ?? 0)}
-                    </span>
-                  </AdminTd>
-                  <AdminTd>{formatTaka(coupon.minOrderTaka)}</AdminTd>
-                  <AdminTd>
-                    <span className="text-xs text-[#555555]">
-                      {new Date(coupon.startsAt).toLocaleDateString()}
-                      {coupon.endsAt
-                        ? ` – ${new Date(coupon.endsAt).toLocaleDateString()}`
-                        : ' – open'}
-                    </span>
-                  </AdminTd>
-                  <AdminTd>
-                    <StatusPill>{coupon.status}</StatusPill>
-                  </AdminTd>
-                  <AdminTd className="text-right">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <AdminButton
-                        type="button"
-                        variant="secondary"
-                        disabled={busy}
-                        onClick={() => showRedemptions(coupon)}
-                      >
-                        Redemptions
-                      </AdminButton>
-                      <AdminButton
-                        type="button"
-                        variant="secondary"
-                        disabled={busy}
-                        onClick={() => startEdit(coupon)}
-                      >
-                        Edit
-                      </AdminButton>
-                      {coupon.status === 'ACTIVE' ? (
+          <div
+            className={
+              couponsQuery.isFetching && !couponsQuery.isLoading
+                ? 'opacity-70 transition-opacity'
+                : undefined
+            }
+          >
+            <AdminTable>
+              <thead>
+                <tr>
+                  <AdminTh>Code</AdminTh>
+                  <AdminTh>Title</AdminTh>
+                  <AdminTh>Reward</AdminTh>
+                  <AdminTh>Min order</AdminTh>
+                  <AdminTh>Window</AdminTh>
+                  <AdminTh>Status</AdminTh>
+                  <AdminTh className="text-right">Action</AdminTh>
+                </tr>
+              </thead>
+              <tbody>
+                {coupons.map((coupon) => (
+                  <tr key={coupon.id}>
+                    <AdminTd>
+                      <span className="font-semibold text-[#111111]">{coupon.code}</span>
+                    </AdminTd>
+                    <AdminTd>
+                      <span className="text-[#111111]">{coupon.title}</span>
+                    </AdminTd>
+                    <AdminTd>
+                      <span className="text-[#C9A227]">
+                        {coupon.rewardType === 'free_shipping'
+                          ? 'Free shipping'
+                          : coupon.rewardType === 'percent'
+                            ? `${coupon.value ?? 0}%`
+                            : formatTaka(coupon.value ?? 0)}
+                      </span>
+                    </AdminTd>
+                    <AdminTd>{formatTaka(coupon.minOrderTaka)}</AdminTd>
+                    <AdminTd>
+                      <span className="text-xs text-[#555555]">
+                        {new Date(coupon.startsAt).toLocaleDateString()}
+                        {coupon.endsAt
+                          ? ` – ${new Date(coupon.endsAt).toLocaleDateString()}`
+                          : ' – open'}
+                      </span>
+                    </AdminTd>
+                    <AdminTd>
+                      <StatusPill>{coupon.status}</StatusPill>
+                    </AdminTd>
+                    <AdminTd className="text-right">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <AdminButton
                           type="button"
-                          variant="danger"
+                          variant="secondary"
                           disabled={busy}
-                          onClick={() => void onDeactivate(coupon.id, coupon.code)}
+                          onClick={() => showRedemptions(coupon)}
                         >
-                          Deactivate
+                          Redemptions
                         </AdminButton>
-                      ) : (
-                        <span className="self-center text-xs text-[#555555]">—</span>
-                      )}
-                    </div>
-                  </AdminTd>
-                </tr>
-              ))}
-            </tbody>
-          </AdminTable>
+                        <AdminButton
+                          type="button"
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() => startEdit(coupon)}
+                        >
+                          Edit
+                        </AdminButton>
+                        {coupon.status === 'ACTIVE' ? (
+                          <AdminButton
+                            type="button"
+                            variant="danger"
+                            disabled={busy}
+                            onClick={() => void onDeactivate(coupon.id, coupon.code)}
+                          >
+                            Deactivate
+                          </AdminButton>
+                        ) : (
+                          <span className="self-center text-xs text-[#555555]">—</span>
+                        )}
+                      </div>
+                    </AdminTd>
+                  </tr>
+                ))}
+              </tbody>
+            </AdminTable>
+            <AdminPagination
+              meta={couponsMeta}
+              entityLabel="coupons"
+              isFetching={couponsQuery.isFetching && !couponsQuery.isLoading}
+              onPageChange={setCouponsPage}
+              onPageSizeChange={(next) => {
+                setCouponsPageSize(next);
+                setCouponsPage(1);
+              }}
+            />
+          </div>
         ) : null}
       </AdminPanel>
 

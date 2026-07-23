@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ConsentAction, ConsentPurpose, NewsletterStatus } from '@/generated/prisma/client';
 import { generateOpaqueToken, sha256Hex } from '@/common/utils/hash';
 import { USER_FACING } from '@/common/messages/user-facing-errors';
+import { buildOffsetMeta, resolveOffsetPagination } from '@/common/pagination/offset-pagination';
 import { AuditService } from '@/modules/platform/audit.service';
 import { OUTBOX_EVENT, OutboxService } from '@/modules/platform/outbox.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
@@ -103,8 +104,13 @@ export class NewsletterService {
     return { message: UNSUBSCRIBE_MESSAGE };
   }
 
-  listAdmin(query: ListNewsletterSubscriptionsQueryDto) {
-    return this.newsletter.listAdmin(query).then((rows) => this.toCursorPage(rows, query.limit));
+  async listAdmin(query: ListNewsletterSubscriptionsQueryDto) {
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { rows, total } = await this.newsletter.listAdmin({ skip, take, status: query.status });
+    return {
+      data: rows.map(toResponse),
+      meta: buildOffsetMeta(page, pageSize, total),
+    };
   }
 
   async adminUnsubscribe(
@@ -146,18 +152,6 @@ export class NewsletterService {
     });
 
     return toResponse(updated);
-  }
-
-  private toCursorPage(rows: NewsletterSubscriptionRecord[], limit: number) {
-    const hasMore = rows.length > limit;
-    const page = hasMore ? rows.slice(0, limit) : rows;
-    return {
-      data: page.map(toResponse),
-      meta: {
-        limit,
-        nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
-      },
-    };
   }
 }
 

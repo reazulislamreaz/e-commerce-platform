@@ -34,10 +34,7 @@ export class InventoryService {
     const balances = await this.inventory.findBalancesByVariantIds([...new Set(variantIds)]);
     for (const balance of balances) {
       const available = Math.max(0, balance.onHand - balance.reserved);
-      availability.set(
-        balance.variantId,
-        (availability.get(balance.variantId) ?? 0) + available,
-      );
+      availability.set(balance.variantId, (availability.get(balance.variantId) ?? 0) + available);
     }
     return availability;
   }
@@ -135,14 +132,11 @@ export class InventoryService {
     if (!reservation || reservation.status !== ReservationStatus.ACTIVE) return;
 
     const items = [...reservation.items].sort(
-      (a, b) =>
-        a.variantId.localeCompare(b.variantId) || a.locationId.localeCompare(b.locationId),
+      (a, b) => a.variantId.localeCompare(b.variantId) || a.locationId.localeCompare(b.locationId),
     );
 
     for (const item of items) {
-      const balances = await tx.$queryRaw<
-        Array<{ id: string; onHand: number; reserved: number }>
-      >`
+      const balances = await tx.$queryRaw<Array<{ id: string; onHand: number; reserved: number }>>`
         SELECT id, "onHand", reserved
         FROM inventory_balance
         WHERE "variantId" = ${item.variantId}::uuid
@@ -191,14 +185,11 @@ export class InventoryService {
     }
 
     const items = [...reservation.items].sort(
-      (a, b) =>
-        a.variantId.localeCompare(b.variantId) || a.locationId.localeCompare(b.locationId),
+      (a, b) => a.variantId.localeCompare(b.variantId) || a.locationId.localeCompare(b.locationId),
     );
 
     for (const item of items) {
-      const balances = await tx.$queryRaw<
-        Array<{ id: string; onHand: number; reserved: number }>
-      >`
+      const balances = await tx.$queryRaw<Array<{ id: string; onHand: number; reserved: number }>>`
         SELECT id, "onHand", reserved
         FROM inventory_balance
         WHERE "variantId" = ${item.variantId}::uuid
@@ -260,9 +251,7 @@ export class InventoryService {
 
     for (const line of [...lines].sort((a, b) => a.variantId.localeCompare(b.variantId))) {
       const locationId = line.locationId ?? location.id;
-      const balances = await tx.$queryRaw<
-        Array<{ id: string; onHand: number; reserved: number }>
-      >`
+      const balances = await tx.$queryRaw<Array<{ id: string; onHand: number; reserved: number }>>`
         SELECT id, "onHand", reserved
         FROM inventory_balance
         WHERE "variantId" = ${line.variantId}::uuid
@@ -361,9 +350,7 @@ export class InventoryService {
       }
 
       if (remaining > 0) {
-        throw new BadRequestException(
-          `Insufficient stock for exchange variant ${line.variantId}.`,
-        );
+        throw new BadRequestException(`Insufficient stock for exchange variant ${line.variantId}.`);
       }
     }
 
@@ -535,35 +522,42 @@ export class InventoryService {
     return holds;
   }
 
-  async listStockAlerts(params?: { resolved?: boolean; limit?: number }) {
-    const limit = Math.min(Math.max(params?.limit ?? 50, 1), 100);
-    return this.prisma.stockAlert.findMany({
-      where: {
-        resolvedAt: params?.resolved === true ? { not: null } : null,
-      },
-      include: {
-        balance: {
-          select: {
-            onHand: true,
-            reserved: true,
-            lowStockThreshold: true,
-            variant: { select: { id: true, sku: true, size: true, color: true } },
-            location: { select: { id: true, code: true, name: true } },
+  async listStockAlerts(params?: { resolved?: boolean; skip?: number; take?: number }) {
+    const take = Math.min(Math.max(params?.take ?? 50, 1), 100);
+    const skip = Math.max(params?.skip ?? 0, 0);
+    const where = {
+      resolvedAt: params?.resolved === true ? { not: null } : null,
+    } satisfies Prisma.StockAlertWhereInput;
+
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.stockAlert.count({ where }),
+      this.prisma.stockAlert.findMany({
+        where,
+        include: {
+          balance: {
+            select: {
+              onHand: true,
+              reserved: true,
+              lowStockThreshold: true,
+              variant: { select: { id: true, sku: true, size: true, color: true } },
+              location: { select: { id: true, code: true, name: true } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+    ]);
+
+    return { rows, total };
   }
 
   async refreshStockAlerts(
     keys: Array<{ variantId: string; locationId: string }>,
     tx: Prisma.TransactionClient = this.prisma,
   ): Promise<void> {
-    const unique = new Map(
-      keys.map((key) => [`${key.variantId}:${key.locationId}`, key] as const),
-    );
+    const unique = new Map(keys.map((key) => [`${key.variantId}:${key.locationId}`, key] as const));
 
     for (const { variantId, locationId } of unique.values()) {
       const balance = await tx.inventoryBalance.findUnique({

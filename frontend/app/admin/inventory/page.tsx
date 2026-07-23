@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
+import { AdminPagination, type AdminPageSize } from '@/components/admin/admin-pagination';
 import {
   AdminButton,
   AdminEmpty,
@@ -34,8 +35,11 @@ function StockAlertsPanel({
 }: {
   onFillAlert: (alert: { variantId: string; locationId: string; onHand: number }) => void;
 }) {
-  const alertsQuery = useStockAlerts({ limit: 50 });
-  const rows = alertsQuery.data ?? [];
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(20);
+  const alertsQuery = useStockAlerts({ page, limit: pageSize });
+  const rows = alertsQuery.data?.data ?? [];
+  const meta = alertsQuery.data?.meta ?? { page, pageSize, total: 0, totalPages: 1 };
 
   return (
     <AdminPanel
@@ -48,58 +52,76 @@ function StockAlertsPanel({
         <AdminEmpty>No open stock alerts.</AdminEmpty>
       ) : null}
       {rows.length > 0 ? (
-        <AdminTable>
-          <thead>
-            <tr>
-              <AdminTh>Level</AdminTh>
-              <AdminTh>SKU</AdminTh>
-              <AdminTh>Variant</AdminTh>
-              <AdminTh>Location</AdminTh>
-              <AdminTh>Available</AdminTh>
-              <AdminTh>Threshold</AdminTh>
-              <AdminTh>Opened</AdminTh>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((alert) => (
-              <tr
-                key={alert.id}
-                className="cursor-pointer hover:bg-[#FFFFFF]"
-                onClick={() =>
-                  onFillAlert({
-                    variantId: alert.variantId,
-                    locationId: alert.locationId,
-                    onHand: alert.onHand,
-                  })
-                }
-              >
-                <AdminTd>
-                  <StatusPill>{alert.level}</StatusPill>
-                </AdminTd>
-                <AdminTd>
-                  <span className="font-semibold text-[#111111]">{alert.sku}</span>
-                </AdminTd>
-                <AdminTd>
-                  <span className="text-[#111111]">
-                    {alert.size} / {alert.color}
-                  </span>
-                </AdminTd>
-                <AdminTd>
-                  <span className="text-[#111111]">{alert.locationCode}</span>
-                </AdminTd>
-                <AdminTd>
-                  <span className="text-[#C9A227]">{alert.available}</span>
-                </AdminTd>
-                <AdminTd>{alert.threshold}</AdminTd>
-                <AdminTd>
-                  <span className="text-[#555555]">
-                    {new Date(alert.createdAt).toLocaleString()}
-                  </span>
-                </AdminTd>
+        <div
+          className={
+            alertsQuery.isFetching && !alertsQuery.isLoading
+              ? 'opacity-70 transition-opacity'
+              : undefined
+          }
+        >
+          <AdminTable>
+            <thead>
+              <tr>
+                <AdminTh>Level</AdminTh>
+                <AdminTh>SKU</AdminTh>
+                <AdminTh>Variant</AdminTh>
+                <AdminTh>Location</AdminTh>
+                <AdminTh>Available</AdminTh>
+                <AdminTh>Threshold</AdminTh>
+                <AdminTh>Opened</AdminTh>
               </tr>
-            ))}
-          </tbody>
-        </AdminTable>
+            </thead>
+            <tbody>
+              {rows.map((alert) => (
+                <tr
+                  key={alert.id}
+                  className="cursor-pointer hover:bg-[#FFFFFF]"
+                  onClick={() =>
+                    onFillAlert({
+                      variantId: alert.variantId,
+                      locationId: alert.locationId,
+                      onHand: alert.onHand,
+                    })
+                  }
+                >
+                  <AdminTd>
+                    <StatusPill>{alert.level}</StatusPill>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="font-semibold text-[#111111]">{alert.sku}</span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="text-[#111111]">
+                      {alert.size} / {alert.color}
+                    </span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="text-[#111111]">{alert.locationCode}</span>
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="text-[#C9A227]">{alert.available}</span>
+                  </AdminTd>
+                  <AdminTd>{alert.threshold}</AdminTd>
+                  <AdminTd>
+                    <span className="text-[#555555]">
+                      {new Date(alert.createdAt).toLocaleString()}
+                    </span>
+                  </AdminTd>
+                </tr>
+              ))}
+            </tbody>
+          </AdminTable>
+          <AdminPagination
+            meta={meta}
+            entityLabel="alerts"
+            isFetching={alertsQuery.isFetching && !alertsQuery.isLoading}
+            onPageChange={setPage}
+            onPageSizeChange={(next) => {
+              setPageSize(next);
+              setPage(1);
+            }}
+          />
+        </div>
       ) : null}
     </AdminPanel>
   );
@@ -242,29 +264,22 @@ function InventoryBalancesPanel({
   locationsError: boolean;
   onFillBalance: (balance: InventoryBalance) => void;
 }) {
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [priorRows, setPriorRows] = useState<InventoryBalance[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(20);
 
   const queryParams = useMemo(
     () => ({
-      limit: 20,
+      page,
+      limit: pageSize,
       ...(locationId ? { locationId } : {}),
-      ...(cursor ? { cursor } : {}),
     }),
-    [locationId, cursor],
+    [locationId, page, pageSize],
   );
 
   const balancesQuery = useInventoryBalances(queryParams);
-  const pageRows = balancesQuery.data?.data ?? [];
-  const rows = cursor ? [...priorRows, ...pageRows] : pageRows;
-  const nextCursor = balancesQuery.data?.meta.nextCursor ?? null;
-  const showInitialLoading = balancesQuery.isLoading && !cursor && rows.length === 0;
-
-  function loadMore() {
-    if (!balancesQuery.data?.meta.nextCursor) return;
-    setPriorRows(cursor ? [...priorRows, ...pageRows] : pageRows);
-    setCursor(balancesQuery.data.meta.nextCursor);
-  }
+  const rows = balancesQuery.data?.data ?? [];
+  const meta = balancesQuery.data?.meta ?? { page, pageSize, total: 0, totalPages: 1 };
+  const showInitialLoading = balancesQuery.isLoading && rows.length === 0;
 
   return (
     <AdminPanel
@@ -298,7 +313,13 @@ function InventoryBalancesPanel({
       ) : null}
 
       {rows.length > 0 ? (
-        <>
+        <div
+          className={
+            balancesQuery.isFetching && !balancesQuery.isLoading
+              ? 'opacity-70 transition-opacity'
+              : undefined
+          }
+        >
           <AdminTable>
             <thead>
               <tr>
@@ -343,16 +364,17 @@ function InventoryBalancesPanel({
             </tbody>
           </AdminTable>
 
-          <div className="mt-4 flex justify-center">
-            {balancesQuery.isFetching && cursor ? (
-              <p className="text-sm text-[#555555]">Loading more…</p>
-            ) : nextCursor ? (
-              <AdminButton type="button" variant="secondary" onClick={loadMore}>
-                Load more
-              </AdminButton>
-            ) : null}
-          </div>
-        </>
+          <AdminPagination
+            meta={meta}
+            entityLabel="balances"
+            isFetching={balancesQuery.isFetching && !balancesQuery.isLoading}
+            onPageChange={setPage}
+            onPageSizeChange={(next) => {
+              setPageSize(next);
+              setPage(1);
+            }}
+          />
+        </div>
       ) : null}
     </AdminPanel>
   );

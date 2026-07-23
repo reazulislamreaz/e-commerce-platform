@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState, type FormEvent } from 'react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
+import { AdminPagination, type AdminPageSize } from '@/components/admin/admin-pagination';
 import {
   AdminButton,
   AdminEmpty,
@@ -22,7 +23,6 @@ import {
   useAdminMutation,
   useAdminNewsletter,
   type NewsletterStatus,
-  type NewsletterSubscription,
 } from '@/features/admin';
 
 const STATUS_OPTIONS: { value: NewsletterStatus | ''; label: string }[] = [
@@ -38,18 +38,18 @@ function isActiveStatus(status: string): boolean {
 function NewsletterListBody({ status }: { status: string }) {
   const router = useRouter();
   const [draftStatus, setDraftStatus] = useState(status);
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [priorRows, setPriorRows] = useState<NewsletterSubscription[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(20);
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const queryParams = useMemo(
     () => ({
-      limit: 20,
+      page,
+      limit: pageSize,
       ...(status ? { status } : {}),
-      ...(cursor ? { cursor } : {}),
     }),
-    [status, cursor],
+    [status, page, pageSize],
   );
 
   const query = useAdminNewsletter(queryParams);
@@ -58,10 +58,9 @@ function NewsletterListBody({ status }: { status: string }) {
     [adminKeys.newsletterRoot()],
   );
 
-  const pageRows = query.data?.data ?? [];
-  const rows = cursor ? [...priorRows, ...pageRows] : pageRows;
-  const nextCursor = query.data?.meta.nextCursor ?? null;
-  const showInitialLoading = query.isLoading && !cursor && rows.length === 0;
+  const rows = query.data?.data ?? [];
+  const meta = query.data?.meta ?? { page, pageSize, limit: pageSize, total: 0, totalPages: 1 };
+  const showInitialLoading = query.isLoading && rows.length === 0;
 
   function applyFilters(event: FormEvent) {
     event.preventDefault();
@@ -69,12 +68,6 @@ function NewsletterListBody({ status }: { status: string }) {
     if (draftStatus) params.set('status', draftStatus);
     const qs = params.toString();
     router.push(qs ? `/admin/newsletter?${qs}` : '/admin/newsletter');
-  }
-
-  function loadMore() {
-    if (!query.data?.meta.nextCursor) return;
-    setPriorRows(cursor ? [...priorRows, ...pageRows] : pageRows);
-    setCursor(query.data.meta.nextCursor);
   }
 
   async function forceUnsubscribe(id: string, email: string) {
@@ -139,7 +132,11 @@ function NewsletterListBody({ status }: { status: string }) {
         ) : null}
 
         {rows.length > 0 ? (
-          <>
+          <div
+            className={
+              query.isFetching && !query.isLoading ? 'opacity-70 transition-opacity' : undefined
+            }
+          >
             <AdminTable>
               <thead>
                 <tr>
@@ -188,16 +185,17 @@ function NewsletterListBody({ status }: { status: string }) {
               </tbody>
             </AdminTable>
 
-            <div className="mt-4 flex justify-center">
-              {query.isFetching && cursor ? (
-                <p className="text-sm text-[#555555]">Loading more…</p>
-              ) : nextCursor ? (
-                <AdminButton type="button" variant="secondary" onClick={loadMore}>
-                  Load more
-                </AdminButton>
-              ) : null}
-            </div>
-          </>
+            <AdminPagination
+              meta={meta}
+              entityLabel="subscribers"
+              isFetching={query.isFetching && !query.isLoading}
+              onPageChange={setPage}
+              onPageSizeChange={(next) => {
+                setPageSize(next);
+                setPage(1);
+              }}
+            />
+          </div>
         ) : null}
       </AdminPanel>
     </div>

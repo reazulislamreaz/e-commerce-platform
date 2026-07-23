@@ -93,17 +93,24 @@ export class PromotionsRepository {
     orderId: string,
     tx: Prisma.TransactionClient = this.prisma,
   ): Promise<void> {
-    return tx.couponRedemption
-      .deleteMany({ where: { orderId } })
-      .then(() => undefined);
+    return tx.couponRedemption.deleteMany({ where: { orderId } }).then(() => undefined);
   }
 
-  listAdminCoupons(): Promise<CouponWithPromotion[]> {
-    return this.prisma.coupon.findMany({
-      where: { deletedAt: null },
-      include: couponWithPromotion,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    });
+  async listAdminCoupons(params: {
+    skip: number;
+    take: number;
+  }): Promise<{ rows: CouponWithPromotion[]; total: number }> {
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.coupon.count({ where: { deletedAt: null } }),
+      this.prisma.coupon.findMany({
+        where: { deletedAt: null },
+        include: couponWithPromotion,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: params.skip,
+        take: params.take,
+      }),
+    ]);
+    return { rows, total };
   }
 
   findAdminCouponById(id: string): Promise<CouponWithPromotion | null> {
@@ -156,15 +163,14 @@ export class PromotionsRepository {
     promotionData: Prisma.PromotionUpdateInput,
     tx: Prisma.TransactionClient = this.prisma,
   ): Promise<CouponWithPromotion> {
-    return tx.coupon
-      .update({
-        where: { id },
-        data: {
-          ...couponData,
-          promotion: { update: promotionData },
-        },
-        include: couponWithPromotion,
-      });
+    return tx.coupon.update({
+      where: { id },
+      data: {
+        ...couponData,
+        promotion: { update: promotionData },
+      },
+      include: couponWithPromotion,
+    });
   }
 
   deactivateCouponPromotion(
@@ -179,14 +185,16 @@ export class PromotionsRepository {
       .then(() => undefined);
   }
 
-  async listCouponRedemptions(couponId: string, cursor?: string, limit = 20) {
-    const items = await this.prisma.couponRedemption.findMany({
-      where: { couponId },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    });
-    const hasMore = items.length > limit;
-    return { items: hasMore ? items.slice(0, limit) : items, hasMore };
+  async listCouponRedemptions(couponId: string, params: { skip: number; take: number }) {
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.couponRedemption.count({ where: { couponId } }),
+      this.prisma.couponRedemption.findMany({
+        where: { couponId },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: params.skip,
+        take: params.take,
+      }),
+    ]);
+    return { items, total };
   }
 }

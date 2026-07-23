@@ -21,6 +21,7 @@ import {
   InventoryMovementResponseDto,
   ListInventoryBalancesQueryDto,
   ListInventoryMovementsQueryDto,
+  ListStockAlertsQueryDto,
 } from './dto/inventory.dto';
 
 @ApiTags('Admin Inventory')
@@ -52,10 +53,7 @@ export class AdminInventoryController {
   @ApiOkResponse({ description: 'Adjustment applied or replayed idempotently' })
   @ApiBadRequestResponse({ description: 'Invalid adjustment or version conflict' })
   @ApiNotFoundResponse({ description: 'Variant or location not found' })
-  adjust(
-    @CurrentUser() actor: JwtPayload,
-    @Body() dto: InventoryAdjustmentDto,
-  ) {
+  adjust(@CurrentUser() actor: JwtPayload, @Body() dto: InventoryAdjustmentDto) {
     return this.adminCatalog.adjustInventory(actor, dto);
   }
 
@@ -67,12 +65,9 @@ export class AdminInventoryController {
   }
 
   @Get('alerts')
-  @ApiOperation({ summary: 'List open low-stock and out-of-stock alerts' })
+  @ApiOperation({ summary: 'List open low-stock and out-of-stock alerts (offset pagination)' })
   @ApiOkResponse({ description: 'Stock alerts for admin monitoring' })
-  listAlerts(@Query('limit') limit?: string) {
-    const parsed = limit ? Number(limit) : 50;
-    return this.adminCatalog.listStockAlerts({
-      limit: Number.isFinite(parsed) ? parsed : 50,
-    });
+  listAlerts(@Query() query: ListStockAlertsQueryDto) {
+    return this.adminCatalog.listStockAlerts(query);
   }
 }

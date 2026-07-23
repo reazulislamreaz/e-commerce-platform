@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
+import { AdminPagination, type AdminPageSize } from '@/components/admin/admin-pagination';
 import {
   AdminButton,
   AdminEmpty,
@@ -28,6 +29,7 @@ import type {
 
 const bannerKeys = {
   all: ['admin', 'banners'] as const,
+  list: (params: Record<string, unknown>) => ['admin', 'banners', 'list', params] as const,
 };
 
 function toDatetimeLocalValue(iso?: string | null): string {
@@ -61,9 +63,12 @@ const defaultForm = {
 
 export default function AdminBannersPage() {
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(20);
   const bannersQuery = useQuery({
-    queryKey: bannerKeys.all,
-    queryFn: () => marketingApi.listAdmin(),
+    queryKey: bannerKeys.list({ page, limit: pageSize }),
+    queryFn: () => marketingApi.listAdmin({ page, limit: pageSize }),
+    placeholderData: (prev) => prev,
   });
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -85,7 +90,13 @@ export default function AdminBannersPage() {
   });
 
   const busy = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
-  const banners = bannersQuery.data ?? [];
+  const banners = bannersQuery.data?.data ?? [];
+  const meta = bannersQuery.data?.meta ?? {
+    page,
+    pageSize,
+    total: 0,
+    totalPages: 1,
+  };
   const isEditing = editingId !== null;
 
   function resetForm() {
@@ -192,65 +203,83 @@ export default function AdminBannersPage() {
         ) : null}
 
         {banners.length > 0 ? (
-          <AdminTable>
-            <thead>
-              <tr>
-                <AdminTh>Title</AdminTh>
-                <AdminTh>Placement</AdminTh>
-                <AdminTh>Status</AdminTh>
-                <AdminTh>Schedule</AdminTh>
-                <AdminTh>Position</AdminTh>
-                <AdminTh className="text-right">Actions</AdminTh>
-              </tr>
-            </thead>
-            <tbody>
-              {banners.map((banner) => (
-                <tr key={banner.id}>
-                  <AdminTd>
-                    <span className="font-semibold text-[#111111]">{banner.title}</span>
-                    {banner.subtitle ? (
-                      <span className="mt-1 block text-xs text-[#555555]">{banner.subtitle}</span>
-                    ) : null}
-                  </AdminTd>
-                  <AdminTd>
-                    <span className="text-[#111111]">{banner.placement}</span>
-                  </AdminTd>
-                  <AdminTd>
-                    <StatusPill>{banner.status}</StatusPill>
-                  </AdminTd>
-                  <AdminTd>
-                    <span className="text-xs text-[#555555]">
-                      {banner.startsAt ? new Date(banner.startsAt).toLocaleDateString() : 'Open'}
-                      {banner.endsAt
-                        ? ` – ${new Date(banner.endsAt).toLocaleDateString()}`
-                        : ' – open'}
-                    </span>
-                  </AdminTd>
-                  <AdminTd>{banner.position}</AdminTd>
-                  <AdminTd className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <AdminButton
-                        type="button"
-                        variant="secondary"
-                        disabled={busy}
-                        onClick={() => startEdit(banner)}
-                      >
-                        Edit
-                      </AdminButton>
-                      <AdminButton
-                        type="button"
-                        variant="danger"
-                        disabled={busy}
-                        onClick={() => void onDelete(banner.id)}
-                      >
-                        Archive
-                      </AdminButton>
-                    </div>
-                  </AdminTd>
+          <div
+            className={
+              bannersQuery.isFetching && !bannersQuery.isLoading
+                ? 'opacity-70 transition-opacity'
+                : undefined
+            }
+          >
+            <AdminTable>
+              <thead>
+                <tr>
+                  <AdminTh>Title</AdminTh>
+                  <AdminTh>Placement</AdminTh>
+                  <AdminTh>Status</AdminTh>
+                  <AdminTh>Schedule</AdminTh>
+                  <AdminTh>Position</AdminTh>
+                  <AdminTh className="text-right">Actions</AdminTh>
                 </tr>
-              ))}
-            </tbody>
-          </AdminTable>
+              </thead>
+              <tbody>
+                {banners.map((banner) => (
+                  <tr key={banner.id}>
+                    <AdminTd>
+                      <span className="font-semibold text-[#111111]">{banner.title}</span>
+                      {banner.subtitle ? (
+                        <span className="mt-1 block text-xs text-[#555555]">{banner.subtitle}</span>
+                      ) : null}
+                    </AdminTd>
+                    <AdminTd>
+                      <span className="text-[#111111]">{banner.placement}</span>
+                    </AdminTd>
+                    <AdminTd>
+                      <StatusPill>{banner.status}</StatusPill>
+                    </AdminTd>
+                    <AdminTd>
+                      <span className="text-xs text-[#555555]">
+                        {banner.startsAt ? new Date(banner.startsAt).toLocaleDateString() : 'Open'}
+                        {banner.endsAt
+                          ? ` – ${new Date(banner.endsAt).toLocaleDateString()}`
+                          : ' – open'}
+                      </span>
+                    </AdminTd>
+                    <AdminTd>{banner.position}</AdminTd>
+                    <AdminTd className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <AdminButton
+                          type="button"
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() => startEdit(banner)}
+                        >
+                          Edit
+                        </AdminButton>
+                        <AdminButton
+                          type="button"
+                          variant="danger"
+                          disabled={busy}
+                          onClick={() => void onDelete(banner.id)}
+                        >
+                          Archive
+                        </AdminButton>
+                      </div>
+                    </AdminTd>
+                  </tr>
+                ))}
+              </tbody>
+            </AdminTable>
+            <AdminPagination
+              meta={meta}
+              entityLabel="banners"
+              isFetching={bannersQuery.isFetching && !bannersQuery.isLoading}
+              onPageChange={setPage}
+              onPageSizeChange={(next) => {
+                setPageSize(next);
+                setPage(1);
+              }}
+            />
+          </div>
         ) : null}
       </AdminPanel>
 

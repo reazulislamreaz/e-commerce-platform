@@ -6,6 +6,7 @@ import {
   ReturnStatus,
   ReturnType,
 } from '@/generated/prisma/client';
+import { buildOffsetMeta, resolveOffsetPagination } from '@/common/pagination/offset-pagination';
 import { InventoryService } from '@/modules/inventory/inventory.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
@@ -14,7 +15,7 @@ import { OUTBOX_EVENT, OutboxService } from '@/modules/platform/outbox.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import type { AdminReturnActionDto } from './dto/admin-return-action.dto';
 import type { CreateReturnDto } from './dto/create-return.dto';
-import type { ListReturnsQueryDto } from './dto/list-returns.query.dto';
+import type { ListAdminReturnsQueryDto, ListReturnsQueryDto } from './dto/list-returns.query.dto';
 import type { ReturnDetailResponseDto, ReturnRequestResponseDto } from './dto/return-response.dto';
 import {
   ACTIVE_RETURN_STATUSES,
@@ -118,9 +119,13 @@ export class ReturnsService {
     return toDetailResponse(row);
   }
 
-  async listAdmin(query: ListReturnsQueryDto) {
-    const rows = await this.returns.listAdmin(query);
-    return this.toCursorPage(rows, query.limit, toDetailResponse);
+  async listAdmin(query: ListAdminReturnsQueryDto) {
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { rows, total } = await this.returns.listAdmin({ skip, take, status: query.status });
+    return {
+      data: rows.map(toDetailResponse),
+      meta: buildOffsetMeta(page, pageSize, total),
+    };
   }
 
   async getAdmin(id: string): Promise<ReturnDetailResponseDto> {

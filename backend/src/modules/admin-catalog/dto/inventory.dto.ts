@@ -1,8 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { OffsetPaginationQueryDto } from '@/common/pagination/offset-pagination.query.dto';
 
-export class ListInventoryBalancesQueryDto {
+export class ListInventoryBalancesQueryDto extends OffsetPaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
@@ -12,20 +13,9 @@ export class ListInventoryBalancesQueryDto {
   @IsOptional()
   @IsUUID()
   locationId?: string;
-
-  @ApiPropertyOptional({ description: 'Cursor: balance id from the previous page' })
-  @IsOptional()
-  @IsUUID()
-  cursor?: string;
-
-  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit: number = 20;
 }
+
+export class ListStockAlertsQueryDto extends OffsetPaginationQueryDto {}
 
 export class ListInventoryMovementsQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })

@@ -23,6 +23,7 @@ import { Public } from '@/common/decorators/public.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
 import {
   CreateBannerDto,
+  ListAdminBannersQueryDto,
   ListPublicBannersQueryDto,
   UpdateBannerDto,
 } from './dto/banner.dto';
@@ -44,10 +45,10 @@ export class MarketingController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @Get('admin/banners')
-  @ApiOperation({ summary: 'List all marketing banners' })
-  @ApiOkResponse({ description: 'All non-deleted banners' })
-  listAdmin() {
-    return this.marketing.listAdmin();
+  @ApiOperation({ summary: 'List marketing banners (offset pagination)' })
+  @ApiOkResponse({ description: 'Non-deleted banners' })
+  listAdmin(@Query() query: ListAdminBannersQueryDto) {
+    return this.marketing.listAdmin(query);
   }
 
   @Roles(Role.ADMIN)

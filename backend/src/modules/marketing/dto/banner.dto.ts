@@ -12,11 +12,14 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
+import { OffsetPaginationQueryDto } from '@/common/pagination/offset-pagination.query.dto';
 
 export class ListPublicBannersQueryDto {
   @IsEnum(BannerPlacement)
   placement!: BannerPlacement;
 }
+
+export class ListAdminBannersQueryDto extends OffsetPaginationQueryDto {}
 
 export class CreateBannerDto {
   @IsEnum(BannerPlacement)

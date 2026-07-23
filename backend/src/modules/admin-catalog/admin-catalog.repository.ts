@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  InventoryMovementType,
-  Prisma,
-  ProductStatus,
-} from '@/generated/prisma/client';
+import { InventoryMovementType, Prisma, ProductStatus } from '@/generated/prisma/client';
 import { computeDiscountProjection, poishaToTaka, takaToPoisha } from '@/common/utils/money';
 import { PrismaService } from '@/prisma/prisma.service';
 import type { CreateCollectionDto } from './dto/collection.dto';
@@ -91,7 +87,7 @@ const listOrderBy: Record<AdminProductSort, Prisma.ProductOrderByWithRelationInp
 export class AdminCatalogRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listProducts(query: ListAdminProductsQueryDto) {
+  async listProducts(query: ListAdminProductsQueryDto, pagination: { skip: number; take: number }) {
     const search = query.q?.trim();
     const where: Prisma.ProductWhereInput = {
       deletedAt: null,
@@ -116,20 +112,21 @@ export class AdminCatalogRepository {
       ...(query.stock ? { id: { in: await this.productIdsForStockBucket(query.stock) } } : {}),
     };
 
-    const items = await this.prisma.product.findMany({
-      where,
-      include: adminProductListInclude,
-      orderBy: listOrderBy[query.sort ?? AdminProductSort.UPDATED_DESC],
-      take: query.limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    });
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.product.count({ where }),
+      this.prisma.product.findMany({
+        where,
+        include: adminProductListInclude,
+        orderBy: listOrderBy[query.sort ?? AdminProductSort.UPDATED_DESC],
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
 
-    const hasMore = items.length > query.limit;
-    const page = hasMore ? items.slice(0, query.limit) : items;
     const stockByVariant = await this.availableStockByVariantIds(
-      page.flatMap((product) => product.variants.map((variant) => variant.id)),
+      items.flatMap((product) => product.variants.map((variant) => variant.id)),
     );
-    return { items: page, hasMore, stockByVariant };
+    return { items, total, stockByVariant };
   }
 
   /** Counts by lifecycle status plus product-level stock buckets for the stats header. */
@@ -205,10 +202,7 @@ export class AdminCatalogRepository {
       _sum: { onHand: true, reserved: true },
     });
     return new Map(
-      grouped.map((row) => [
-        row.variantId,
-        (row._sum.onHand ?? 0) - (row._sum.reserved ?? 0),
-      ]),
+      grouped.map((row) => [row.variantId, (row._sum.onHand ?? 0) - (row._sum.reserved ?? 0)]),
     );
   }
 
@@ -303,14 +297,7 @@ export class AdminCatalogRepository {
     },
     tx: Prisma.TransactionClient = this.prisma,
   ): Promise<AdminProductRecord> {
-    const {
-      categoryIds,
-      collectionIds,
-      colors,
-      variants,
-      media,
-      ...productData
-    } = data;
+    const { categoryIds, collectionIds, colors, variants, media, ...productData } = data;
 
     if (categoryIds) {
       await tx.productCategory.deleteMany({ where: { productId: id } });
@@ -556,7 +543,10 @@ export class AdminCatalogRepository {
     });
   }
 
-  updateCollection(id: string, data: Prisma.CatalogCollectionUpdateInput): Promise<CollectionRecord> {
+  updateCollection(
+    id: string,
+    data: Prisma.CatalogCollectionUpdateInput,
+  ): Promise<CollectionRecord> {
     return this.prisma.catalogCollection.update({
       where: { id },
       data,
@@ -571,25 +561,30 @@ export class AdminCatalogRepository {
     });
   }
 
-  async listInventoryBalances(query: ListInventoryBalancesQueryDto) {
+  async listInventoryBalances(
+    query: ListInventoryBalancesQueryDto,
+    pagination: { skip: number; take: number },
+  ) {
     const where: Prisma.InventoryBalanceWhereInput = {
       ...(query.variantId ? { variantId: query.variantId } : {}),
       ...(query.locationId ? { locationId: query.locationId } : {}),
     };
 
-    const items = await this.prisma.inventoryBalance.findMany({
-      where,
-      include: {
-        variant: { select: { sku: true } },
-        location: { select: { code: true } },
-      },
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      take: query.limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    });
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.inventoryBalance.count({ where }),
+      this.prisma.inventoryBalance.findMany({
+        where,
+        include: {
+          variant: { select: { sku: true } },
+          location: { select: { code: true } },
+        },
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
 
-    const hasMore = items.length > query.limit;
-    return { items: hasMore ? items.slice(0, query.limit) : items, hasMore };
+    return { items, total };
   }
 
   async listInventoryMovements(query: ListInventoryMovementsQueryDto) {
@@ -625,8 +620,7 @@ export class AdminCatalogRepository {
   }
 
   toProductSummary(product: AdminProductRecord) {
-    const primaryMedia =
-      product.media.find((item) => item.isPrimary) ?? product.media[0];
+    const primaryMedia = product.media.find((item) => item.isPrimary) ?? product.media[0];
     const primaryCategory =
       product.categories.find((item) => item.isPrimary) ?? product.categories[0];
     return {

@@ -2,11 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ContactMessageStatus, ConsentAction, ConsentPurpose } from '@/generated/prisma/client';
 import { sha256Hex } from '@/common/utils/hash';
+import { buildOffsetMeta, resolveOffsetPagination } from '@/common/pagination/offset-pagination';
 import { AuditService } from '@/modules/platform/audit.service';
 import { OUTBOX_EVENT, OutboxService } from '@/modules/platform/outbox.service';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
-import type { AdminUpdateContactMessageDto, ListContactMessagesQueryDto } from './dto/admin-contact.dto';
-import type { ContactMessageResponseDto, ContactSubmitResponseDto } from './dto/contact-response.dto';
+import type {
+  AdminUpdateContactMessageDto,
+  ListContactMessagesQueryDto,
+} from './dto/admin-contact.dto';
+import type {
+  ContactMessageResponseDto,
+  ContactSubmitResponseDto,
+} from './dto/contact-response.dto';
 import type { SubmitContactDto } from './dto/submit-contact.dto';
 import { ContactRepository, type ContactMessageRecord } from './contact.repository';
 
@@ -92,8 +99,13 @@ export class ContactService {
     });
   }
 
-  listAdmin(query: ListContactMessagesQueryDto) {
-    return this.contact.listAdmin(query).then((rows) => this.toCursorPage(rows, query.limit));
+  async listAdmin(query: ListContactMessagesQueryDto) {
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { rows, total } = await this.contact.listAdmin({ skip, take, status: query.status });
+    return {
+      data: rows.map(toResponse),
+      meta: buildOffsetMeta(page, pageSize, total),
+    };
   }
 
   async updateAdmin(
@@ -107,7 +119,7 @@ export class ContactService {
     const nextStatus = dto.status ?? current.status;
     const resolvedAt =
       nextStatus === ContactMessageStatus.RESOLVED
-        ? current.resolvedAt ?? new Date()
+        ? (current.resolvedAt ?? new Date())
         : nextStatus === ContactMessageStatus.NEW || nextStatus === ContactMessageStatus.IN_PROGRESS
           ? null
           : current.resolvedAt;
@@ -140,18 +152,6 @@ export class ContactService {
     });
 
     return toResponse(updated);
-  }
-
-  private toCursorPage(rows: ContactMessageRecord[], limit: number) {
-    const hasMore = rows.length > limit;
-    const page = hasMore ? rows.slice(0, limit) : rows;
-    return {
-      data: page.map(toResponse),
-      meta: {
-        limit,
-        nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
-      },
-    };
   }
 }
 

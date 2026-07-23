@@ -62,18 +62,23 @@ export class ReturnsRepository {
     });
   }
 
-  listAdmin(query: {
-    cursor?: string;
-    limit: number;
+  async listAdmin(query: {
+    skip: number;
+    take: number;
     status?: ReturnStatus;
-  }): Promise<ReturnDetailRecord[]> {
-    return this.prisma.returnRequest.findMany({
-      where: { status: query.status },
-      include: returnInclude,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: query.limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    });
+  }): Promise<{ rows: ReturnDetailRecord[]; total: number }> {
+    const where: Prisma.ReturnRequestWhereInput = { status: query.status };
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.returnRequest.count({ where }),
+      this.prisma.returnRequest.findMany({
+        where,
+        include: returnInclude,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: query.skip,
+        take: query.take,
+      }),
+    ]);
+    return { rows, total };
   }
 
   findActiveByOrderId(

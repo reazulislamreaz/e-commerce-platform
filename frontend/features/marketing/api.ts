@@ -1,5 +1,5 @@
 import { apiClient } from '@/services/api-client';
-import { unwrapData, type ApiResponse } from '@/types/api';
+import { unwrapData, type ApiResponse, type OffsetPageMeta } from '@/types/api';
 import type { BannerPlacement, MarketingBanner, UpsertBannerInput } from './types';
 
 async function getData<T>(path: string, config?: Parameters<typeof apiClient.get>[1]): Promise<T> {
@@ -7,12 +7,29 @@ async function getData<T>(path: string, config?: Parameters<typeof apiClient.get
   return unwrapData(data);
 }
 
+export type MarketingBannerPage = {
+  data: MarketingBanner[];
+  meta: OffsetPageMeta;
+};
+
 export const marketingApi = {
   listPublic(placement: BannerPlacement) {
     return getData<MarketingBanner[]>('/banners', { params: { placement } });
   },
-  listAdmin() {
-    return getData<MarketingBanner[]>('/admin/banners');
+  async listAdmin(params?: { page?: number; limit?: number }): Promise<MarketingBannerPage> {
+    const { data } = await apiClient.get<ApiResponse<MarketingBanner[], OffsetPageMeta>>(
+      '/admin/banners',
+      { params },
+    );
+    return {
+      data: data.data,
+      meta: data.meta ?? {
+        page: params?.page ?? 1,
+        pageSize: params?.limit ?? 20,
+        total: data.data.length,
+        totalPages: 1,
+      },
+    };
   },
   create(body: UpsertBannerInput) {
     return apiClient

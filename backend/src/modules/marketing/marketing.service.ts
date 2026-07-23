@@ -5,7 +5,8 @@ import {
   type MarketingBanner,
   type Prisma,
 } from '@/generated/prisma/client';
-import type { CreateBannerDto, UpdateBannerDto } from './dto/banner.dto';
+import { buildOffsetMeta, resolveOffsetPagination } from '@/common/pagination/offset-pagination';
+import type { CreateBannerDto, ListAdminBannersQueryDto, UpdateBannerDto } from './dto/banner.dto';
 import { MarketingRepository } from './marketing.repository';
 
 @Injectable()
@@ -16,8 +17,10 @@ export class MarketingService {
     return this.banners.listPublic(placement, now);
   }
 
-  listAdmin() {
-    return this.banners.listAdmin();
+  async listAdmin(query: ListAdminBannersQueryDto) {
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { rows, total } = await this.banners.listAdmin({ skip, take });
+    return { data: rows, meta: buildOffsetMeta(page, pageSize, total) };
   }
 
   async getAdmin(id: string) {

@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
+import { AdminPagination, type AdminPageSize } from '@/components/admin/admin-pagination';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import {
   AdminButton,
@@ -104,12 +105,13 @@ export default function AdminTaxonomyPage() {
 
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [searchDraft, setSearchDraft] = useState('');
-  // Visible-row count and selection are keyed to the filters that produced
-  // them, so a filter change automatically restarts paging and clears both.
-  const [visible, setVisible] = useState<{ key: string; count: number }>({
+  // Page and selection are keyed to the filters that produced them, so a
+  // filter change automatically restarts paging and clears both.
+  const [pagination, setPagination] = useState<{ key: string; page: number }>({
     key: '',
-    count: PAGE_SIZE,
+    page: 1,
   });
+  const [pageSize, setPageSize] = useState<AdminPageSize>(PAGE_SIZE);
   const [selection, setSelection] = useState<{ key: string; ids: ReadonlySet<string> }>({
     key: '',
     ids: new Set(),
@@ -121,7 +123,7 @@ export default function AdminTaxonomyPage() {
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
   const filterKey = JSON.stringify(filters);
-  const visibleCount = visible.key === filterKey ? visible.count : PAGE_SIZE;
+  const page = pagination.key === filterKey ? pagination.page : 1;
   const selected = selection.key === filterKey ? selection.ids : EMPTY_SELECTION;
 
   // Debounced search keeps typing responsive without re-filtering on each key.
@@ -161,7 +163,11 @@ export default function AdminTaxonomyPage() {
       .sort(SORT_COMPARATORS[filters.sort]);
   }, [allRows, filters]);
 
-  const rows = filteredRows.slice(0, visibleCount);
+  const totalRows = filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const rows = filteredRows.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const meta = { page: safePage, pageSize, total: totalRows, totalPages };
   const allSelected = rows.length > 0 && rows.every((row) => selected.has(taxonomyRowKey(row)));
   const filtersActive =
     Boolean(filters.q || filters.type || filters.status || filters.parentId) ||
@@ -220,6 +226,17 @@ export default function AdminTaxonomyPage() {
 
   function setSelected(ids: ReadonlySet<string>) {
     setSelection({ key: filterKey, ids });
+  }
+
+  function goToPage(next: number) {
+    setPagination({ key: filterKey, page: next });
+    setSelected(new Set());
+  }
+
+  function changePageSize(next: AdminPageSize) {
+    setPageSize(next);
+    setPagination({ key: filterKey, page: 1 });
+    setSelected(new Set());
   }
 
   function toggleRow(row: TaxonomyRow) {
@@ -551,20 +568,12 @@ export default function AdminTaxonomyPage() {
                 ))}
               </tbody>
             </AdminTable>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-[#555555]">
-                Showing {rows.length} of {filteredRows.length} item
-                {filteredRows.length === 1 ? '' : 's'}
-              </p>
-              {filteredRows.length > visibleCount ? (
-                <AdminButton
-                  variant="secondary"
-                  onClick={() => setVisible({ key: filterKey, count: visibleCount + PAGE_SIZE })}
-                >
-                  Load more
-                </AdminButton>
-              ) : null}
-            </div>
+            <AdminPagination
+              meta={meta}
+              entityLabel="items"
+              onPageChange={goToPage}
+              onPageSizeChange={changePageSize}
+            />
           </>
         ) : null}
       </AdminPanel>

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, PromotionRewardType, PromotionStatus } from '@/generated/prisma/client';
 import { USER_FACING } from '@/common/messages/user-facing-errors';
+import { buildOffsetMeta, resolveOffsetPagination } from '@/common/pagination/offset-pagination';
 import { poishaToTaka, takaToPoisha } from '@/common/utils/money';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { AuditService } from '@/modules/platform/audit.service';
@@ -13,6 +14,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import type {
   CreateAdminCouponDto,
   ListAdminCouponRedemptionsQueryDto,
+  ListAdminCouponsQueryDto,
   UpdateAdminCouponDto,
 } from './dto/admin-coupon.dto';
 import type { CouponResponseDto } from './dto/coupon-response.dto';
@@ -136,9 +138,13 @@ export class PromotionsService {
     };
   }
 
-  async listAdminCoupons() {
-    const coupons = await this.promotions.listAdminCoupons();
-    return coupons.map((coupon) => this.toAdminCouponResponse(coupon));
+  async listAdminCoupons(query: ListAdminCouponsQueryDto) {
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { rows, total } = await this.promotions.listAdminCoupons({ skip, take });
+    return {
+      data: rows.map((coupon) => this.toAdminCouponResponse(coupon)),
+      meta: buildOffsetMeta(page, pageSize, total),
+    };
   }
 
   async getAdminCoupon(id: string) {
@@ -266,11 +272,8 @@ export class PromotionsService {
     const existing = await this.promotions.findAdminCouponById(id);
     if (!existing) throw new NotFoundException('Coupon not found');
 
-    const { items, hasMore } = await this.promotions.listCouponRedemptions(
-      id,
-      query.cursor,
-      query.limit,
-    );
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { items, total } = await this.promotions.listCouponRedemptions(id, { skip, take });
 
     return {
       data: items.map((redemption) => ({
@@ -281,10 +284,7 @@ export class PromotionsService {
         shippingWaived: redemption.shippingWaived,
         createdAt: redemption.createdAt.toISOString(),
       })),
-      meta: {
-        limit: query.limit,
-        nextCursor: hasMore ? items[items.length - 1].id : null,
-      },
+      meta: buildOffsetMeta(page, pageSize, total),
     };
   }
 

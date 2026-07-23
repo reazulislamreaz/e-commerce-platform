@@ -30,6 +30,7 @@ import {
   AdminCouponResponseDto,
   CreateAdminCouponDto,
   ListAdminCouponRedemptionsQueryDto,
+  ListAdminCouponsQueryDto,
   UpdateAdminCouponDto,
 } from './dto/admin-coupon.dto';
 import { PromotionsService } from './promotions.service';
@@ -44,10 +45,10 @@ export class AdminCouponsController {
   constructor(private readonly promotions: PromotionsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List coupons for admin management' })
+  @ApiOperation({ summary: 'List coupons for admin management (offset pagination)' })
   @ApiOkResponse({ type: [AdminCouponResponseDto] })
-  list() {
-    return this.promotions.listAdminCoupons();
+  list(@Query() query: ListAdminCouponsQueryDto) {
+    return this.promotions.listAdminCoupons(query);
   }
 
   @Post()

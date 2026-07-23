@@ -7,11 +7,11 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
   Min,
 } from 'class-validator';
 import { PromotionStatus } from '@/generated/prisma/client';
+import { OffsetPaginationQueryDto } from '@/common/pagination/offset-pagination.query.dto';
 
 export class CreateAdminCouponDto {
   @ApiProperty({ example: 'ELEVATE10' })
@@ -177,18 +177,6 @@ export class AdminCouponRedemptionResponseDto {
   createdAt!: string;
 }
 
-export class ListAdminCouponRedemptionsQueryDto {
-  @ApiPropertyOptional({ description: 'Cursor: redemption id from the previous page' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(36)
-  cursor?: string;
+export class ListAdminCouponsQueryDto extends OffsetPaginationQueryDto {}
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit: number = 20;
-}
+export class ListAdminCouponRedemptionsQueryDto extends OffsetPaginationQueryDto {}

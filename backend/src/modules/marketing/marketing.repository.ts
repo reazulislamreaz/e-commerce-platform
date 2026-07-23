@@ -21,11 +21,17 @@ export class MarketingRepository {
     });
   }
 
-  listAdmin() {
-    return this.prisma.marketingBanner.findMany({
-      where: { deletedAt: null },
-      orderBy: [{ placement: 'asc' }, { position: 'asc' }, { createdAt: 'desc' }],
-    });
+  async listAdmin(params: { skip: number; take: number }) {
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.marketingBanner.count({ where: { deletedAt: null } }),
+      this.prisma.marketingBanner.findMany({
+        where: { deletedAt: null },
+        orderBy: [{ placement: 'asc' }, { position: 'asc' }, { createdAt: 'desc' }],
+        skip: params.skip,
+        take: params.take,
+      }),
+    ]);
+    return { rows, total };
   }
 
   findById(id: string) {

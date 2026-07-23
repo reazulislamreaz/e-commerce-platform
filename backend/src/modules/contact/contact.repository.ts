@@ -15,17 +15,22 @@ export class ContactRepository {
     return tx.contactMessage.create({ data });
   }
 
-  listAdmin(query: {
-    cursor?: string;
-    limit: number;
+  async listAdmin(query: {
+    skip: number;
+    take: number;
     status?: ContactMessageStatus;
-  }): Promise<ContactMessageRecord[]> {
-    return this.prisma.contactMessage.findMany({
-      where: { status: query.status },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: query.limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    });
+  }): Promise<{ rows: ContactMessageRecord[]; total: number }> {
+    const where: Prisma.ContactMessageWhereInput = { status: query.status };
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.contactMessage.count({ where }),
+      this.prisma.contactMessage.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: query.skip,
+        take: query.take,
+      }),
+    ]);
+    return { rows, total };
   }
 
   findById(id: string): Promise<ContactMessageRecord | null> {

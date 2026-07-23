@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import { AdminTableSkeleton } from '@/components/common/skeleton';
+import { AdminPagination, type AdminPageSize } from '@/components/admin/admin-pagination';
 import {
   AdminButton,
   AdminEmpty,
@@ -107,11 +108,11 @@ export default function AdminProductsPage() {
   const [searchDraft, setSearchDraft] = useState('');
   // Pagination and selection are keyed to the filters that produced them, so a
   // filter change automatically restarts paging and clears the selection.
-  const [pagination, setPagination] = useState<{
-    key: string;
-    cursor?: string;
-    priorRows: AdminProductSummary[];
-  }>({ key: '', priorRows: [] });
+  const [pagination, setPagination] = useState<{ key: string; page: number }>({
+    key: '',
+    page: 1,
+  });
+  const [pageSize, setPageSize] = useState<AdminPageSize>(PAGE_SIZE);
   const [selection, setSelection] = useState<{ key: string; ids: ReadonlySet<string> }>({
     key: '',
     ids: new Set(),
@@ -121,8 +122,7 @@ export default function AdminProductsPage() {
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
   const filterKey = JSON.stringify(filters);
-  const cursor = pagination.key === filterKey ? pagination.cursor : undefined;
-  const priorRows = pagination.key === filterKey ? pagination.priorRows : [];
+  const page = pagination.key === filterKey ? pagination.page : 1;
   const selected = selection.key === filterKey ? selection.ids : EMPTY_SELECTION;
 
   // Debounced search keeps typing responsive without spamming the API.
@@ -137,16 +137,16 @@ export default function AdminProductsPage() {
 
   const queryParams = useMemo(
     () => ({
-      limit: PAGE_SIZE,
+      page,
+      limit: pageSize,
       ...(filters.q ? { q: filters.q } : {}),
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.stock ? { stock: filters.stock } : {}),
       ...(filters.brandId ? { brandId: filters.brandId } : {}),
       ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
       sort: filters.sort,
-      ...(cursor ? { cursor } : {}),
     }),
-    [filters, cursor],
+    [filters, page, pageSize],
   );
 
   const products = useAdminProducts(queryParams);
@@ -174,9 +174,8 @@ export default function AdminProductsPage() {
     [adminKeys.productsRoot(), adminKeys.productRoot(), adminKeys.productStats()],
   );
 
-  const pageRows = products.data?.data ?? [];
-  const rows = cursor ? [...priorRows, ...pageRows] : pageRows;
-  const nextCursor = products.data?.meta.nextCursor ?? null;
+  const rows = products.data?.data ?? [];
+  const meta = products.data?.meta ?? { page, pageSize, limit: pageSize, total: 0, totalPages: 1 };
   const filtersActive =
     Boolean(
       filters.q || filters.status || filters.stock || filters.brandId || filters.categoryId,
@@ -243,9 +242,15 @@ export default function AdminProductsPage() {
     }
   }
 
-  function loadMore() {
-    if (!nextCursor) return;
-    setPagination({ key: filterKey, cursor: nextCursor, priorRows: rows });
+  function goToPage(next: number) {
+    setPagination({ key: filterKey, page: next });
+    setSelected(new Set());
+  }
+
+  function changePageSize(next: AdminPageSize) {
+    setPageSize(next);
+    setPagination({ key: filterKey, page: 1 });
+    setSelected(new Set());
   }
 
   function toggleColumnSort(column: SortableColumn) {
@@ -473,7 +478,13 @@ export default function AdminProductsPage() {
         ) : null}
 
         {rows.length > 0 ? (
-          <>
+          <div
+            className={
+              products.isFetching && !products.isLoading
+                ? 'opacity-70 transition-opacity'
+                : undefined
+            }
+          >
             <AdminTable>
               <thead>
                 <tr>
@@ -516,23 +527,14 @@ export default function AdminProductsPage() {
                 ))}
               </tbody>
             </AdminTable>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-[#555555]">
-                Showing {rows.length} product{rows.length === 1 ? '' : 's'}
-                {products.isFetching ? ' · refreshing…' : ''}
-              </p>
-              {nextCursor ? (
-                <AdminButton
-                  variant="secondary"
-                  onClick={loadMore}
-                  disabled={products.isFetching}
-                  loading={products.isFetching && Boolean(cursor)}
-                >
-                  Load more
-                </AdminButton>
-              ) : null}
-            </div>
-          </>
+            <AdminPagination
+              meta={meta}
+              entityLabel="products"
+              isFetching={products.isFetching && !products.isLoading}
+              onPageChange={goToPage}
+              onPageSizeChange={changePageSize}
+            />
+          </div>
         ) : null}
       </AdminPanel>
 

@@ -5,12 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ReviewStatus } from '@/generated/prisma/client';
+import { buildOffsetMeta, resolveOffsetPagination } from '@/common/pagination/offset-pagination';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { CatalogCacheService } from '@/modules/catalog/catalog-cache.service';
 import { AuditService } from '@/modules/platform/audit.service';
 import type { AdminReviewActionDto } from './dto/admin-review-action.dto';
 import type { CreateReviewDto } from './dto/create-review.dto';
-import type { ListReviewsQueryDto } from './dto/list-reviews.query.dto';
+import type { ListAdminReviewsQueryDto, ListReviewsQueryDto } from './dto/list-reviews.query.dto';
 import type { ReviewResponseDto } from './dto/review-response.dto';
 import type { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewsRepository, type ReviewDetailRecord } from './reviews.repository';
@@ -118,9 +119,13 @@ export class ReviewsService {
     if (shouldInvalidate) await this.catalogCache.invalidateAll();
   }
 
-  async listAdmin(query: ListReviewsQueryDto) {
-    const rows = await this.reviews.listAdmin(query);
-    return this.toCursorPage(rows, query.limit);
+  async listAdmin(query: ListAdminReviewsQueryDto) {
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { rows, total } = await this.reviews.listAdmin({ skip, take, status: query.status });
+    return {
+      data: rows.map(toResponse),
+      meta: buildOffsetMeta(page, pageSize, total),
+    };
   }
 
   async getAdmin(id: string): Promise<ReviewResponseDto> {

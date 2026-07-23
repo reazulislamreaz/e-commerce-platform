@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, ProductStatus } from '@/generated/prisma/client';
+import { buildOffsetMeta, resolveOffsetPagination } from '@/common/pagination/offset-pagination';
 import { slugify } from '@/common/utils/slug';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { InventoryService } from '@/modules/inventory/inventory.service';
@@ -23,6 +24,7 @@ import type { InventoryAdjustmentDto } from './dto/inventory.dto';
 import type {
   ListInventoryBalancesQueryDto,
   ListInventoryMovementsQueryDto,
+  ListStockAlertsQueryDto,
 } from './dto/inventory.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
 
@@ -37,13 +39,14 @@ export class AdminCatalogService {
   ) {}
 
   async listProducts(query: ListAdminProductsQueryDto) {
-    const { items, hasMore, stockByVariant } = await this.adminCatalog.listProducts(query);
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { items, total, stockByVariant } = await this.adminCatalog.listProducts(query, {
+      skip,
+      take,
+    });
     return {
       data: items.map((product) => this.adminCatalog.toProductListSummary(product, stockByVariant)),
-      meta: {
-        limit: query.limit,
-        nextCursor: hasMore ? items[items.length - 1].id : null,
-      },
+      meta: buildOffsetMeta(page, pageSize, total),
     };
   }
 
@@ -454,13 +457,11 @@ export class AdminCatalogService {
   }
 
   async listInventoryBalances(query: ListInventoryBalancesQueryDto) {
-    const { items, hasMore } = await this.adminCatalog.listInventoryBalances(query);
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { items, total } = await this.adminCatalog.listInventoryBalances(query, { skip, take });
     return {
       data: items.map((balance) => this.adminCatalog.toBalanceResponse(balance)),
-      meta: {
-        limit: query.limit,
-        nextCursor: hasMore ? items[items.length - 1].id : null,
-      },
+      meta: buildOffsetMeta(page, pageSize, total),
     };
   }
 
@@ -485,27 +486,32 @@ export class AdminCatalogService {
     }));
   }
 
-  async listStockAlerts(params?: { limit?: number }) {
-    const alerts = await this.inventory.listStockAlerts({
+  async listStockAlerts(query: ListStockAlertsQueryDto) {
+    const { page, pageSize, skip, take } = resolveOffsetPagination(query);
+    const { rows, total } = await this.inventory.listStockAlerts({
       resolved: false,
-      limit: params?.limit,
+      skip,
+      take,
     });
-    return alerts.map((alert) => ({
-      id: alert.id,
-      level: alert.level,
-      available: alert.available,
-      threshold: alert.threshold,
-      createdAt: alert.createdAt.toISOString(),
-      variantId: alert.balance.variant.id,
-      sku: alert.balance.variant.sku,
-      size: alert.balance.variant.size,
-      color: alert.balance.variant.color,
-      locationId: alert.balance.location.id,
-      locationCode: alert.balance.location.code,
-      locationName: alert.balance.location.name,
-      onHand: alert.balance.onHand,
-      reserved: alert.balance.reserved,
-    }));
+    return {
+      data: rows.map((alert) => ({
+        id: alert.id,
+        level: alert.level,
+        available: alert.available,
+        threshold: alert.threshold,
+        createdAt: alert.createdAt.toISOString(),
+        variantId: alert.balance.variant.id,
+        sku: alert.balance.variant.sku,
+        size: alert.balance.variant.size,
+        color: alert.balance.variant.color,
+        locationId: alert.balance.location.id,
+        locationCode: alert.balance.location.code,
+        locationName: alert.balance.location.name,
+        onHand: alert.balance.onHand,
+        reserved: alert.balance.reserved,
+      })),
+      meta: buildOffsetMeta(page, pageSize, total),
+    };
   }
 
   async adjustInventory(actor: JwtPayload, dto: InventoryAdjustmentDto) {

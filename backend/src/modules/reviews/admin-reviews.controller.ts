@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -23,7 +14,7 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { AdminReviewActionDto } from './dto/admin-review-action.dto';
-import { ListReviewsQueryDto } from './dto/list-reviews.query.dto';
+import { ListAdminReviewsQueryDto } from './dto/list-reviews.query.dto';
 import { ReviewResponseDto } from './dto/review-response.dto';
 import { ReviewsService } from './reviews.service';
 
@@ -37,9 +28,9 @@ export class AdminReviewsController {
   constructor(private readonly reviews: ReviewsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List product reviews for moderation' })
+  @ApiOperation({ summary: 'List product reviews for moderation (offset pagination)' })
   @ApiOkResponse({ type: [ReviewResponseDto] })
-  list(@Query() query: ListReviewsQueryDto) {
+  list(@Query() query: ListAdminReviewsQueryDto) {
     return this.reviews.listAdmin(query);
   }
 

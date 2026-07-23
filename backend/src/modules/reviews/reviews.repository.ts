@@ -14,7 +14,10 @@ export type ReviewDetailRecord = Prisma.ProductReviewGetPayload<{
 export class ReviewsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: string, tx: Prisma.TransactionClient = this.prisma): Promise<ReviewDetailRecord | null> {
+  findById(
+    id: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<ReviewDetailRecord | null> {
     return tx.productReview.findFirst({
       where: { id, deletedAt: null },
       include: reviewInclude,
@@ -38,21 +41,26 @@ export class ReviewsRepository {
     });
   }
 
-  listAdmin(query: {
-    cursor?: string;
-    limit: number;
+  async listAdmin(query: {
+    skip: number;
+    take: number;
     status?: ReviewStatus;
-  }): Promise<ReviewDetailRecord[]> {
-    return this.prisma.productReview.findMany({
-      where: {
-        deletedAt: null,
-        ...(query.status ? { status: query.status } : {}),
-      },
-      include: reviewInclude,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: query.limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    });
+  }): Promise<{ rows: ReviewDetailRecord[]; total: number }> {
+    const where: Prisma.ProductReviewWhereInput = {
+      deletedAt: null,
+      ...(query.status ? { status: query.status } : {}),
+    };
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.productReview.count({ where }),
+      this.prisma.productReview.findMany({
+        where,
+        include: reviewInclude,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: query.skip,
+        take: query.take,
+      }),
+    ]);
+    return { rows, total };
   }
 
   findActiveByUserAndProduct(

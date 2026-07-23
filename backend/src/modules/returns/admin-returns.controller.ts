@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -23,7 +14,7 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { AdminReturnActionDto } from './dto/admin-return-action.dto';
-import { ListReturnsQueryDto } from './dto/list-returns.query.dto';
+import { ListAdminReturnsQueryDto } from './dto/list-returns.query.dto';
 import { ReturnDetailResponseDto } from './dto/return-response.dto';
 import { ReturnsService } from './returns.service';
 
@@ -37,9 +28,9 @@ export class AdminReturnsController {
   constructor(private readonly returns: ReturnsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List return requests' })
+  @ApiOperation({ summary: 'List return requests (offset pagination)' })
   @ApiOkResponse({ type: [ReturnDetailResponseDto] })
-  list(@Query() query: ListReturnsQueryDto) {
+  list(@Query() query: ListAdminReturnsQueryDto) {
     return this.returns.listAdmin(query);
   }
 

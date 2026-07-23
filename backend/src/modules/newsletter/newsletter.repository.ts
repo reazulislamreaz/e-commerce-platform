@@ -72,17 +72,22 @@ export class NewsletterRepository {
     });
   }
 
-  listAdmin(query: {
-    cursor?: string;
-    limit: number;
+  async listAdmin(query: {
+    skip: number;
+    take: number;
     status?: NewsletterStatus;
-  }): Promise<NewsletterSubscriptionRecord[]> {
-    return this.prisma.newsletterSubscription.findMany({
-      where: { status: query.status },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: query.limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    });
+  }): Promise<{ rows: NewsletterSubscriptionRecord[]; total: number }> {
+    const where: Prisma.NewsletterSubscriptionWhereInput = { status: query.status };
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.newsletterSubscription.count({ where }),
+      this.prisma.newsletterSubscription.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: query.skip,
+        take: query.take,
+      }),
+    ]);
+    return { rows, total };
   }
 
   runTransaction<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
