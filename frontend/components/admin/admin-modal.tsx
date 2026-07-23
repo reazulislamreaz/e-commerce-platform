@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useId, useRef, type PropsWithChildren, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useLayoutEffect,
+  type PropsWithChildren,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,6 +43,21 @@ export function AdminModal({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Keep the latest onClose and dismissDisabled in refs so that the effects
+  // below can always call the current version without being listed as
+  // dependencies — preventing the effects from re-running (and re-focusing
+  // the panel) on every parent re-render caused by form field state updates.
+  // Refs are only read inside effects/handlers, never during the render phase.
+  const onCloseRef = useRef(onClose);
+  const dismissDisabledRef = useRef(dismissDisabled);
+
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+    dismissDisabledRef.current = dismissDisabled;
+  }, [onClose, dismissDisabled]);
+
+  // Effect 1: focus the panel and lock body scroll when the modal opens.
+  // Depends only on `open` so it never re-runs due to callback identity changes.
   useEffect(() => {
     if (!open) return;
 
@@ -43,17 +65,26 @@ export function AdminModal({
     panelRef.current?.focus();
     document.body.style.overflow = 'hidden';
 
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !dismissDisabled) onClose();
-    }
-    document.addEventListener('keydown', onKeyDown);
-
     return () => {
-      document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = '';
       previouslyFocused?.focus();
     };
-  }, [open, onClose, dismissDisabled]);
+  }, [open]);
+
+  // Effect 2: keyboard listener — registered once per modal-open cycle.
+  // Reads refs inside the handler so it always has the latest values without
+  // needing them as dependencies.
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !dismissDisabledRef.current) {
+        onCloseRef.current();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
 
   if (!open) return null;
 

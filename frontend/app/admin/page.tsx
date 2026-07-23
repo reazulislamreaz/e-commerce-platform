@@ -3,22 +3,29 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import {
+  AlertTriangle,
   ArrowUpRight,
   Banknote,
   BarChart3,
   ImageIcon,
-  Mail,
   Package,
   PackageCheck,
   Plus,
-  RotateCcw,
   Shirt,
   Star,
   Tag,
   TrendingDown,
   TrendingUp,
+  Users,
 } from 'lucide-react';
-import { useAdminCoupons, useAdminOrders, useAdminQueues, type AdminOrder } from '@/features/admin';
+import {
+  useAdminOrders,
+  useAdminQueues,
+  useAnalyticsOverview,
+  useCustomerAnalytics,
+  useInventoryAnalytics,
+  type AdminOrder,
+} from '@/features/admin';
 import {
   AdminButton,
   AdminEmpty,
@@ -153,14 +160,14 @@ function useOrderAnalytics(orders: AdminOrder[]) {
 }
 
 export default function AdminDashboardPage() {
-  const { confirmedOrders, processingOrders, pendingReturns, pendingReviews, newContact } =
-    useAdminQueues();
-  const coupons = useAdminCoupons();
+  const { confirmedOrders, processingOrders, pendingReturns, pendingReviews } = useAdminQueues();
   const recentOrders = useAdminOrders({ limit: 50 });
+  const analyticsOverview = useAnalyticsOverview();
+  const customerAnalytics = useCustomerAnalytics();
+  const inventoryAnalytics = useInventoryAnalytics();
 
   const orderRows = useMemo(() => recentOrders.data?.data ?? [], [recentOrders.data]);
   const analytics = useOrderAnalytics(orderRows);
-  const activeCoupons = coupons.data?.filter((coupon) => coupon.status === 'ACTIVE') ?? [];
 
   const cards = [
     {
@@ -173,6 +180,7 @@ export default function AdminDashboardPage() {
       more: Boolean(confirmedOrders.data?.meta.nextCursor),
       loading: confirmedOrders.isLoading,
       trend: dailyCounts((confirmedOrders.data?.data ?? []).map((row) => row.createdAt)),
+      delta: null,
     },
     {
       label: 'Processing Orders',
@@ -184,50 +192,55 @@ export default function AdminDashboardPage() {
       more: Boolean(processingOrders.data?.meta.nextCursor),
       loading: processingOrders.isLoading,
       trend: dailyCounts((processingOrders.data?.data ?? []).map((row) => row.createdAt)),
+      delta: null,
     },
     {
-      label: 'Pending Returns',
-      hint: 'Needs a decision',
-      href: '/admin/returns?status=PENDING',
-      icon: RotateCcw,
+      label: 'Total Revenue',
+      hint: 'Completed orders',
+      href: '/admin/analytics',
+      icon: Banknote,
       tone: TONES.sky,
-      count: pendingReturns.data?.data.length ?? 0,
-      more: Boolean(pendingReturns.data?.meta.nextCursor),
-      loading: pendingReturns.isLoading,
-      trend: dailyCounts((pendingReturns.data?.data ?? []).map((row) => row.createdAt)),
-    },
-    {
-      label: 'Pending Reviews',
-      hint: 'Moderation queue',
-      href: '/admin/reviews?status=PENDING',
-      icon: Star,
-      tone: TONES.emerald,
-      count: pendingReviews.data?.data.length ?? 0,
-      more: Boolean(pendingReviews.data?.meta.nextCursor),
-      loading: pendingReviews.isLoading,
-      trend: dailyCounts((pendingReviews.data?.data ?? []).map((row) => row.createdAt)),
-    },
-    {
-      label: 'Active Coupons',
-      hint: 'Live promotions',
-      href: '/admin/coupons',
-      icon: Tag,
-      tone: TONES.rose,
-      count: activeCoupons.length,
+      count: formatTaka(analyticsOverview.data?.totalRevenue ?? 0),
       more: false,
-      loading: coupons.isLoading,
-      trend: dailyCounts(activeCoupons.map((coupon) => coupon.startsAt)),
+      loading: analyticsOverview.isLoading,
+      trend: [],
+      delta: analyticsOverview.data?.deltas.revenue30d ?? null,
     },
     {
-      label: 'New Messages',
-      hint: 'Unread inbox',
-      href: '/admin/contact?status=NEW',
-      icon: Mail,
+      label: "Today's Sales",
+      hint: `${analyticsOverview.data?.ordersToday ?? 0} orders today`,
+      href: '/admin/analytics',
+      icon: TrendingUp,
+      tone: TONES.emerald,
+      count: formatTaka(analyticsOverview.data?.revenueToday ?? 0),
+      more: false,
+      loading: analyticsOverview.isLoading,
+      trend: [],
+      delta: analyticsOverview.data?.deltas.revenueToday ?? null,
+    },
+    {
+      label: 'Total Customers',
+      hint: 'Registered users',
+      href: '/admin/users',
+      icon: Users,
+      tone: TONES.rose,
+      count: customerAnalytics.data?.totalCustomers ?? 0,
+      more: false,
+      loading: customerAnalytics.isLoading,
+      trend: [],
+      delta: null,
+    },
+    {
+      label: 'Low Stock Products',
+      hint: 'Below threshold',
+      href: '/admin/products?stock=LOW_STOCK',
+      icon: AlertTriangle,
       tone: TONES.orange,
-      count: newContact.data?.data.length ?? 0,
-      more: Boolean(newContact.data?.meta.nextCursor),
-      loading: newContact.isLoading,
-      trend: dailyCounts((newContact.data?.data ?? []).map((row) => row.createdAt)),
+      count: inventoryAnalytics.data?.lowStockCount ?? 0,
+      more: false,
+      loading: inventoryAnalytics.isLoading,
+      trend: [],
+      delta: null,
     },
   ];
 
@@ -319,7 +332,22 @@ export default function AdminDashboardPage() {
                 {card.label}
               </p>
               <p className="mt-0.5 truncate text-xs text-[#555555]">{card.hint}</p>
-              <Sparkline values={card.trend} className={cn('mt-3', card.tone.spark)} />
+              {card.delta !== undefined && card.delta !== null ? (
+                <div className="mt-3 flex items-center gap-1 text-[11px] font-bold">
+                  {card.delta >= 0 ? (
+                    <TrendingUp className="size-3.5 text-emerald-600" strokeWidth={2} />
+                  ) : (
+                    <TrendingDown className="size-3.5 text-red-600" strokeWidth={2} />
+                  )}
+                  <span className={card.delta >= 0 ? 'text-emerald-700' : 'text-red-700'}>
+                    {card.delta > 0 ? '+' : ''}
+                    {card.delta.toFixed(1)}%
+                  </span>
+                </div>
+              ) : null}
+              {card.trend && card.trend.length > 0 ? (
+                <Sparkline values={card.trend} className={cn('mt-3', card.tone.spark)} />
+              ) : null}
             </Link>
           );
         })}
