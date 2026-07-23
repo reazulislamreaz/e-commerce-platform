@@ -39,6 +39,14 @@
   --container-8xl: 87.5rem;
 }
 
+/* Reserve the scrollbar gutter so pages don't shift horizontally when the
+   vertical scrollbar appears/disappears (short vs full content).
+   overflow-y fallback covers browsers without scrollbar-gutter support. */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
