@@ -5,6 +5,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Role, UserStatus } from '@/generated/prisma/client';
 import { USER_FACING } from '@/common/messages/user-facing-errors';
 import { PrismaService } from '@/prisma/prisma.service';
+import { AuthSessionCacheService } from './auth-session-cache.service';
 import { AuthUserCacheService } from './auth-user-cache.service';
 
 export interface JwtPayload {
@@ -22,11 +23,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly userCache: AuthUserCacheService,
+    private readonly sessionCache: AuthSessionCacheService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+      // Pin the symmetric algorithm so a token forged with a different `alg`
+      // header (e.g. algorithm-confusion attempts) is rejected outright.
+      algorithms: ['HS256'],
     });
   }
 
@@ -37,6 +42,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * prevent stale role claims.
    */
   async validate(payload: JwtPayload): Promise<JwtPayload> {
+    // Reject tokens whose session was revoked (logout, password reset/change,
+    // refresh-token reuse) before the 15 minute access token would expire.
+    if (await this.sessionCache.isRevoked(payload.sid)) {
+      throw new UnauthorizedException(USER_FACING.SESSION_ENDED);
+    }
+
     const cached = await this.userCache.get(payload.sub);
     if (cached) {
       if (cached.deletedAt || cached.status !== UserStatus.ACTIVE) {

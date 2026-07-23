@@ -1,6 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { sha256Hex } from '@/common/utils/hash';
 import { InventoryService } from '@/modules/inventory/inventory.service';
-import { CatalogCacheService } from './catalog-cache.service';
+import {
+  CatalogCacheService,
+  LIST_TTL_SECONDS,
+  PRODUCT_TTL_SECONDS,
+  RAIL_TTL_SECONDS,
+} from './catalog-cache.service';
 import {
   CatalogRepository,
   type CatalogMappableProduct,
@@ -14,6 +20,33 @@ import type {
 
 function taka(poisha: bigint): number {
   return Number(poisha) / 100;
+}
+
+/**
+ * Deterministic cache key for a product list query. Array filters are sorted so
+ * equivalent requests (e.g. category order swapped) share a cache entry.
+ */
+function listCacheKey(query: ListProductsQueryDto): string {
+  const sortList = (value?: string[]) => (value ? [...value].sort() : undefined);
+  const normalized = {
+    collections: sortList(query.collections),
+    categories: sortList(query.categories),
+    subcategories: sortList(query.subcategories),
+    brands: sortList(query.brands),
+    sizes: sortList(query.sizes),
+    colors: sortList(query.colors),
+    minPrice: query.minPrice,
+    maxPrice: query.maxPrice,
+    availability: query.availability,
+    discount: query.discount,
+    isNew: query.isNew,
+    minRating: query.minRating,
+    query: query.query?.trim().toLowerCase(),
+    sort: query.sort,
+    page: query.page,
+    pageSize: query.pageSize,
+  };
+  return `catalog:list:v1:${sha256Hex(JSON.stringify(normalized))}`;
 }
 
 @Injectable()
@@ -32,16 +65,18 @@ export class CatalogService {
     ) {
       throw new BadRequestException('minPrice cannot exceed maxPrice');
     }
-    const result = await this.catalog.list(query);
-    return {
-      data: await this.mapMany(result.items),
-      meta: {
-        page: result.page,
-        pageSize: query.pageSize,
-        total: result.total,
-        totalPages: result.totalPages,
-      },
-    };
+    return this.cache.getOrSet(listCacheKey(query), LIST_TTL_SECONDS, async () => {
+      const result = await this.catalog.list(query);
+      return {
+        data: await this.mapMany(result.items),
+        meta: {
+          page: result.page,
+          pageSize: query.pageSize,
+          total: result.total,
+          totalPages: result.totalPages,
+        },
+      };
+    });
   }
 
   async search(query: ProductSearchQueryDto) {
@@ -57,25 +92,33 @@ export class CatalogService {
   }
 
   async newArrivals(query: ProductLimitQueryDto) {
-    const result = await this.catalog.list({
-      sort: 'newest',
-      availability: 'all',
-      page: 1,
-      pageSize: query.limit,
-      isNew: true,
+    return this.cache.getOrSet(`catalog:rail:new:v1:${query.limit}`, RAIL_TTL_SECONDS, async () => {
+      const result = await this.catalog.list({
+        sort: 'newest',
+        availability: 'all',
+        page: 1,
+        pageSize: query.limit,
+        isNew: true,
+      });
+      return this.mapMany(result.items);
     });
-    return this.mapMany(result.items);
   }
 
   async onSale(query: ProductLimitQueryDto) {
-    const result = await this.catalog.list({
-      discount: true,
-      sort: 'featured',
-      availability: 'all',
-      page: 1,
-      pageSize: query.limit,
-    });
-    return this.mapMany(result.items);
+    return this.cache.getOrSet(
+      `catalog:rail:sale:v1:${query.limit}`,
+      RAIL_TTL_SECONDS,
+      async () => {
+        const result = await this.catalog.list({
+          discount: true,
+          sort: 'featured',
+          availability: 'all',
+          page: 1,
+          pageSize: query.limit,
+        });
+        return this.mapMany(result.items);
+      },
+    );
   }
 
   async getBySlug(slug: string) {
@@ -91,9 +134,15 @@ export class CatalogService {
   }
 
   async getByIdentifier(identifier: string) {
-    const product = await this.catalog.findByIdentifier(identifier);
-    if (!product) throw new NotFoundException('Product not found');
-    return this.mapOne(product);
+    return this.cache.getOrSet(
+      `catalog:id:v1:${encodeURIComponent(identifier)}`,
+      PRODUCT_TTL_SECONDS,
+      async () => {
+        const product = await this.catalog.findByIdentifier(identifier);
+        if (!product) throw new NotFoundException('Product not found');
+        return this.mapOne(product);
+      },
+    );
   }
 
   async getByIdentifiers(identifiers: string[]) {
@@ -112,9 +161,15 @@ export class CatalogService {
   }
 
   async related(slug: string, query: ProductLimitQueryDto) {
-    const related = await this.catalog.findRelatedBySlug(slug, query.limit);
-    if (related === null) throw new NotFoundException('Product not found');
-    return this.mapMany(related);
+    return this.cache.getOrSet(
+      `catalog:related:v1:${encodeURIComponent(slug)}:${query.limit}`,
+      RAIL_TTL_SECONDS,
+      async () => {
+        const related = await this.catalog.findRelatedBySlug(slug, query.limit);
+        if (related === null) throw new NotFoundException('Product not found');
+        return this.mapMany(related);
+      },
+    );
   }
 
   async facets() {

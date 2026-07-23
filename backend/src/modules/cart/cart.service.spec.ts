@@ -19,6 +19,7 @@ describe('CartService', () => {
     deleteAllItems: jest.fn(),
     deleteCart: jest.fn(),
     findActiveVariant: jest.fn(),
+    findActiveVariantsByIds: jest.fn(),
     setRecoveryEmail: jest.fn(),
   };
 
@@ -112,18 +113,16 @@ describe('CartService', () => {
       };
 
       cartRepository.findByGuestTokenHash.mockResolvedValue(guestCart);
-      cartRepository.findByUserId
-        .mockResolvedValueOnce(userCart)
-        .mockResolvedValueOnce({
-          ...userCart,
-          version: 3,
-          items: [{ ...userCart.items[0], quantity: 5 }],
-        });
+      cartRepository.findByUserId.mockResolvedValueOnce(userCart).mockResolvedValueOnce({
+        ...userCart,
+        version: 3,
+        items: [{ ...userCart.items[0], quantity: 5 }],
+      });
       inventoryService.getAvailableByVariantIds.mockResolvedValue(new Map([['variant-1', 5]]));
       cartRepository.upsertItem.mockResolvedValue(undefined);
       cartRepository.deleteCart.mockResolvedValue(undefined);
       cartRepository.touchCart.mockResolvedValue({ version: 3 });
-      cartRepository.findActiveVariant.mockResolvedValue({
+      const variantRecord = {
         id: 'variant-1',
         productId: 'product-1',
         size: 'M',
@@ -134,7 +133,9 @@ describe('CartService', () => {
           currentPriceAmount: 500000n,
           media: [{ url: 'https://example.com/image.webp' }],
         },
-      });
+      };
+      cartRepository.findActiveVariant.mockResolvedValue(variantRecord);
+      cartRepository.findActiveVariantsByIds.mockResolvedValue([variantRecord]);
 
       const result = await service.mergeGuestIntoUser('user-1', 'guest-token');
 

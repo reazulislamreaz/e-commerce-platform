@@ -153,6 +153,7 @@ describe('CatalogService', () => {
     getFacets: jest.fn(),
     setFacets: jest.fn(),
     invalidateAll: jest.fn(),
+    getOrSet: jest.fn((_key: string, _ttl: number, loader: () => Promise<unknown>) => loader()),
   };
 
   beforeEach(async () => {

@@ -136,4 +136,13 @@ export class CartRepository {
       include: activeVariantInclude,
     });
   }
+
+  /** Batch resolve active variants so cart rendering stays O(1) queries. */
+  findActiveVariantsByIds(variantIds: string[]): Promise<ActiveVariantRecord[]> {
+    if (variantIds.length === 0) return Promise.resolve([]);
+    return this.prisma.productVariant.findMany({
+      where: { id: { in: variantIds }, isActive: true, deletedAt: null },
+      include: activeVariantInclude,
+    });
+  }
 }

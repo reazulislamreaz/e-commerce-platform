@@ -30,6 +30,15 @@ export class RedisService implements OnModuleDestroy {
     await this.redis.set(key, value, 'EX', ttlSeconds);
   }
 
+  /**
+   * Sets a key only if it does not already exist (single-flight lock primitive).
+   * Returns true when the caller won the lock.
+   */
+  async setNx(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+    const result = await this.redis.set(key, value, 'EX', ttlSeconds, 'NX');
+    return result === 'OK';
+  }
+
   async del(...keys: string[]): Promise<void> {
     if (keys.length === 0) return;
     await this.redis.del(...keys);

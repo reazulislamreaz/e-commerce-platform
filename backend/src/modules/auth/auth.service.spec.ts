@@ -7,6 +7,7 @@ import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { MailService } from '@/modules/mail/mail.service';
+import { AuthSessionCacheService } from './auth-session-cache.service';
 import { AuthService } from './auth.service';
 
 jest.mock('argon2', () => ({
@@ -30,6 +31,7 @@ function createPrismaMock() {
       create: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     } satisfies MockedModel,
     refreshToken: {
       findUnique: jest.fn(),
@@ -86,6 +88,10 @@ describe('AuthService', () => {
     recordActivity: jest.fn().mockResolvedValue(undefined),
     recomputeForUser: jest.fn().mockResolvedValue(undefined),
   };
+  const sessionCache = {
+    markRevoked: jest.fn().mockResolvedValue(undefined),
+    isRevoked: jest.fn().mockResolvedValue(false),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -97,6 +103,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: { signAsync: jest.fn().mockResolvedValue('jwt') } },
         { provide: MailService, useValue: mail },
         { provide: CustomerMetricsService, useValue: customerMetrics },
+        { provide: AuthSessionCacheService, useValue: sessionCache },
         {
           provide: ConfigService,
           useValue: {

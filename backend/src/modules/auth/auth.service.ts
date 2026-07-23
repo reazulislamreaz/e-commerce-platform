@@ -16,6 +16,7 @@ import { MailService } from '@/modules/mail/mail.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { USER_FACING } from '@/common/messages/user-facing-errors';
+import { AuthSessionCacheService } from './auth-session-cache.service';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 import type { JwtPayload } from './jwt.strategy';
@@ -64,6 +65,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly mail: MailService,
     private readonly customerMetrics: CustomerMetricsService,
+    private readonly sessionCache: AuthSessionCacheService,
   ) {}
 
   /**
@@ -327,7 +329,7 @@ export class AuthService {
       throw new BadRequestException(USER_FACING.RESET_LINK);
 
     const passwordHash = await argon2.hash(newPassword);
-    await this.prisma.$transaction(async (tx) => {
+    const revokedSessionIds = await this.prisma.$transaction(async (tx) => {
       // Atomic claim: a token can reset the password exactly once.
       const claimed = await tx.verificationToken.updateMany({
         where: { id: token.id, usedAt: null },
@@ -335,6 +337,10 @@ export class AuthService {
       });
       if (claimed.count === 0) throw new BadRequestException(USER_FACING.RESET_LINK);
       await tx.user.update({ where: { id: token.userId }, data: { passwordHash } });
+      const sessions = await tx.authSession.findMany({
+        where: { userId: token.userId, revokedAt: null },
+        select: { id: true },
+      });
       await tx.authSession.updateMany({
         where: { userId: token.userId, revokedAt: null },
         data: { revokedAt: now },
@@ -343,7 +349,9 @@ export class AuthService {
         where: { session: { userId: token.userId }, revokedAt: null },
         data: { revokedAt: now },
       });
+      return sessions.map((session) => session.id);
     });
+    await this.sessionCache.markRevoked(revokedSessionIds);
   }
 
   /**
@@ -368,17 +376,23 @@ export class AuthService {
 
     const now = new Date();
     const passwordHash = await argon2.hash(newPassword);
-    await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
-      this.prisma.authSession.updateMany({
+    const revokedSessionIds = await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: userId }, data: { passwordHash } });
+      const sessions = await tx.authSession.findMany({
+        where: { userId, id: { not: currentSessionId }, revokedAt: null },
+        select: { id: true },
+      });
+      await tx.authSession.updateMany({
         where: { userId, id: { not: currentSessionId }, revokedAt: null },
         data: { revokedAt: now },
-      }),
-      this.prisma.refreshToken.updateMany({
+      });
+      await tx.refreshToken.updateMany({
         where: { session: { userId, id: { not: currentSessionId } }, revokedAt: null },
         data: { revokedAt: now },
-      }),
-    ]);
+      });
+      return sessions.map((session) => session.id);
+    });
+    await this.sessionCache.markRevoked(revokedSessionIds);
   }
 
   async login(dto: LoginDto, meta: SessionMeta) {
@@ -505,6 +519,7 @@ export class AuthService {
         data: { revokedAt: now },
       }),
     ]);
+    await this.sessionCache.markRevoked([sessionId]);
   }
 
   async logout(sessionId: string): Promise<void> {
@@ -519,11 +534,16 @@ export class AuthService {
         data: { revokedAt: now },
       }),
     ]);
+    await this.sessionCache.markRevoked([sessionId]);
   }
 
   /** Force-logout everywhere: used when an account is suspended or deleted. */
   async revokeAllUserSessions(userId: string): Promise<void> {
     const now = new Date();
+    const sessions = await this.prisma.authSession.findMany({
+      where: { userId, revokedAt: null },
+      select: { id: true },
+    });
     await this.prisma.$transaction([
       this.prisma.authSession.updateMany({
         where: { userId, revokedAt: null },
@@ -534,6 +554,7 @@ export class AuthService {
         data: { revokedAt: now },
       }),
     ]);
+    await this.sessionCache.markRevoked(sessions.map((session) => session.id));
   }
 
   private signAccessToken(user: User, sessionId: string): Promise<string> {
@@ -547,6 +568,7 @@ export class AuthService {
     return this.jwt.signAsync(payload, {
       secret: this.config.getOrThrow('JWT_ACCESS_SECRET'),
       expiresIn: ACCESS_TOKEN_TTL,
+      algorithm: 'HS256',
     });
   }
 

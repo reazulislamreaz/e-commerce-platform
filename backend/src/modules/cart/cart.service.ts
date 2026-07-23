@@ -330,11 +330,9 @@ export class CartService {
     const variantIds = record.items.map((item) => item.variantId);
     const [stockMap, variants] = await Promise.all([
       this.inventory.getAvailableByVariantIds(variantIds),
-      Promise.all(variantIds.map((id) => this.cart.findActiveVariant(id))),
+      this.cart.findActiveVariantsByIds(variantIds),
     ]);
-    const variantById = new Map(
-      variants.filter((v): v is ActiveVariantRecord => v !== null).map((v) => [v.id, v]),
-    );
+    const variantById = new Map(variants.map((v) => [v.id, v]));
 
     const items: CartItemResponseDto[] = record.items.flatMap((item) => {
       const variant = variantById.get(item.variantId);

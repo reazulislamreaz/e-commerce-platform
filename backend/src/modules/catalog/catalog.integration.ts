@@ -17,6 +17,7 @@ describe('Catalog + Inventory integration', () => {
     getFacets: async () => null,
     setFacets: async () => undefined,
     invalidateAll: async () => undefined,
+    getOrSet: async <T>(_key: string, _ttl: number, loader: () => Promise<T>) => loader(),
   } as unknown as CatalogCacheService;
   const catalog = new CatalogService(catalogRepository, inventory, cache);
 

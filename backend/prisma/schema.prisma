@@ -275,6 +275,7 @@ model VerificationToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type])
+  @@index([expiresAt])
   @@map("verification_token")
 }
 
@@ -899,6 +900,7 @@ model CustomerOrder {
   returns       ReturnRequest[]
 
   @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status, createdAt(sort: Desc)])
   @@index([email, createdAt(sort: Desc)])
   @@index([phone, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
@@ -1017,6 +1019,7 @@ model InventoryReservationItem {
 
   @@unique([reservationId, variantId, locationId])
   @@index([variantId])
+  @@index([locationId])
   @@map("inventory_reservation_item")
 }
 
@@ -1104,6 +1107,7 @@ model ReturnItem {
   exchangeVariant ProductVariant? @relation("ReturnExchangeVariant", fields: [exchangeVariantId], references: [id], onDelete: Restrict)
 
   @@unique([returnRequestId, orderItemId])
+  @@index([variantId])
   @@index([exchangeVariantId])
   @@map("return_item")
 }
@@ -1178,6 +1182,7 @@ model ContactMessage {
 
   @@index([status, createdAt(sort: Desc)])
   @@index([email, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("contact_message")
 }
 
@@ -1198,6 +1203,7 @@ model NewsletterSubscription {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt(sort: Desc)])
+  @@index([userId])
   @@map("newsletter_subscription")
 }
 
@@ -1297,6 +1303,7 @@ model AbandonedCartRecovery {
   @@unique([cartId])
   @@index([status, nextSendAt])
   @@index([email, createdAt(sort: Desc)])
+  @@index([userId])
   @@map("abandoned_cart_recovery")
 }
 
