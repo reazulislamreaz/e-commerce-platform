@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Star } from 'lucide-react';
@@ -13,9 +13,8 @@ import { ProductBelowFold } from '@/components/product/product-below-fold';
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
 import { WishlistButton } from '@/components/shared/wishlist-button';
 import { ProductImage } from '@/components/common/product-image';
-import { useAppDispatch } from '@/store/hooks';
-import { itemAdded } from '@/store/slices/cart-slice';
-import { toast } from '@/lib/toast';
+import { useCartMutations } from '@/features/cart/hooks';
+import { useCartUi } from '@/components/cart/cart-ui-context';
 import {
   buildProductOrderWhatsAppHref,
   buildTelHref,
@@ -24,8 +23,10 @@ import {
 
 export function ProductDetailClient({ product }: { product: CatalogProduct }) {
   const p = normalizeProduct(product);
-  const dispatch = useAppDispatch();
   const router = useRouter();
+  const { addItem } = useCartMutations();
+  const { flyToCart, openDrawer } = useCartUi();
+  const imageBoxRef = useRef<HTMLDivElement>(null);
 
   const [activeImage, setActiveImage] = useState(0);
   const [size, setSize] = useState(p.sizes[0] ?? 'M');
@@ -84,50 +85,27 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
   );
   const callOrderHref = buildTelHref(contact.phoneNumber);
 
-  const syncCart = (variantId: string, quantity: number) => {
-    void import('@/features/cart/api')
-      .then(({ upsertServerCartItem }) => upsertServerCartItem(variantId, quantity))
-      .catch(() => {
-        toast.warning('Could not sync bag. Changes saved on this device.', {
-          dedupeKey: 'cart:sync',
-        });
-      });
-  };
-
   const addToBag = () => {
     if (!inStock) return;
     const variantId = variant?.id ?? `${p.id}-${color}-${size}`;
-    dispatch(
-      itemAdded({
-        productId: p.id,
-        variantId,
-        size,
-        color,
-        quantity: qty,
-      }),
-    );
-    syncCart(variantId, qty);
+    const rect = imageBoxRef.current?.getBoundingClientRect();
+    if (rect) {
+      flyToCart({ rect, imageSrc: p.images[activeImage] ?? p.image });
+    }
+    addItem({ productId: p.id, variantId, size, color, quantity: qty, name: p.name });
     trackAddToCart({
       content_ids: [p.id],
       content_name: p.name,
       value: p.price * qty,
     });
-    toast.success(`${p.name} added to your bag.`, { dedupeKey: `cart:add:${p.id}` });
+    // Reveal the mini cart once the fly-to-cart interaction has landed.
+    window.setTimeout(() => openDrawer(), 620);
   };
 
   const orderNow = () => {
     if (!inStock) return;
     const variantId = variant?.id ?? `${p.id}-${color}-${size}`;
-    dispatch(
-      itemAdded({
-        productId: p.id,
-        variantId,
-        size,
-        color,
-        quantity: qty,
-      }),
-    );
-    syncCart(variantId, qty);
+    addItem({ productId: p.id, variantId, size, color, quantity: qty, notify: false });
     router.push('/checkout');
   };
 
@@ -146,6 +124,7 @@ export function ProductDetailClient({ product }: { product: CatalogProduct }) {
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
           <div>
             <div
+              ref={imageBoxRef}
               className={`relative overflow-hidden rounded-[4px] bg-[#e4e3e1] ${
                 coarsePointer ? 'cursor-zoom-in' : ''
               }`}

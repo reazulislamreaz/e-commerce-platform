@@ -118,6 +118,22 @@ input:-webkit-autofill:focus {
   }
 }
 
+/* Cart badge bounce when new items are added — GPU transform only */
+@keyframes cart-badge-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.35);
+  }
+  70% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* Toast notifications — GPU transform + opacity only */
 @keyframes toast-in {
   from {

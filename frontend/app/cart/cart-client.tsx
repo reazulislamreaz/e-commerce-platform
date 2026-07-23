@@ -3,29 +3,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { toast } from '@/lib/toast';
 import { formatTaka } from '@/lib/currency';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { itemQuantitySet, itemRemoved } from '@/store/slices/cart-slice';
-import { selectCartHydrated, selectCartItems } from '@/store/selectors';
-import { cartSubtotal, resolveCartLines, shippingForSubtotal } from '@/features/cart/pricing';
-import { useProductsByIds } from '@/features/products';
+import { useCartDetails, useCartMutations } from '@/features/cart/hooks';
 import { trackAddToCart } from '@/features/analytics/facebook-pixel';
 
-function syncQtyFailed() {
-  toast.warning('Could not sync bag. Changes saved on this device.', { dedupeKey: 'cart:sync' });
-}
-
 export function CartClient() {
-  const dispatch = useAppDispatch();
-  const items = useAppSelector(selectCartItems);
-  const hydrated = useAppSelector(selectCartHydrated);
-  const products = useProductsByIds(
-    items.map(({ productId }) => productId),
-    hydrated,
-  );
+  const { items, hydrated, lines, subtotal, shipping, total, productsQuery } = useCartDetails();
+  const { setItemQuantity, removeItem } = useCartMutations();
 
-  if (!hydrated || (items.length > 0 && products.isLoading && !products.data)) {
+  if (!hydrated || (items.length > 0 && productsQuery.isLoading && !productsQuery.data)) {
     return (
       <main id="main-content" className="flex-1 bg-[#FAFAFA]" aria-busy="true">
         <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-7 sm:py-10">
@@ -58,7 +44,7 @@ export function CartClient() {
     );
   }
 
-  if (items.length > 0 && products.isError) {
+  if (items.length > 0 && productsQuery.isError) {
     return (
       <main
         id="main-content"
@@ -76,7 +62,7 @@ export function CartClient() {
         </p>
         <button
           type="button"
-          onClick={() => void products.refetch()}
+          onClick={() => void productsQuery.refetch()}
           className="mt-8 border border-[#111111] bg-[#111111] px-6 py-3 text-[11px] font-bold uppercase text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
         >
           Try Again
@@ -84,11 +70,6 @@ export function CartClient() {
       </main>
     );
   }
-
-  const lines = resolveCartLines(items, products.data ?? []);
-  const subtotal = cartSubtotal(lines);
-  const shipping = shippingForSubtotal(subtotal);
-  const total = subtotal + shipping;
 
   if (lines.length === 0) {
     return (
@@ -161,17 +142,13 @@ export function CartClient() {
                     <button
                       type="button"
                       aria-label="Remove item"
-                      onClick={() => {
-                        dispatch(
-                          itemRemoved({ productId: item.productId, variantId: item.variantId }),
-                        );
-                        toast.info(`${product.name} removed from your bag.`, {
-                          dedupeKey: `cart:remove:${item.variantId}`,
-                        });
-                        void import('@/features/cart/api').then(({ removeServerCartItem }) =>
-                          removeServerCartItem(item.variantId).catch(syncQtyFailed),
-                        );
-                      }}
+                      onClick={() =>
+                        removeItem({
+                          productId: item.productId,
+                          variantId: item.variantId,
+                          name: product.name,
+                        })
+                      }
                       className="p-1 text-[#555555] hover:text-red-600"
                     >
                       <Trash2 className="size-4" strokeWidth={1.5} />
@@ -181,19 +158,13 @@ export function CartClient() {
                     <button
                       type="button"
                       aria-label="Decrease"
-                      onClick={() => {
-                        const quantity = item.quantity - 1;
-                        dispatch(
-                          itemQuantitySet({
-                            productId: item.productId,
-                            variantId: item.variantId,
-                            quantity,
-                          }),
-                        );
-                        void import('@/features/cart/api').then(({ setServerCartItemQuantity }) =>
-                          setServerCartItemQuantity(item.variantId, quantity).catch(syncQtyFailed),
-                        );
-                      }}
+                      onClick={() =>
+                        setItemQuantity({
+                          productId: item.productId,
+                          variantId: item.variantId,
+                          quantity: item.quantity - 1,
+                        })
+                      }
                       className="p-2 text-[#111111] hover:text-[#C9A227]"
                     >
                       <Minus className="size-3.5" />
@@ -205,22 +176,16 @@ export function CartClient() {
                       type="button"
                       aria-label="Increase"
                       onClick={() => {
-                        const quantity = item.quantity + 1;
-                        dispatch(
-                          itemQuantitySet({
-                            productId: item.productId,
-                            variantId: item.variantId,
-                            quantity,
-                          }),
-                        );
+                        setItemQuantity({
+                          productId: item.productId,
+                          variantId: item.variantId,
+                          quantity: item.quantity + 1,
+                        });
                         trackAddToCart({
                           content_ids: [item.productId],
                           content_name: product.name,
                           value: product.price,
                         });
-                        void import('@/features/cart/api').then(({ setServerCartItemQuantity }) =>
-                          setServerCartItemQuantity(item.variantId, quantity).catch(syncQtyFailed),
-                        );
                       }}
                       className="p-2 text-[#111111] hover:text-[#C9A227]"
                     >
