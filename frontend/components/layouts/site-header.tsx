@@ -24,6 +24,7 @@ import { PrefetchNavLink } from '@/components/layouts/prefetch-nav-link';
 import { MobileHeaderBar } from '@/components/layouts/mobile-header-bar';
 import { MobileNavDrawer } from '@/components/layouts/mobile-nav-drawer';
 import { BrandLogo } from '@/components/shared/brand-logo';
+import { loginHref, registerHref } from '@/lib/auth-redirect';
 import { cn } from '@/lib/utils';
 
 const SearchDialog = dynamic(
@@ -108,10 +109,18 @@ export function SiteHeader() {
           </>
         ) : (
           <>
-            <Link href="/login" onClick={() => setAccountOpen(false)} className={menuItemClass}>
+            <Link
+              href={loginHref(pathname)}
+              onClick={() => setAccountOpen(false)}
+              className={menuItemClass}
+            >
               Login
             </Link>
-            <Link href="/register" onClick={() => setAccountOpen(false)} className={menuItemClass}>
+            <Link
+              href={registerHref(pathname)}
+              onClick={() => setAccountOpen(false)}
+              className={menuItemClass}
+            >
               Register
             </Link>
             <Link
@@ -297,7 +306,7 @@ export function SiteHeader() {
             WISHLIST
           </Link>
           <Link
-            href={user ? '/account' : '/login'}
+            href={user ? '/account' : loginHref(pathname)}
             onClick={() => setTabletMenuOpen(false)}
             className="block py-2.5 text-xs font-semibold tracking-wide text-[#111111] hover:text-[#C9A227]"
           >

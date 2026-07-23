@@ -20,6 +20,9 @@ import { useProductsByIds } from '@/features/products';
 import { trackInitiateCheckout } from '@/features/analytics/facebook-pixel';
 import { setCartRecoveryEmail } from '@/features/cart/api';
 import { createClientId } from '@/lib/client-id';
+import { loginHref, registerHref } from '@/lib/auth-redirect';
+
+const CHECKOUT_PATH = '/checkout';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(80),
@@ -323,6 +326,43 @@ export function CheckoutClient() {
           SHIPPING & PAYMENT
         </h1>
 
+        {user ? (
+          <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[4px] border border-[#E5E7EB] bg-white px-4 py-3 text-[12px] text-[#555555]">
+            <span>Signed in as</span>
+            <span className="font-semibold text-[#111111]">{user.email}</span>
+            <span aria-hidden className="text-[#E5E7EB]">
+              ·
+            </span>
+            <span>your saved details are filled in below.</span>
+          </div>
+        ) : (
+          <div className="mt-6 flex flex-col gap-4 rounded-[4px] border border-[#E5E7EB] bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div>
+              <p className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
+                Checkout as guest or sign in
+              </p>
+              <p className="mt-1 max-w-md text-[13px] text-[#555555]">
+                Continue as a guest by filling in the details below, or sign in to autofill saved
+                addresses, use coupon codes, and keep this order in your history.
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Link
+                href={loginHref(CHECKOUT_PATH)}
+                className="rounded-[4px] border border-[#111111] bg-[#111111] px-5 py-2.5 text-center text-[11px] font-bold uppercase tracking-[.08em] text-white transition-colors hover:border-[#C9A227] hover:bg-[#C9A227] hover:text-[#111111]"
+              >
+                Login
+              </Link>
+              <Link
+                href={registerHref(CHECKOUT_PATH)}
+                className="rounded-[4px] border border-[#111111] bg-white px-5 py-2.5 text-center text-[11px] font-bold uppercase tracking-[.08em] text-[#111111] transition-colors hover:bg-[#111111] hover:text-white"
+              >
+                Register
+              </Link>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={onSubmit} className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-6 rounded-[4px] border border-[#E5E7EB] bg-white p-5">
             <h2 className="text-[12px] font-bold uppercase tracking-[.14em] text-[#111111]">
@@ -514,7 +554,10 @@ export function CheckoutClient() {
               )}
               {!user && (
                 <p className="mt-1.5 text-[11px] text-[#555555]">
-                  <Link href="/login" className="text-[#C9A227] hover:text-[#D4B03A]">
+                  <Link
+                    href={loginHref(CHECKOUT_PATH)}
+                    className="text-[#C9A227] hover:text-[#D4B03A]"
+                  >
                     Sign in
                   </Link>{' '}
                   to use coupons.
@@ -545,7 +588,10 @@ export function CheckoutClient() {
 
             {!user && (
               <p className="text-[11px] text-[#555555]">
-                <Link href="/login" className="text-[#C9A227] hover:text-[#D4B03A]">
+                <Link
+                  href={loginHref(CHECKOUT_PATH)}
+                  className="text-[#C9A227] hover:text-[#D4B03A]"
+                >
                   Sign in
                 </Link>{' '}
                 to save this order to your account history.

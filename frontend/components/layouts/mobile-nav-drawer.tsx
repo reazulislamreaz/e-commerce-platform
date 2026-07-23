@@ -7,6 +7,7 @@ import type { AuthUser } from '@/types/auth';
 import { displayName } from '@/features/account';
 import { isActiveNav, MAIN_NAV } from './site-nav';
 import { PrefetchNavLink } from './prefetch-nav-link';
+import { loginHref, registerHref } from '@/lib/auth-redirect';
 import { cn } from '@/lib/utils';
 
 type MobileNavDrawerProps = {
@@ -226,7 +227,7 @@ export function MobileNavDrawer({
           ) : (
             <div className="flex flex-col gap-1">
               <Link
-                href="/login"
+                href={loginHref(pathname)}
                 onClick={onClose}
                 className={cn(
                   'rounded-[4px] px-3 py-2.5 text-center text-[11px] font-bold uppercase transition-colors',
@@ -238,7 +239,7 @@ export function MobileNavDrawer({
                 Login
               </Link>
               <Link
-                href="/register"
+                href={registerHref(pathname)}
                 onClick={onClose}
                 className={cn(
                   'rounded-[4px] px-3 py-2.5 text-center text-[11px] font-bold uppercase transition-colors',

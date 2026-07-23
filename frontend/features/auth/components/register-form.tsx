@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField } from '@/components/common/form-field';
@@ -9,9 +10,12 @@ import { GoogleLoginButton } from '@/features/auth/components/google-login-butto
 import { useRegister } from '@/features/auth/hooks';
 import { registerSchema, type RegisterInput } from '@/features/auth/schemas';
 import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
+import { loginHref, resolvePostAuthPath } from '@/lib/auth-redirect';
 
-export function RegisterForm() {
+function RegisterFormInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const registerMutation = useRegister();
   const {
     register,
@@ -22,7 +26,7 @@ export function RegisterForm() {
   const onSubmit = handleSubmit(async (input) => {
     try {
       await registerMutation.mutateAsync(input);
-      router.replace('/');
+      router.replace(resolvePostAuthPath(next));
     } catch {
       // Inline alert below shows a user-facing message.
     }
@@ -104,12 +108,20 @@ export function RegisterForm() {
       <p className="pt-2 text-center text-sm text-[#555555]">
         Already have an account?{' '}
         <Link
-          href="/login"
+          href={loginHref(next)}
           className="font-semibold text-[#C9A227] transition-colors hover:text-[#D4B03A]"
         >
           Sign In
         </Link>
       </p>
     </form>
+  );
+}
+
+export function RegisterForm() {
+  return (
+    <Suspense fallback={<p className="text-sm text-[#555555]">Loading…</p>}>
+      <RegisterFormInner />
+    </Suspense>
   );
 }

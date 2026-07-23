@@ -10,11 +10,12 @@ import { GoogleLoginButton } from '@/features/auth/components/google-login-butto
 import { useLogin } from '@/features/auth/hooks';
 import { loginSchema, type LoginInput } from '@/features/auth/schemas';
 import { getUserFacingErrorMessage, USER_FACING_ERRORS } from '@/lib/user-facing-error';
+import { registerHref, resolvePostAuthPath } from '@/lib/auth-redirect';
 
 function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/';
+  const next = searchParams.get('next');
   const login = useLogin();
   const [rememberMe, setRememberMe] = useState(true);
   const {
@@ -27,7 +28,7 @@ function LoginFormInner() {
     try {
       const result = await login.mutateAsync({ ...input, rememberMe });
       const isAdmin = result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN';
-      router.replace(isAdmin ? '/admin' : next);
+      router.replace(isAdmin ? '/admin' : resolvePostAuthPath(next));
     } catch {
       // Inline alert below shows a user-facing message.
     }
@@ -97,7 +98,7 @@ function LoginFormInner() {
       <p className="pt-2 text-center text-sm text-[#555555]">
         Doesn&apos;t have an account?{' '}
         <Link
-          href="/register"
+          href={registerHref(next)}
           className="font-semibold text-[#C9A227] transition-colors hover:text-[#D4B03A]"
         >
           Sign Up
