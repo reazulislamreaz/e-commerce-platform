@@ -483,7 +483,10 @@ export async function seedOrders(ctx: SeedContext): Promise<void> {
           id: seedUuid(`shipment:${number}`),
           orderId,
           trackingNumber: seedTrackingNumber(number),
-          carrier: 'Pathao Parcel',
+          carrier: 'Pathao Courier',
+          deliveryPartnerId: seedUuid('delivery-partner:pathao'),
+          assignedAt: stamps.shippedAt ?? createdAt,
+          trackingUrl: `https://pathao.com/track/${seedTrackingNumber(number)}`,
           shippedAt: stamps.shippedAt ?? createdAt,
         },
       });

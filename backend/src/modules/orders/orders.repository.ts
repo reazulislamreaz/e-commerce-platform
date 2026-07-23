@@ -25,11 +25,33 @@ export type CheckoutVariantRecord = Prisma.ProductVariantGetPayload<{
   include: typeof checkoutVariantInclude;
 }>;
 
+const shipmentInclude = {
+  deliveryPartner: true,
+  assignedBy: { select: { id: true, firstName: true, lastName: true } },
+} satisfies Prisma.ShipmentInclude;
+
+const statusHistoryInclude = {
+  orderBy: { createdAt: 'asc' as const },
+  include: {
+    actor: { select: { id: true, firstName: true, lastName: true } },
+  },
+} satisfies Prisma.CustomerOrder$statusHistoryArgs;
+
 const orderDetailInclude = {
   address: true,
-  items: { orderBy: { createdAt: 'asc' as const } },
-  statusHistory: { orderBy: { createdAt: 'asc' as const } },
-  shipments: { orderBy: { createdAt: 'desc' as const }, take: 1 },
+  items: {
+    orderBy: { createdAt: 'asc' as const },
+    include: {
+      variant: { select: { sku: true } },
+    },
+  },
+  statusHistory: statusHistoryInclude,
+  payment: true,
+  shipments: {
+    orderBy: { createdAt: 'desc' as const },
+    take: 1,
+    include: shipmentInclude,
+  },
 } satisfies Prisma.CustomerOrderInclude;
 
 export type OrderDetailRecord = Prisma.CustomerOrderGetPayload<{
@@ -45,6 +67,10 @@ const activeProductWhere = {
 @Injectable()
 export class OrdersRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  get detailInclude() {
+    return orderDetailInclude;
+  }
 
   findActiveVariantsByIds(variantIds: string[]): Promise<CheckoutVariantRecord[]> {
     if (variantIds.length === 0) return Promise.resolve([]);
@@ -98,9 +124,7 @@ export class OrdersRepository {
   }): Promise<OrderDetailRecord[]> {
     const where: Prisma.CustomerOrderWhereInput = {
       status: query.status,
-      ...(query.number
-        ? { number: { contains: query.number, mode: 'insensitive' } }
-        : {}),
+      ...(query.number ? { number: { contains: query.number, mode: 'insensitive' } } : {}),
       ...(query.email ? { email: { equals: query.email, mode: 'insensitive' } } : {}),
     };
 
@@ -113,10 +137,52 @@ export class OrdersRepository {
     });
   }
 
+  countAdmin(where: Prisma.CustomerOrderWhereInput) {
+    return this.prisma.customerOrder.count({ where });
+  }
+
+  listAdminOffset(args: {
+    where: Prisma.CustomerOrderWhereInput;
+    orderBy: Prisma.CustomerOrderOrderByWithRelationInput[];
+    skip: number;
+    take: number;
+  }): Promise<OrderDetailRecord[]> {
+    return this.prisma.customerOrder.findMany({
+      where: args.where,
+      include: orderDetailInclude,
+      orderBy: args.orderBy,
+      skip: args.skip,
+      take: args.take,
+    });
+  }
+
   findShipmentByOrderId(orderId: string, tx: Prisma.TransactionClient = this.prisma) {
     return tx.shipment.findFirst({
       where: { orderId },
       orderBy: { createdAt: 'desc' },
+      include: shipmentInclude,
+    });
+  }
+
+  groupStatusCounts() {
+    return this.prisma.customerOrder.groupBy({
+      by: ['status'],
+      _count: { _all: true },
+    });
+  }
+
+  countCreatedSince(since: Date) {
+    return this.prisma.customerOrder.count({
+      where: { createdAt: { gte: since } },
+    });
+  }
+
+  aggregatedCollectedRevenue() {
+    return this.prisma.payment.aggregate({
+      where: { status: 'COLLECTED' },
+      _sum: { amountPoisha: true },
+      _count: { _all: true },
+      _avg: { amountPoisha: true },
     });
   }
 }

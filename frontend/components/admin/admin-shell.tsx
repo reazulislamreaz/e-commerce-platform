@@ -305,10 +305,25 @@ function AdminNotifications({
 }
 
 function toBadge(query: {
-  data?: { data: unknown[]; meta: { nextCursor: string | null } };
+  data?: {
+    data: unknown[];
+    meta: {
+      nextCursor?: string | null;
+      total?: number;
+      totalPages?: number;
+      page?: number;
+    };
+  };
 }): QueueBadge | undefined {
   if (!query.data) return undefined;
-  return { count: query.data.data.length, more: Boolean(query.data.meta.nextCursor) };
+  const count = query.data.meta.total ?? query.data.data.length;
+  const more = Boolean(
+    query.data.meta.nextCursor ||
+    (query.data.meta.totalPages &&
+      query.data.meta.page &&
+      query.data.meta.page < query.data.meta.totalPages),
+  );
+  return { count, more };
 }
 
 function AdminChrome({ user, children }: PropsWithChildren<{ user: AuthUser }>) {

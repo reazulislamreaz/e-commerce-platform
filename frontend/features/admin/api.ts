@@ -7,6 +7,12 @@ import type {
   AdminCoupon,
   AdminOrder,
   AdminOrderStatus,
+  AdminOrderListParams,
+  OrdersSummary,
+  BulkOrderAction,
+  BulkOrdersResult,
+  DeliveryPartner,
+  DeliveryPartnerInput,
   AdminProductDetail,
   AdminProductListParams,
   AdminProductStats,
@@ -98,8 +104,10 @@ async function patchData<T>(path: string, body?: unknown): Promise<T> {
   return unwrapData(data);
 }
 
-async function deleteData(path: string): Promise<void> {
-  await apiClient.delete(path);
+async function deleteData<T = void>(path: string): Promise<T> {
+  const { data } = await apiClient.delete<ApiResponse<T>>(path);
+  if (data?.data !== undefined) return unwrapData(data);
+  return undefined as T;
 }
 
 export const adminApi = {
@@ -125,14 +133,11 @@ export const adminApi = {
     return getData<CustomerSegmentSummary[]>('/admin/customers/segments/summary');
   },
 
-  listOrders(params?: {
-    cursor?: string;
-    limit?: number;
-    status?: string;
-    number?: string;
-    email?: string;
-  }) {
-    return getPage<AdminOrder>('/admin/orders', params);
+  listOrders(params?: AdminOrderListParams) {
+    return getOffsetPage<AdminOrder>('/admin/orders', params);
+  },
+  getOrdersSummary() {
+    return getData<OrdersSummary>('/admin/orders/summary');
   },
   getOrder(id: string) {
     return getData<AdminOrder>(`/admin/orders/${id}`);
@@ -144,15 +149,75 @@ export const adminApi = {
       note?: string;
       trackingNumber?: string;
       carrier?: string;
+      deliveryPartnerId?: string;
+      trackingUrl?: string;
+      shippingNote?: string;
+      estimatedDeliveryAt?: string;
     },
   ) {
     return postData<AdminOrder>(`/admin/orders/${id}/status`, body);
   },
-  setOrderTracking(id: string, body: { trackingNumber: string; carrier?: string }) {
+  setOrderTracking(
+    id: string,
+    body: {
+      trackingNumber: string;
+      carrier?: string;
+      deliveryPartnerId?: string;
+      trackingUrl?: string;
+      shippingNote?: string;
+      estimatedDeliveryAt?: string;
+    },
+  ) {
     return postData<AdminOrder>(`/admin/orders/${id}/tracking`, body);
   },
   cancelOrder(id: string, reason: string) {
     return postData<AdminOrder>(`/admin/orders/${id}/cancel`, { reason });
+  },
+  updateOrderNotes(id: string, notes: string) {
+    return patchData<AdminOrder>(`/admin/orders/${id}/notes`, { notes });
+  },
+  bulkOrders(body: {
+    ids: string[];
+    action: BulkOrderAction;
+    note?: string;
+    deliveryPartnerId?: string;
+    trackingNumber?: string;
+    trackingUrl?: string;
+    shippingNote?: string;
+  }) {
+    return postData<BulkOrdersResult>('/admin/orders/bulk', body);
+  },
+
+  listDeliveryPartners(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    active?: boolean;
+  }) {
+    return getOffsetPage<DeliveryPartner>('/admin/delivery-partners', params);
+  },
+  listActiveDeliveryPartners() {
+    return getData<DeliveryPartner[]>('/admin/delivery-partners/active');
+  },
+  getDeliveryPartner(id: string) {
+    return getData<DeliveryPartner>(`/admin/delivery-partners/${id}`);
+  },
+  createDeliveryPartner(body: DeliveryPartnerInput) {
+    return postData<DeliveryPartner>('/admin/delivery-partners', body);
+  },
+  updateDeliveryPartner(id: string, body: Partial<DeliveryPartnerInput>) {
+    return patchData<DeliveryPartner>(`/admin/delivery-partners/${id}`, body);
+  },
+  activateDeliveryPartner(id: string) {
+    return postData<DeliveryPartner>(`/admin/delivery-partners/${id}/activate`);
+  },
+  deactivateDeliveryPartner(id: string) {
+    return postData<DeliveryPartner>(`/admin/delivery-partners/${id}/deactivate`);
+  },
+  deleteDeliveryPartner(id: string) {
+    return deleteData<{ id: string; deleted?: boolean; isActive?: boolean }>(
+      `/admin/delivery-partners/${id}`,
+    );
   },
 
   listReturns(params?: { cursor?: string; limit?: number; status?: string }) {

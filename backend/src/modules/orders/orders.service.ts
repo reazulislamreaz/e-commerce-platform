@@ -14,6 +14,7 @@ import { poishaToTaka, STANDARD_SHIPPING_POISHA } from '@/common/utils/money';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { CartService } from '@/modules/cart/cart.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
+import { DeliveryPartnersService } from '@/modules/delivery-partners/delivery-partners.service';
 import { InventoryService } from '@/modules/inventory/inventory.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
@@ -22,11 +23,17 @@ import { OUTBOX_EVENT, OutboxService } from '@/modules/platform/outbox.service';
 import { PromotionsService } from '@/modules/promotions/promotions.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import type { AdminCancelOrderDto } from './dto/admin-cancel-order.dto';
+import { AdminListOrdersQueryDto, AdminOrderSort } from './dto/admin-list-orders.query.dto';
 import type { AdminSetTrackingDto } from './dto/admin-set-tracking.dto';
 import type { AdminUpdateOrderStatusDto } from './dto/admin-update-order-status.dto';
+import {
+  BulkOrderAction,
+  type BulkOrdersDto,
+  type UpdateOrderNotesDto,
+} from './dto/bulk-orders.dto';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import type { ListOrdersQueryDto } from './dto/list-orders.query.dto';
-import type { OrderResponseDto } from './dto/order-response.dto';
+import type { OrderResponseDto, OrdersSummaryDto } from './dto/order-response.dto';
 import type { TrackOrderQueryDto } from './dto/track-order.query.dto';
 import {
   OrdersRepository,
@@ -88,6 +95,7 @@ export class OrdersService {
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly customerMetrics: CustomerMetricsService,
+    private readonly deliveryPartners: DeliveryPartnersService,
   ) {}
 
   computeCheckoutTotals(input: {
@@ -237,12 +245,7 @@ export class OrdersService {
 
       const created = await tx.customerOrder.findUniqueOrThrow({
         where: { id: orderId },
-        include: {
-          address: true,
-          items: { orderBy: { createdAt: 'asc' } },
-          statusHistory: { orderBy: { createdAt: 'asc' } },
-          shipments: { orderBy: { createdAt: 'desc' }, take: 1 },
-        },
+        include: this.orders.detailInclude,
       });
 
       const mapped = this.toOrderResponse(created);
@@ -346,10 +349,274 @@ export class OrdersService {
     return this.toCursorPage(rows, query.limit);
   }
 
+  async listAdminOffset(query: AdminListOrdersQueryDto) {
+    const pageSize = query.pageSize ?? query.limit;
+    const page = query.page;
+    const where = this.buildAdminListWhere(query);
+    const orderBy = this.buildAdminListOrderBy(query.sort);
+
+    const [total, rows] = await Promise.all([
+      this.orders.countAdmin(where),
+      this.orders.listAdminOffset({
+        where,
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    return {
+      data: rows.map((order) => this.toOrderResponse(order)),
+      meta: {
+        page,
+        pageSize,
+        limit: pageSize,
+        total,
+        totalPages,
+        nextCursor: null as string | null,
+      },
+    };
+  }
+
+  async getSummary(): Promise<OrdersSummaryDto> {
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfWeek = new Date(startOfToday);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+
+    const startOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), 1);
+
+    const [statusGroups, today, thisWeek, thisMonth, revenue] = await Promise.all([
+      this.orders.groupStatusCounts(),
+      this.orders.countCreatedSince(startOfToday),
+      this.orders.countCreatedSince(startOfWeek),
+      this.orders.countCreatedSince(startOfMonth),
+      this.orders.aggregatedCollectedRevenue(),
+    ]);
+
+    const byStatus = Object.fromEntries(
+      statusGroups.map((row) => [row.status, row._count._all]),
+    ) as Partial<Record<OrderStatus, number>>;
+
+    const totalOrders = statusGroups.reduce((sum, row) => sum + row._count._all, 0);
+    const totalRevenuePoisha = revenue._sum.amountPoisha ?? 0n;
+    const avgPoisha = revenue._avg.amountPoisha
+      ? BigInt(Math.round(Number(revenue._avg.amountPoisha)))
+      : 0n;
+
+    return {
+      totalOrders,
+      pending: byStatus[OrderStatus.PENDING] ?? 0,
+      confirmed: byStatus[OrderStatus.CONFIRMED] ?? 0,
+      processing: byStatus[OrderStatus.PROCESSING] ?? 0,
+      packed: byStatus[OrderStatus.PACKED] ?? 0,
+      shipped: byStatus[OrderStatus.SHIPPED] ?? 0,
+      delivered: byStatus[OrderStatus.DELIVERED] ?? 0,
+      cancelled: byStatus[OrderStatus.CANCELLED] ?? 0,
+      returned: byStatus[OrderStatus.RETURNED] ?? 0,
+      exchanged: byStatus[OrderStatus.EXCHANGED] ?? 0,
+      today,
+      thisWeek,
+      thisMonth,
+      totalRevenue: poishaToTaka(totalRevenuePoisha),
+      averageOrderValue: poishaToTaka(avgPoisha),
+    };
+  }
+
   async getAdmin(orderId: string): Promise<OrderResponseDto> {
     const order = await this.orders.findById(orderId);
     if (!order) throw new NotFoundException('Order not found');
     return this.toOrderResponse(order);
+  }
+
+  async updateNotes(
+    actor: JwtPayload,
+    orderId: string,
+    dto: UpdateOrderNotesDto,
+  ): Promise<OrderResponseDto> {
+    const existing = await this.orders.findById(orderId);
+    if (!existing) throw new NotFoundException('Order not found');
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.customerOrder.update({
+        where: { id: orderId },
+        data: { notes: dto.notes?.trim() ? dto.notes.trim() : null },
+      });
+      await this.audit.write(
+        {
+          actorUserId: actor.sub,
+          actorRole: actor.role,
+          action: 'order.notes.update',
+          resourceType: 'order',
+          resourceId: orderId,
+          before: { notes: existing.notes },
+          after: { notes: dto.notes?.trim() || null },
+        },
+        tx,
+      );
+    });
+
+    return this.getAdmin(orderId);
+  }
+
+  async bulk(actor: JwtPayload, dto: BulkOrdersDto) {
+    if (dto.action === BulkOrderAction.EXPORT) {
+      const orders = await this.prisma.customerOrder.findMany({
+        where: { id: { in: dto.ids } },
+        include: this.orders.detailInclude,
+        orderBy: { createdAt: 'desc' },
+      });
+      const csv = this.toOrdersCsv(orders.map((order) => this.toOrderResponse(order)));
+      return {
+        processed: orders.length,
+        succeeded: orders.map((o) => o.id),
+        failed: [] as Array<{ id: string; reason: string }>,
+        csv,
+      };
+    }
+
+    const targetStatus = this.bulkActionToStatus(dto.action);
+    const succeeded: string[] = [];
+    const failed: Array<{ id: string; reason: string }> = [];
+
+    for (const id of dto.ids) {
+      try {
+        await this.updateStatus(actor, id, {
+          status: targetStatus,
+          note: dto.note,
+          trackingNumber: dto.trackingNumber,
+          deliveryPartnerId: dto.deliveryPartnerId,
+          trackingUrl: dto.trackingUrl,
+          shippingNote: dto.shippingNote,
+        });
+        succeeded.push(id);
+      } catch (error) {
+        failed.push({
+          id,
+          reason: error instanceof Error ? error.message : 'Failed to update order',
+        });
+      }
+    }
+
+    return {
+      processed: succeeded.length,
+      succeeded,
+      failed,
+    };
+  }
+
+  private bulkActionToStatus(action: BulkOrderAction): OrderStatus {
+    switch (action) {
+      case BulkOrderAction.CONFIRM:
+        return OrderStatus.CONFIRMED;
+      case BulkOrderAction.START_PROCESSING:
+        return OrderStatus.PROCESSING;
+      case BulkOrderAction.MARK_PACKED:
+        return OrderStatus.PACKED;
+      case BulkOrderAction.SHIP:
+        return OrderStatus.SHIPPED;
+      case BulkOrderAction.CANCEL:
+        return OrderStatus.CANCELLED;
+      default:
+        throw new BadRequestException('Unsupported bulk action');
+    }
+  }
+
+  private buildAdminListWhere(query: AdminListOrdersQueryDto): Prisma.CustomerOrderWhereInput {
+    const search = query.search?.trim();
+    const createdAt: Prisma.DateTimeFilter | undefined =
+      query.createdFrom || query.createdTo
+        ? {
+            ...(query.createdFrom ? { gte: new Date(query.createdFrom) } : {}),
+            ...(query.createdTo
+              ? {
+                  lte: (() => {
+                    const end = new Date(query.createdTo);
+                    if (!query.createdTo.includes('T')) {
+                      end.setHours(23, 59, 59, 999);
+                    }
+                    return end;
+                  })(),
+                }
+              : {}),
+          }
+        : undefined;
+
+    return {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.number ? { number: { contains: query.number, mode: 'insensitive' } } : {}),
+      ...(query.email ? { email: { contains: query.email, mode: 'insensitive' } } : {}),
+      ...(query.phone ? { phone: { contains: query.phone, mode: 'insensitive' } } : {}),
+      ...(query.paymentMethod ? { paymentMethod: query.paymentMethod } : {}),
+      ...(query.paymentStatus ? { payment: { status: query.paymentStatus } } : {}),
+      ...(query.deliveryPartnerId
+        ? { shipments: { some: { deliveryPartnerId: query.deliveryPartnerId } } }
+        : {}),
+      ...(createdAt ? { createdAt } : {}),
+      ...(search
+        ? {
+            OR: [
+              { number: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } },
+              { address: { fullName: { contains: search, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    };
+  }
+
+  private buildAdminListOrderBy(
+    sort: AdminOrderSort,
+  ): Prisma.CustomerOrderOrderByWithRelationInput[] {
+    switch (sort) {
+      case AdminOrderSort.CREATED_ASC:
+        return [{ createdAt: 'asc' }, { id: 'asc' }];
+      case AdminOrderSort.TOTAL_DESC:
+        return [{ totalPoisha: 'desc' }, { createdAt: 'desc' }];
+      case AdminOrderSort.TOTAL_ASC:
+        return [{ totalPoisha: 'asc' }, { createdAt: 'desc' }];
+      case AdminOrderSort.UPDATED_DESC:
+        return [{ updatedAt: 'desc' }, { id: 'desc' }];
+      case AdminOrderSort.CREATED_DESC:
+      default:
+        return [{ createdAt: 'desc' }, { id: 'desc' }];
+    }
+  }
+
+  private toOrdersCsv(orders: OrderResponseDto[]): string {
+    const header = [
+      'Order Number',
+      'Status',
+      'Customer',
+      'Email',
+      'Phone',
+      'Total',
+      'Payment Status',
+      'Delivery Partner',
+      'Tracking',
+      'Created At',
+    ];
+    const lines = orders.map((order) =>
+      [
+        order.number,
+        order.status,
+        order.customerName ?? '',
+        order.email ?? '',
+        order.phone ?? '',
+        String(order.total),
+        order.paymentStatus ?? '',
+        order.shipment?.deliveryPartnerName ?? order.shipment?.carrier ?? '',
+        order.trackingNumber ?? '',
+        order.createdAt,
+      ]
+        .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+        .join(','),
+    );
+    return [header.join(','), ...lines].join('\n');
   }
 
   async updateStatus(
@@ -389,12 +656,7 @@ export class OrdersService {
         return this.toOrderResponse(
           await tx.customerOrder.findUniqueOrThrow({
             where: { id: order.id },
-            include: {
-              address: true,
-              items: { orderBy: { createdAt: 'asc' } },
-              statusHistory: { orderBy: { createdAt: 'asc' } },
-              shipments: { orderBy: { createdAt: 'desc' }, take: 1 },
-            },
+            include: this.orders.detailInclude,
           }),
         );
       }
@@ -407,18 +669,14 @@ export class OrdersService {
         version: { increment: 1 },
       };
 
-      if (dto.status === OrderStatus.PROCESSING) {
+      if (dto.status === OrderStatus.CONFIRMED) {
+        statusData.confirmedAt = now;
+      } else if (dto.status === OrderStatus.PROCESSING) {
         statusData.processingAt = now;
       } else if (dto.status === OrderStatus.PACKED) {
         statusData.packedAt = now;
       } else if (dto.status === OrderStatus.SHIPPED) {
-        await this.ensureShipmentForShip(
-          tx,
-          order.id,
-          order.shipments[0] ?? null,
-          dto.trackingNumber,
-          dto.carrier,
-        );
+        await this.ensureShipmentForShip(tx, order.id, order.shipments[0] ?? null, dto, actor.sub);
         await this.inventory.consumeForShipment(order.id, tx);
         statusData.shippedAt = now;
       } else if (dto.status === OrderStatus.CANCELLED) {
@@ -504,7 +762,7 @@ export class OrdersService {
               firstName,
               status: mapStatusToApi(dto.status),
               trackingNumber,
-              carrier: dto.carrier?.trim() || undefined,
+              carrier: dto.carrier?.trim() || order.shipments[0]?.carrier || undefined,
               orderUrl,
             },
             tx,
@@ -612,12 +870,7 @@ export class OrdersService {
 
       const updated = await tx.customerOrder.findUniqueOrThrow({
         where: { id: order.id },
-        include: {
-          address: true,
-          items: { orderBy: { createdAt: 'asc' } },
-          statusHistory: { orderBy: { createdAt: 'asc' } },
-          shipments: { orderBy: { createdAt: 'desc' }, take: 1 },
-        },
+        include: this.orders.detailInclude,
       });
 
       return this.toOrderResponse(updated);
@@ -633,7 +886,15 @@ export class OrdersService {
       const order = await tx.customerOrder.findUnique({ where: { id: orderId } });
       if (!order) throw new NotFoundException('Order not found');
 
-      await this.createOrUpdateShipment(tx, order.id, dto.trackingNumber, dto.carrier);
+      await this.createOrUpdateShipment(tx, order.id, {
+        trackingNumber: dto.trackingNumber,
+        carrier: dto.carrier,
+        deliveryPartnerId: dto.deliveryPartnerId,
+        trackingUrl: dto.trackingUrl,
+        shippingNote: dto.shippingNote,
+        estimatedDeliveryAt: dto.estimatedDeliveryAt,
+        assignedById: actor.sub,
+      });
 
       await this.audit.write(
         {
@@ -642,19 +903,27 @@ export class OrdersService {
           action: 'order.tracking.set',
           resourceType: 'order',
           resourceId: order.id,
-          after: { trackingNumber: dto.trackingNumber, carrier: dto.carrier ?? null },
+          after: {
+            trackingNumber: dto.trackingNumber,
+            carrier: dto.carrier ?? null,
+            deliveryPartnerId: dto.deliveryPartnerId ?? null,
+          },
         },
         tx,
       );
 
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          status: order.status,
+          note: dto.shippingNote?.trim() || 'Tracking updated',
+          actorId: actor.sub,
+        },
+      });
+
       const updated = await tx.customerOrder.findUniqueOrThrow({
         where: { id: order.id },
-        include: {
-          address: true,
-          items: { orderBy: { createdAt: 'asc' } },
-          statusHistory: { orderBy: { createdAt: 'asc' } },
-          shipments: { orderBy: { createdAt: 'desc' }, take: 1 },
-        },
+        include: this.orders.detailInclude,
       });
 
       return this.toOrderResponse(updated);
@@ -845,37 +1114,96 @@ export class OrdersService {
     tx: Prisma.TransactionClient,
     orderId: string,
     existingShipment: { id: string; trackingNumber: string } | null,
-    trackingNumber: string | undefined,
-    carrier: string | undefined,
+    dto: Pick<
+      AdminUpdateOrderStatusDto,
+      | 'trackingNumber'
+      | 'carrier'
+      | 'deliveryPartnerId'
+      | 'trackingUrl'
+      | 'shippingNote'
+      | 'estimatedDeliveryAt'
+    >,
+    assignedById: string,
   ): Promise<void> {
-    if (existingShipment) return;
-    if (!trackingNumber?.trim()) {
+    const trackingNumber = dto.trackingNumber?.trim() || existingShipment?.trackingNumber;
+    if (!trackingNumber) {
       throw new BadRequestException(
         'Tracking number is required before marking the order as shipped',
       );
     }
-    await this.createOrUpdateShipment(tx, orderId, trackingNumber, carrier);
+    await this.createOrUpdateShipment(tx, orderId, {
+      trackingNumber,
+      carrier: dto.carrier,
+      deliveryPartnerId: dto.deliveryPartnerId,
+      trackingUrl: dto.trackingUrl,
+      shippingNote: dto.shippingNote,
+      estimatedDeliveryAt: dto.estimatedDeliveryAt,
+      assignedById,
+    });
   }
 
   private async createOrUpdateShipment(
     tx: Prisma.TransactionClient,
     orderId: string,
-    trackingNumber: string,
-    carrier?: string,
+    input: {
+      trackingNumber: string;
+      carrier?: string;
+      deliveryPartnerId?: string;
+      trackingUrl?: string;
+      shippingNote?: string;
+      estimatedDeliveryAt?: string;
+      assignedById?: string;
+    },
   ): Promise<void> {
-    const normalizedTracking = trackingNumber.trim();
+    const normalizedTracking = input.trackingNumber.trim();
+    let carrier = input.carrier?.trim() || null;
+    let trackingUrl = input.trackingUrl?.trim() || null;
+    const deliveryPartnerId = input.deliveryPartnerId ?? null;
+
+    if (deliveryPartnerId) {
+      const partner = await tx.deliveryPartner.findFirst({
+        where: { id: deliveryPartnerId, isActive: true },
+      });
+      if (!partner) {
+        throw new BadRequestException('Delivery partner not found or inactive');
+      }
+      carrier = carrier || partner.companyName;
+      trackingUrl =
+        this.deliveryPartners.resolveTrackingUrl(
+          partner.trackingUrlTemplate,
+          normalizedTracking,
+          trackingUrl,
+        ) ?? trackingUrl;
+    } else if (!trackingUrl) {
+      trackingUrl = null;
+    }
+
     const existing = await tx.shipment.findFirst({
       where: { orderId },
       orderBy: { createdAt: 'desc' },
     });
 
+    const estimatedDeliveryAt = input.estimatedDeliveryAt
+      ? new Date(input.estimatedDeliveryAt)
+      : null;
+    const assignedAt = deliveryPartnerId || input.assignedById ? new Date() : null;
+
+    const data = {
+      trackingNumber: normalizedTracking,
+      carrier,
+      deliveryPartnerId,
+      trackingUrl,
+      shippingNote: input.shippingNote?.trim() || null,
+      estimatedDeliveryAt,
+      ...(input.assignedById
+        ? { assignedById: input.assignedById, assignedAt: assignedAt ?? new Date() }
+        : {}),
+    };
+
     if (existing) {
       await tx.shipment.update({
         where: { id: existing.id },
-        data: {
-          trackingNumber: normalizedTracking,
-          carrier: carrier?.trim() || null,
-        },
+        data,
       });
       return;
     }
@@ -883,8 +1211,7 @@ export class OrdersService {
     await tx.shipment.create({
       data: {
         orderId,
-        trackingNumber: normalizedTracking,
-        carrier: carrier?.trim() || null,
+        ...data,
       },
     });
   }
@@ -901,15 +1228,34 @@ export class OrdersService {
     };
   }
 
+  private actorFullName(
+    actor:
+      | {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+        }
+      | null
+      | undefined,
+  ): { id: string; fullName: string } | null {
+    if (!actor) return null;
+    const fullName = [actor.firstName, actor.lastName].filter(Boolean).join(' ').trim();
+    return { id: actor.id, fullName: fullName || 'Staff' };
+  }
+
   private toOrderResponse(order: OrderDetailRecord): OrderResponseDto {
     if (!order.address) {
       throw new BadRequestException(`Order ${order.id} is missing address snapshot`);
     }
 
+    const shipment = order.shipments[0] ?? null;
+    const paymentStatus = order.payment?.status ? order.payment.status.toLowerCase() : undefined;
+
     return {
       id: order.id,
       number: order.number,
       createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
       status: mapStatusToApi(order.status),
       items: order.items.map((item) => ({
         orderItemId: item.id,
@@ -918,10 +1264,12 @@ export class OrdersService {
         name: item.name,
         slug: item.slug,
         image: item.image,
+        sku: item.variant?.sku,
         size: item.size,
         color: item.color,
         quantity: item.quantity,
         unitPrice: poishaToTaka(item.unitPricePoisha),
+        lineTotal: poishaToTaka(item.unitPricePoisha * BigInt(item.quantity)),
       })),
       subtotal: poishaToTaka(order.subtotalPoisha),
       shipping: poishaToTaka(order.shippingPoisha),
@@ -943,9 +1291,40 @@ export class OrdersService {
         type: 'shipping',
       },
       paymentMethod: 'cod',
-      trackingNumber: order.shipments[0]?.trackingNumber,
+      paymentStatus,
+      trackingNumber: shipment?.trackingNumber,
+      shipment: shipment
+        ? {
+            deliveryPartnerId: shipment.deliveryPartnerId,
+            deliveryPartnerName: shipment.deliveryPartner?.companyName ?? null,
+            deliveryPartnerLogoUrl: shipment.deliveryPartner?.logoUrl ?? null,
+            carrier: shipment.carrier,
+            trackingNumber: shipment.trackingNumber,
+            trackingUrl: shipment.trackingUrl,
+            shippingNote: shipment.shippingNote,
+            shippedAt: shipment.shippedAt.toISOString(),
+            assignedAt: shipment.assignedAt?.toISOString() ?? null,
+            estimatedDeliveryAt: shipment.estimatedDeliveryAt?.toISOString() ?? null,
+            assignedBy: this.actorFullName(shipment.assignedBy),
+          }
+        : null,
       timeline: buildTimeline(order),
+      statusHistory: order.statusHistory.map((entry) => ({
+        status: mapStatusToApi(entry.status),
+        note: entry.note,
+        createdAt: entry.createdAt.toISOString(),
+        actor: this.actorFullName(entry.actor),
+      })),
       email: order.email,
+      phone: order.phone,
+      notes: order.notes,
+      confirmedAt: order.confirmedAt?.toISOString() ?? null,
+      processingAt: order.processingAt?.toISOString() ?? null,
+      packedAt: order.packedAt?.toISOString() ?? null,
+      shippedAt: order.shippedAt?.toISOString() ?? null,
+      deliveredAt: order.deliveredAt?.toISOString() ?? null,
+      cancelledAt: order.cancelledAt?.toISOString() ?? null,
+      customerName: order.address.fullName,
       ...(order.userId ? { userId: order.userId } : {}),
     };
   }

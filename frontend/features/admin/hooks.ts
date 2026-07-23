@@ -6,6 +6,7 @@ import { adminApi } from './api';
 import { mutationErrorMessage } from './mutation-error';
 import type {
   AdminProductListParams,
+  AdminOrderListParams,
   AdminReviewStatus,
   ContactStatus,
   NewsletterStatus,
@@ -20,6 +21,9 @@ export const adminKeys = {
   /** Prefix keys — invalidate entire families without requiring exact params. */
   ordersRoot: () => [...adminKeys.all, 'orders'] as const,
   orderRoot: () => [...adminKeys.all, 'order'] as const,
+  ordersSummary: () => [...adminKeys.all, 'orders-summary'] as const,
+  deliveryPartnersRoot: () => [...adminKeys.all, 'delivery-partners'] as const,
+  deliveryPartnersActive: () => [...adminKeys.all, 'delivery-partners-active'] as const,
   returnsRoot: () => [...adminKeys.all, 'returns'] as const,
   returnRoot: () => [...adminKeys.all, 'return'] as const,
   reviewsRoot: () => [...adminKeys.all, 'reviews'] as const,
@@ -82,20 +86,26 @@ export const adminKeys = {
   customerActivity: (id: string, params?: Record<string, unknown>) =>
     [...adminKeys.all, 'customer', id, 'activity', params ?? {}] as const,
   customerSegments: () => [...adminKeys.all, 'customer-segments'] as const,
+  deliveryPartners: (params?: Record<string, unknown>) =>
+    [...adminKeys.all, 'delivery-partners', params ?? {}] as const,
+  deliveryPartner: (id: string) => [...adminKeys.all, 'delivery-partner', id] as const,
 };
 
 const keepPrevious = <T>(previous: T | undefined) => previous;
 
-export function useAdminOrders(params?: {
-  cursor?: string;
-  limit?: number;
-  status?: string;
-  number?: string;
-  email?: string;
-}) {
+export function useAdminOrders(params?: AdminOrderListParams) {
   return useQuery({
     queryKey: adminKeys.orders(params),
     queryFn: () => adminApi.listOrders(params),
+    staleTime: LIST_STALE_MS,
+    placeholderData: keepPrevious,
+  });
+}
+
+export function useOrdersSummary() {
+  return useQuery({
+    queryKey: adminKeys.ordersSummary(),
+    queryFn: () => adminApi.getOrdersSummary(),
     staleTime: LIST_STALE_MS,
     placeholderData: keepPrevious,
   });
@@ -108,6 +118,29 @@ export function useAdminOrder(id: string | undefined) {
     enabled: Boolean(id),
     staleTime: LIST_STALE_MS,
     placeholderData: (previous) => previous,
+  });
+}
+
+export function useDeliveryPartners(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  active?: boolean;
+}) {
+  return useQuery({
+    queryKey: adminKeys.deliveryPartners(params),
+    queryFn: () => adminApi.listDeliveryPartners(params),
+    staleTime: LIST_STALE_MS,
+    placeholderData: keepPrevious,
+  });
+}
+
+export function useActiveDeliveryPartners() {
+  return useQuery({
+    queryKey: adminKeys.deliveryPartnersActive(),
+    queryFn: () => adminApi.listActiveDeliveryPartners(),
+    staleTime: LIST_STALE_MS,
+    placeholderData: keepPrevious,
   });
 }
 
@@ -401,8 +434,8 @@ export function useCustomerSegmentSummary() {
  */
 export function useAdminQueues() {
   return {
-    confirmedOrders: useAdminOrders({ limit: 5, status: 'CONFIRMED' }),
-    processingOrders: useAdminOrders({ limit: 5, status: 'PROCESSING' }),
+    confirmedOrders: useAdminOrders({ limit: 5, status: 'CONFIRMED', page: 1 }),
+    processingOrders: useAdminOrders({ limit: 5, status: 'PROCESSING', page: 1 }),
     pendingReturns: useAdminReturns({ limit: 5, status: 'PENDING' }),
     pendingReviews: useAdminReviews({ limit: 5, status: 'PENDING' }),
     newContact: useAdminContact({ limit: 5, status: 'NEW' }),

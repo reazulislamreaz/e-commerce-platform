@@ -65,16 +65,21 @@ export type AdminOrder = {
   id: string;
   number: string;
   createdAt: string;
+  updatedAt?: string;
   status: AdminOrderStatus;
   items: Array<{
+    orderItemId?: string;
     productId: string;
+    variantId?: string;
     name: string;
     slug: string;
     image: string;
+    sku?: string;
     size: string;
     color: string;
     quantity: number;
     unitPrice: number;
+    lineTotal?: number;
   }>;
   subtotal: number;
   shipping: number;
@@ -96,10 +101,113 @@ export type AdminOrder = {
     type: 'shipping' | 'billing';
   };
   paymentMethod: 'cod';
+  paymentStatus?: 'pending' | 'collected' | 'cancelled' | string;
   trackingNumber?: string;
+  shipment?: {
+    deliveryPartnerId?: string | null;
+    deliveryPartnerName?: string | null;
+    deliveryPartnerLogoUrl?: string | null;
+    carrier?: string | null;
+    trackingNumber?: string | null;
+    trackingUrl?: string | null;
+    shippingNote?: string | null;
+    shippedAt?: string | null;
+    assignedAt?: string | null;
+    estimatedDeliveryAt?: string | null;
+    assignedBy?: { id: string; fullName: string } | null;
+  } | null;
   timeline: Array<{ label: string; at: string; done: boolean }>;
+  statusHistory?: Array<{
+    status: string;
+    note?: string | null;
+    createdAt: string;
+    actor?: { id: string; fullName: string } | null;
+  }>;
   email?: string;
+  phone?: string;
+  notes?: string | null;
+  customerName?: string;
+  confirmedAt?: string | null;
+  processingAt?: string | null;
+  packedAt?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
+  cancelledAt?: string | null;
   userId?: string;
+};
+
+export type AdminOrderSort =
+  'CREATED_DESC' | 'CREATED_ASC' | 'TOTAL_DESC' | 'TOTAL_ASC' | 'UPDATED_DESC';
+
+export type AdminOrderListParams = {
+  page?: number;
+  limit?: number;
+  pageSize?: number;
+  search?: string;
+  number?: string;
+  phone?: string;
+  email?: string;
+  status?: string;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  deliveryPartnerId?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  sort?: AdminOrderSort | string;
+};
+
+export type OrdersSummary = {
+  totalOrders: number;
+  pending: number;
+  confirmed: number;
+  processing: number;
+  packed: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+  returned: number;
+  exchanged: number;
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+};
+
+export type BulkOrderAction =
+  'CONFIRM' | 'START_PROCESSING' | 'MARK_PACKED' | 'SHIP' | 'CANCEL' | 'EXPORT';
+
+export type BulkOrdersResult = {
+  processed: number;
+  succeeded: string[];
+  failed: Array<{ id: string; reason: string }>;
+  csv?: string;
+};
+
+export type DeliveryPartner = {
+  id: string;
+  companyName: string;
+  contactPerson?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  logoUrl?: string | null;
+  trackingUrlTemplate?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  shipmentCount?: number;
+};
+
+export type DeliveryPartnerInput = {
+  companyName: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logoUrl?: string;
+  trackingUrlTemplate?: string;
+  isActive?: boolean;
 };
 
 export type AdminReturn = {

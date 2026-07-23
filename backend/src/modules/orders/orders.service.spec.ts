@@ -4,6 +4,7 @@ import { OrderStatus, PaymentStatus, ReservationStatus } from '@/generated/prism
 import { STANDARD_SHIPPING_POISHA, takaToPoisha } from '@/common/utils/money';
 import { CartService } from '@/modules/cart/cart.service';
 import { CustomerMetricsService } from '@/modules/crm/customer-metrics.service';
+import { DeliveryPartnersService } from '@/modules/delivery-partners/delivery-partners.service';
 import { InventoryService } from '@/modules/inventory/inventory.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { AuditService } from '@/modules/platform/audit.service';
@@ -46,6 +47,10 @@ describe('OrdersService', () => {
         {
           provide: CustomerMetricsService,
           useValue: { recordActivity: jest.fn(), recomputeForUser: jest.fn() },
+        },
+        {
+          provide: DeliveryPartnersService,
+          useValue: { resolveTrackingUrl: jest.fn() },
         },
       ],
     }).compile();

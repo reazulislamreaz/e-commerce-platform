@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { CartModule } from '@/modules/cart/cart.module';
 import { CrmModule } from '@/modules/crm/crm.module';
+import { DeliveryPartnersModule } from '@/modules/delivery-partners/delivery-partners.module';
 import { InventoryModule } from '@/modules/inventory/inventory.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { PromotionsModule } from '@/modules/promotions/promotions.module';
@@ -16,6 +17,7 @@ import { OrdersService } from './orders.service';
     forwardRef(() => CartModule),
     NotificationsModule,
     CrmModule,
+    DeliveryPartnersModule,
   ],
   controllers: [OrdersController, AdminOrdersController],
   providers: [OrdersRepository, OrdersService],

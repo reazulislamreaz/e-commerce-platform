@@ -32,6 +32,7 @@ import { MarketingModule } from '@/modules/marketing/marketing.module';
 import { CartRecoveryModule } from '@/modules/cart-recovery/cart-recovery.module';
 import { CrmModule } from '@/modules/crm/crm.module';
 import { AnalyticsModule } from '@/modules/analytics/analytics.module';
+import { DeliveryPartnersModule } from '@/modules/delivery-partners/delivery-partners.module';
 import { HealthModule } from '@/modules/health/health.module';
 
 @Module({
@@ -78,6 +79,7 @@ import { HealthModule } from '@/modules/health/health.module';
     CartRecoveryModule,
     CrmModule,
     AnalyticsModule,
+    DeliveryPartnersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

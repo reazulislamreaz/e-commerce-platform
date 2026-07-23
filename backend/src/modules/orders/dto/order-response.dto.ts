@@ -11,6 +11,26 @@ export class OrderTimelineStepDto {
   done!: boolean;
 }
 
+export class OrderStatusHistoryEntryDto {
+  @ApiProperty({ example: 'shipped' })
+  status!: string;
+
+  @ApiPropertyOptional()
+  note?: string | null;
+
+  @ApiProperty({ example: '2026-07-18T10:00:00.000Z' })
+  createdAt!: string;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      fullName: { type: 'string' },
+    },
+  })
+  actor?: { id: string; fullName: string } | null;
+}
+
 export class OrderLineItemDto {
   @ApiProperty({ format: 'uuid', description: 'Order line id for returns/exchanges' })
   orderItemId!: string;
@@ -30,6 +50,9 @@ export class OrderLineItemDto {
   @ApiProperty({ example: 'https://cdn.example.com/tee.webp' })
   image!: string;
 
+  @ApiPropertyOptional({ example: 'EA-TEE-M-BLK' })
+  sku?: string;
+
   @ApiProperty({ example: 'M' })
   size!: string;
 
@@ -41,6 +64,9 @@ export class OrderLineItemDto {
 
   @ApiProperty({ description: 'Unit price in integer taka', example: 1499 })
   unitPrice!: number;
+
+  @ApiProperty({ description: 'Line total in integer taka', example: 2998 })
+  lineTotal!: number;
 }
 
 export class OrderShippingAddressDto {
@@ -65,7 +91,7 @@ export class OrderShippingAddressDto {
   @ApiProperty({ example: 'Dhaka' })
   city!: string;
 
-  @ApiProperty({ example: 'Dhaka' })
+  @ApiProperty({ example: 'Dhaka', description: 'District / division' })
   district!: string;
 
   @ApiProperty({ example: '1207' })
@@ -81,6 +107,47 @@ export class OrderShippingAddressDto {
   type!: 'shipping' | 'billing';
 }
 
+export class OrderShipmentDto {
+  @ApiPropertyOptional({ format: 'uuid' })
+  deliveryPartnerId?: string | null;
+
+  @ApiPropertyOptional()
+  deliveryPartnerName?: string | null;
+
+  @ApiPropertyOptional()
+  deliveryPartnerLogoUrl?: string | null;
+
+  @ApiPropertyOptional()
+  carrier?: string | null;
+
+  @ApiPropertyOptional()
+  trackingNumber?: string | null;
+
+  @ApiPropertyOptional()
+  trackingUrl?: string | null;
+
+  @ApiPropertyOptional()
+  shippingNote?: string | null;
+
+  @ApiPropertyOptional()
+  shippedAt?: string | null;
+
+  @ApiPropertyOptional()
+  assignedAt?: string | null;
+
+  @ApiPropertyOptional()
+  estimatedDeliveryAt?: string | null;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      fullName: { type: 'string' },
+    },
+  })
+  assignedBy?: { id: string; fullName: string } | null;
+}
+
 export class OrderResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -90,6 +157,9 @@ export class OrderResponseDto {
 
   @ApiProperty({ example: '2026-07-18T10:00:00.000Z' })
   createdAt!: string;
+
+  @ApiPropertyOptional({ example: '2026-07-18T12:00:00.000Z' })
+  updatedAt?: string;
 
   @ApiProperty({
     enum: [
@@ -131,11 +201,20 @@ export class OrderResponseDto {
   @ApiProperty({ enum: ['cod'], example: 'cod' })
   paymentMethod!: 'cod';
 
+  @ApiPropertyOptional({ enum: ['pending', 'collected', 'cancelled'], example: 'pending' })
+  paymentStatus?: string;
+
   @ApiPropertyOptional({ example: 'TRK1A2B3C4D5E' })
   trackingNumber?: string;
 
+  @ApiPropertyOptional({ type: OrderShipmentDto })
+  shipment?: OrderShipmentDto | null;
+
   @ApiProperty({ type: [OrderTimelineStepDto] })
   timeline!: OrderTimelineStepDto[];
+
+  @ApiPropertyOptional({ type: [OrderStatusHistoryEntryDto] })
+  statusHistory?: OrderStatusHistoryEntryDto[];
 
   @ApiPropertyOptional({
     example: 'customer@example.com',
@@ -143,9 +222,83 @@ export class OrderResponseDto {
   })
   email?: string;
 
+  @ApiPropertyOptional({ example: '+8801712345678' })
+  phone?: string;
+
+  @ApiPropertyOptional()
+  notes?: string | null;
+
+  @ApiPropertyOptional({ example: '2026-07-18T10:05:00.000Z' })
+  confirmedAt?: string | null;
+
+  @ApiPropertyOptional()
+  processingAt?: string | null;
+
+  @ApiPropertyOptional()
+  packedAt?: string | null;
+
+  @ApiPropertyOptional()
+  shippedAt?: string | null;
+
+  @ApiPropertyOptional()
+  deliveredAt?: string | null;
+
+  @ApiPropertyOptional()
+  cancelledAt?: string | null;
+
   @ApiPropertyOptional({
     format: 'uuid',
     description: 'Present on admin order responses when the order belongs to a registered user.',
   })
   userId?: string;
+
+  @ApiPropertyOptional({ description: 'Customer display name from address snapshot' })
+  customerName?: string;
+}
+
+export class OrdersSummaryDto {
+  @ApiProperty()
+  totalOrders!: number;
+
+  @ApiProperty()
+  pending!: number;
+
+  @ApiProperty()
+  confirmed!: number;
+
+  @ApiProperty()
+  processing!: number;
+
+  @ApiProperty()
+  packed!: number;
+
+  @ApiProperty()
+  shipped!: number;
+
+  @ApiProperty()
+  delivered!: number;
+
+  @ApiProperty()
+  cancelled!: number;
+
+  @ApiProperty()
+  returned!: number;
+
+  @ApiProperty()
+  exchanged!: number;
+
+  @ApiProperty()
+  today!: number;
+
+  @ApiProperty()
+  thisWeek!: number;
+
+  @ApiProperty()
+  thisMonth!: number;
+
+  @ApiProperty({ description: 'Collected payment revenue in integer taka' })
+  totalRevenue!: number;
+
+  @ApiProperty({ description: 'Average collected order value in integer taka' })
+  averageOrderValue!: number;
 }

@@ -254,6 +254,8 @@ model User {
   activityEvents     CustomerActivityEvent[]
   cartRecoveries     AbandonedCartRecovery[]
   reportExports      ReportExportJob[]
+  assignedShipments  Shipment[]              @relation("ShipmentAssignedBy")
+  orderStatusActions OrderStatusHistory[]    @relation("OrderStatusActor")
 
   @@index([role, status])
   @@index([createdAt])
@@ -898,8 +900,11 @@ model CustomerOrder {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([email, createdAt(sort: Desc)])
+  @@index([phone, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
+  @@index([updatedAt(sort: Desc)])
+  @@index([totalPoisha(sort: Desc)])
   @@map("customer_order")
 }
 
@@ -954,8 +959,10 @@ model OrderStatusHistory {
   createdAt DateTime    @default(now()) @db.Timestamptz(3)
 
   order CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actor User?         @relation("OrderStatusActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([orderId, createdAt])
+  @@index([actorId])
   @@map("order_status_history")
 }
 
@@ -1013,17 +1020,47 @@ model InventoryReservationItem {
   @@map("inventory_reservation_item")
 }
 
-model Shipment {
-  id             String   @id @default(uuid()) @db.Uuid
-  orderId        String   @db.Uuid
-  trackingNumber String   @unique
-  carrier        String?
-  shippedAt      DateTime @default(now()) @db.Timestamptz(3)
-  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+model DeliveryPartner {
+  id                  String   @id @default(uuid()) @db.Uuid
+  companyName         String
+  contactPerson       String?
+  phone               String?
+  email               String?
+  website             String?
+  logoUrl             String?
+  /// Template with optional `{trackingNumber}` placeholder.
+  trackingUrlTemplate String?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
 
-  order CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shipments Shipment[]
+
+  @@index([isActive, companyName])
+  @@map("delivery_partner")
+}
+
+model Shipment {
+  id                    String    @id @default(uuid()) @db.Uuid
+  orderId               String    @db.Uuid
+  trackingNumber        String    @unique
+  /// Denormalized carrier label (legacy free-text / partner company name).
+  carrier               String?
+  deliveryPartnerId     String?   @db.Uuid
+  assignedById          String?   @db.Uuid
+  assignedAt            DateTime? @db.Timestamptz(3)
+  trackingUrl           String?
+  shippingNote          String?
+  estimatedDeliveryAt   DateTime? @db.Timestamptz(3)
+  shippedAt             DateTime  @default(now()) @db.Timestamptz(3)
+  createdAt             DateTime  @default(now()) @db.Timestamptz(3)
+
+  order           CustomerOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  deliveryPartner DeliveryPartner? @relation(fields: [deliveryPartnerId], references: [id], onDelete: SetNull)
+  assignedBy      User?            @relation("ShipmentAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
 
   @@index([orderId])
+  @@index([deliveryPartnerId])
   @@map("shipment")
 }
 

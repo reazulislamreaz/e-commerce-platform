@@ -10,6 +10,7 @@ import { seedStockAlerts } from './seeders/stock-alerts.seeder';
 import { seedPreferences } from './seeders/preferences.seeder';
 import { seedAddresses } from './seeders/addresses.seeder';
 import { seedCartsAndWishlists } from './seeders/carts-wishlists.seeder';
+import { seedDeliveryPartners } from './seeders/delivery-partners.seeder';
 import { seedOrders } from './seeders/orders.seeder';
 import { seedUserReviews } from './seeders/reviews.seeder';
 import { seedNotifications } from './seeders/notifications.seeder';
@@ -49,6 +50,7 @@ export async function runSeed(prisma: SeedPrisma): Promise<void> {
   await seedPreferences(ctx);
   await seedAddresses(ctx);
   await seedCartsAndWishlists(ctx);
+  await seedDeliveryPartners(ctx);
   await seedOrders(ctx);
   await seedUserReviews(ctx);
   await seedNotifications(ctx);

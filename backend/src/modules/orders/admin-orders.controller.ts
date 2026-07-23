@@ -5,6 +5,7 @@ import {
   HttpCode,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -23,10 +24,11 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
 import type { JwtPayload } from '@/modules/auth/jwt.strategy';
 import { AdminCancelOrderDto } from './dto/admin-cancel-order.dto';
+import { AdminListOrdersQueryDto } from './dto/admin-list-orders.query.dto';
 import { AdminSetTrackingDto } from './dto/admin-set-tracking.dto';
 import { AdminUpdateOrderStatusDto } from './dto/admin-update-order-status.dto';
-import { ListOrdersQueryDto } from './dto/list-orders.query.dto';
-import { OrderResponseDto } from './dto/order-response.dto';
+import { BulkOrdersDto, BulkOrdersResultDto, UpdateOrderNotesDto } from './dto/bulk-orders.dto';
+import { OrderResponseDto, OrdersSummaryDto } from './dto/order-response.dto';
 import { OrdersService } from './orders.service';
 
 @ApiTags('Admin Orders')
@@ -39,10 +41,25 @@ export class AdminOrdersController {
   constructor(private readonly orders: OrdersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List orders with admin filters' })
+  @ApiOperation({ summary: 'List orders with admin filters (offset pagination)' })
   @ApiOkResponse({ type: [OrderResponseDto] })
-  list(@Query() query: ListOrdersQueryDto) {
-    return this.orders.listAdmin(query);
+  list(@Query() query: AdminListOrdersQueryDto) {
+    return this.orders.listAdminOffset(query);
+  }
+
+  @Get('summary')
+  @ApiOperation({ summary: 'Order management KPI summary' })
+  @ApiOkResponse({ type: OrdersSummaryDto })
+  summary() {
+    return this.orders.getSummary();
+  }
+
+  @Post('bulk')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Apply a bulk action to orders' })
+  @ApiOkResponse({ type: BulkOrdersResultDto })
+  bulk(@CurrentUser() actor: JwtPayload, @Body() dto: BulkOrdersDto) {
+    return this.orders.bulk(actor, dto);
   }
 
   @Get(':id')
@@ -53,12 +70,23 @@ export class AdminOrdersController {
     return this.orders.getAdmin(id);
   }
 
+  @Patch(':id/notes')
+  @ApiOperation({ summary: 'Update internal order notes' })
+  @ApiOkResponse({ type: OrderResponseDto })
+  updateNotes(
+    @CurrentUser() actor: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateOrderNotesDto,
+  ) {
+    return this.orders.updateNotes(actor, id, dto);
+  }
+
   @Post(':id/status')
   @HttpCode(200)
   @ApiOperation({
     summary: 'Advance order fulfillment status',
     description:
-      'CONFIRMED→PROCESSING|CANCELLED, PROCESSING→PACKED|CANCELLED, PACKED→SHIPPED|CANCELLED, SHIPPED→DELIVERED. Shipping requires tracking on the order or in the same request.',
+      'PENDING→CONFIRMED|CANCELLED, CONFIRMED→PROCESSING|CANCELLED, PROCESSING→PACKED|CANCELLED, PACKED→SHIPPED|CANCELLED, SHIPPED→DELIVERED. Shipping requires tracking on the order or in the same request. Delivery partner assignment is optional on ship.',
   })
   @ApiOkResponse({ type: OrderResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid transition or missing tracking' })

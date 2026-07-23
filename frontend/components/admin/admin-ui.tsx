@@ -228,7 +228,7 @@ export function AdminTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaEl
   return <textarea {...props} className={cn(inputStyles, props.className)} />;
 }
 
-type StatusTone = 'success' | 'info' | 'warning' | 'error' | 'neutral';
+type StatusTone = 'success' | 'info' | 'warning' | 'error' | 'neutral' | 'purple' | 'amber';
 
 const toneByStatus: Record<string, StatusTone> = {
   DELIVERED: 'success',
@@ -237,11 +237,13 @@ const toneByStatus: Record<string, StatusTone> = {
   COMPLETED: 'success',
   RESOLVED: 'success',
   APPROVED: 'success',
+  COLLECTED: 'success',
   CONFIRMED: 'info',
-  PROCESSING: 'info',
-  SHIPPED: 'info',
+  PACKED: 'info',
   NEW: 'info',
   IN_PROGRESS: 'info',
+  PROCESSING: 'purple',
+  SHIPPED: 'amber',
   PENDING: 'warning',
   PENDING_VERIFICATION: 'warning',
   DRAFT: 'warning',
@@ -251,6 +253,7 @@ const toneByStatus: Record<string, StatusTone> = {
   SUSPENDED: 'error',
   SPAM: 'error',
   RETURNED: 'error',
+  EXCHANGED: 'warning',
   LOW: 'warning',
   OUT: 'error',
   BRAND: 'info',
@@ -264,6 +267,8 @@ const toneStyles: Record<StatusTone, string> = {
   warning: 'border-[#E8D9A8] bg-[#FFF8E7] text-[#C9A227]',
   error: 'border-red-200 bg-red-50 text-red-700',
   neutral: 'border-[#E5E7EB] bg-[#FAFAFA] text-[#555555]',
+  purple: 'border-purple-200 bg-purple-50 text-purple-800',
+  amber: 'border-amber-200 bg-amber-50 text-amber-800',
 };
 
 const dotStyles: Record<StatusTone, string> = {
@@ -272,6 +277,8 @@ const dotStyles: Record<StatusTone, string> = {
   warning: 'bg-[#C9A227]',
   error: 'bg-red-500',
   neutral: 'bg-[#555555]',
+  purple: 'bg-purple-500',
+  amber: 'bg-amber-500',
 };
 
 function resolveTone(children: ReactNode): StatusTone {
