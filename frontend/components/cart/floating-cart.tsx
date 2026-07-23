@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { selectCartCount } from '@/store/selectors';
@@ -16,15 +17,27 @@ interface FloatingCartProps {
 /**
  * Right-edge, vertically centered floating cart. Stays mounted (so it remains a
  * stable fly-to-cart target) but is only visible + focusable while the bag has
- * items. Bounces its badge whenever the item count grows.
+ * items. Hidden on mobile (the bottom nav owns the cart there) and on the
+ * homepage to keep the hero uncluttered. Bounces its badge on new items.
  */
 export const FloatingCart = forwardRef<HTMLButtonElement, FloatingCartProps>(function FloatingCart(
   { onOpen },
   ref,
 ) {
+  const pathname = usePathname();
   const count = useAppSelector(selectCartCount);
   const { subtotal } = useCartDetails();
-  const visible = count > 0;
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobile(query.matches);
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
+
+  const visible = count > 0 && pathname !== '/' && !isMobile;
 
   const [pulse, setPulse] = useState(false);
   const previousCount = useRef(count);

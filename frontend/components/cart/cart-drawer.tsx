@@ -89,7 +89,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         aria-label="Close shopping bag"
         onClick={onClose}
         className={cn(
-          'absolute inset-0 bg-[#111111]/40 backdrop-blur-[1px] transition-opacity duration-300 ease-out motion-reduce:transition-none',
+          'absolute inset-0 bg-[#111111]/40 backdrop-blur-[1px] transition-opacity duration-[450ms] ease-[cubic-bezier(.32,.72,0,1)] motion-reduce:transition-none',
           open ? 'opacity-100' : 'opacity-0',
         )}
       />
@@ -101,7 +101,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         aria-modal="true"
         aria-label="Shopping bag"
         className={cn(
-          'absolute right-0 top-0 flex h-full w-[86vw] max-w-[400px] flex-col bg-[#FAFAFA] shadow-[0_0_40px_rgba(0,0,0,.25)] transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)] will-change-transform motion-reduce:transition-none',
+          'absolute right-0 top-0 flex h-full w-[86vw] max-w-[400px] flex-col bg-[#FAFAFA] shadow-[0_0_40px_rgba(0,0,0,.25)] transition-transform duration-[450ms] ease-[cubic-bezier(.32,.72,0,1)] will-change-transform motion-reduce:transition-none',
           open ? 'translate-x-0' : 'translate-x-full',
         )}
       >
