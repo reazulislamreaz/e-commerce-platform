@@ -200,6 +200,7 @@ export class InvoicePdfService {
       .text(`${address.line1}${address.line2 ? `, ${address.line2}` : ''}`, { width: colWidth })
       .text(`${address.city}, ${address.district} ${address.postalCode}`, { width: colWidth })
       .text(address.country, { width: colWidth });
+    const leftBottom = doc.y;
 
     const rightRows: Array<[string, string]> = [['Delivery Method', 'Standard Delivery']];
     if (order.shipment?.estimatedDeliveryAt) {
@@ -234,7 +235,7 @@ export class InvoicePdfService {
       ry += 13;
     }
 
-    doc.y = Math.max(doc.y, ry) + 18;
+    doc.y = Math.max(leftBottom, ry) + 18;
   }
 
   private readonly columns = {
@@ -282,7 +283,12 @@ export class InvoicePdfService {
         .font('Helvetica-Bold')
         .fontSize(9)
         .heightOfString(item.name, { width: this.columns.description.width });
-      const rowHeight = Math.max(28, topPad + nameHeight + (item.sku ? skuHeight : 0) + bottomPad);
+      const variantHeight = doc
+        .font('Helvetica')
+        .fontSize(9)
+        .heightOfString(`${item.size} / ${item.color}`, { width: this.columns.variant.width });
+      const descBlockHeight = nameHeight + (item.sku ? skuHeight : 0);
+      const rowHeight = Math.max(28, topPad + Math.max(descBlockHeight, variantHeight) + bottomPad);
 
       if (doc.y + rowHeight > pageBottom) {
         doc.addPage();
